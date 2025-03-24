@@ -1052,11 +1052,11 @@ Nested call within stakingPro so that we do not have to make 2 independent txns 
 
 ### Remote token
 
+2 txn process:
+
 - Token exists on a different chain as the StakingPro
 - `MONEY_MANAGER` to call `deposit()` on **EvmVault**, which exists on the remote chain
-- This is a LayerZero enabled function, so it is payable
-- Will fire off a cross-chain message to the home chain, to update rewardsVault
-- `totalDeposited` is incremented on rewardsVault
+- Increment `totalDeposited` on RewardsVault, by calling `updateRemoteBalance()`.
 
 ## 3. Withdraw tokens
 
@@ -1067,22 +1067,24 @@ Nested call within stakingPro so that we do not have to make 2 independent txns 
 
 ### Remote token
 
+2 txn process:
+
 - MONEY_MANAGER to call `withdraw()` on EvmVault, which exists on the remote chain
 - `withdraw(address token, uint256 amount, address to, uint256 distributionId) external onlyOwner`
-- this is a LZ enabled fn, so it is payable
-- will fire off a xchain message to the home chain, to update rewardsVault
-- `totalDeposited` is decremented on rewardsVault
+- Decrement `totalDeposited` on RewardsVault, by calling `updateRemoteBalance()`.
 
 ## 4. Users claiming Rewards
 
 - User to call `claimRewards()` on StakingPro
 - `claimRewards(bytes32 vaultId, uint256 distributionId) external`
-- After calculating rewards, will make an external call to rewardsVault to transfer rewards to user
-- if the token is local, rewardsVault will transfer the rewards to the user
-- if the token is remote, rewardsVault will fire off a xchain message to the remote chain, hitting the evmVault there and instructing it to transfer rewards to the user
+- After calculating rewards, will make an external call to RewardsVault to transfer rewards to user
+- if the token is local, RewardsVault will transfer the rewards to the user
+- if the token is remote, RewardsVault will fire off a X-chain message to the remote chain, instructing the EvmVault there to transfer rewards to the user
 - `totalClaimed` is incremented on rewardsVault
 
-Note that the rewardsVault only supports local, other remote evm chains and solana.
+Note that the RewardsVault only supports local, other remote evm chains.
+
+> Solana is work in progress
 
 ## 5. Cooldown & Ending vaults: activateCooldown() and endVaults()
 
@@ -1093,7 +1095,7 @@ Process:
 
 ### activateCooldown()
 
-- activateCooldown() is called when the vault creator wants to activate the cooldown period of a vault
+- `activateCooldown()` is called when the vault creator wants to activate the cooldown period of a vault
 - this signifies that the vault will come to an end in the near future
 - `vault.endTime` is set to `block.timestamp` + `VAULT_COOLDOWN_DURATION`
 - once `vault.endTime` is a non-zero value, users would not be able to stake anymore
@@ -1101,14 +1103,14 @@ Process:
 
 ### endVaults()
 
-- endVaults() is called when the vault's end time is reached and the weight of its staked assets must be removed from the system
+- `endVaults()` is called when the vault's end time is reached and the weight of its staked assets must be removed from the system
 - this prevents assets from accruing rewards and diluting the rewards of the other active vaults
 - this is necessary as there is no automated manner for this to occur
 - currently this is callable by anyone, with no access control restrictions
 - vault's staked assets are removed from the system
 - global boosted balances are also decremented
 
-The expectation is that we call endVaults() on all the vaults that have come to an end, via script.
+The expectation is that we call `endVaults()` on all the vaults that have come to an end, via script.
 
 ## 6. Updating NFT_MULTIPLIER (enableMaintenance, update, disableMaintenance)
 
@@ -1143,22 +1145,18 @@ Note: `_updateDistributionIndex` returns if paused. This prevents multiple updat
 
 **What if endTime is set, but there are still active distributions continuing beyond endTime?**
 
-- `unstake` and `claimRewards` are callable even after `endTime`.
-- Calling these functions after `endTime` would mean that if there are still active distributions, the distributions would be updated via _updateUserAccounts::_updateDistributionIndex.
+- `setEndTime` checks if there active distributions which would end beyond the proposed endTime input.
+- For those distributions it will shorten their endTimes to the proposed endTime input.
+- `totalRequired` gets updated on both StakingPro and RewardsVault as well.
 
-Hence, when calling `setEndTime`, we should check if there are still active distributions beyond endTime.
-If there are, we should end those distributions via `updateDistribution`.
-
->It is not possible to nest `claimRewards` within `unstakeAll`, as `claimRewards` operates on a per-distribution basis. Hence, 2 functions are needed.
-
-## 9. Ending a distribution
+## 8. Ending a distribution
 
 - `endDistributionImmediately(uint256 distributionId)`
-- This function enables immediate termination of a distribution by setting its end time to the current block timestamp. 
-- This effectively stops any further rewards from being distributed while preserving all rewards earned up to that point.
+- This function enables immediate termination of a distribution by setting its end time to the current block timestamp.
+- Effectively stops any further rewards from being distributed while preserving all rewards earned up to that point.
 - Distribution must exist and be active (not ended).
 
-## 10. Migrating from old rewardsVault (V1) to new rewardsVault (V2)
+## 9. Migrating from old rewardsVault (V1) to new rewardsVault (V2)
 
 Process:
 
@@ -1178,7 +1176,7 @@ These values will not be migrated over from V1 - so we must be mindful of this w
 When claiming rewards for a remote distribution:
 
 1. User calls `claimRewards()` on StakingPro
-2. StakingPro calculates rewards and calls `payRewards()` on RewardsVaultV2
+2. StakingPro calculates rewards and calls `payRewards()` on RewardsVaultV2, instructing it to pay user the calculated figure.
 3. RewardsVaultV2 initiates LayerZero message to EVMVault on remote chain
 4. EVMVault receives message and transfers tokens to user
 
@@ -1190,14 +1188,14 @@ The flow requires:
 
 If LayerZero messaging fails:
 
-1. Owner can call `payRewards()` directly on EVMVault as backup
+1. Owner can call `payRewards()` directly on EVMVault as backup, instructing to pay specified user
 2. This privileged function allows manual reward distribution if needed
 3. RewardsVaultV2 state is still updated via LayerZero retry mechanism
 
 Key considerations:
 
 - Gas costs are higher for remote claims due to cross-chain messaging
-- Slight delay between claim initiation and token receipt due to cross-chain finality
+- Slight delay between claim initiation and token receipt due to cross-chain communication
 - EVMVault balance must be monitored and topped up as needed
 - Owner intervention possible if LayerZero experiences issues
 
@@ -1205,21 +1203,31 @@ Key considerations:
 
 - Call on stakingPro
 - Nested call to rewardsVaultV2, token info registered
-- Remains the same as setting up a local distribution, except that dstEid must be correctly specified
+- Remains the same as setting up a local distribution, except that `dstEid` must be correctly specified
 
 ## 2. deposit tokens [financing distribution]
 
-- On the remote chain, tokens get deposited to EVMVault.sol
-- calling `deposit` EVMVault fires of nested x-chain call to RewardsVaultV2.
-- On RewardsVaultV2, `_lzReceive` will process the deposit, and update `distribution.totalDeposited``
+2 txn process:
 
-Hence RewardsVaultV2 will have updated values wrt to deposit actions.
+- On the remote chain, tokens get deposited to EVMVault.sol
+- Increment `totalDeposited` on RewardsVault, by calling `updateRemoteBalance()`.
+
+**We opt to not have `EVMVault::deposit` to callback RewardsVault via LZ, as it could create a race condition:**
+
+Example:
+
+- 1000 token deposited on remote, 1000 tokens already recorded on home.
+- 600 tokens withdrawn, 400 left. [pending update on home]
+- user claimsRewards for 600 tokens
+- home is stale w/ 1000 tokens, so txn clears on home.
+- however on remote, txn fails, since there are insufficient tokens.
 
 ## 3. Withdraw remote tokens
 
+2 txn process:
+
 - Withdraw from EVMVault, since thats where the tokens were deposited to.
-- `withdraw` initiates a nested x-chain call to RewardsVaultV2.
-- On RewardsVaultV2, `_lzReceive` will process the withdraw, and update `distribution.totalDeposited`
+- Decrement `totalDeposited` on RewardsVault, by calling `updateRemoteBalance()`.
 
 ## 4. Claiming Remote Rewards
 
@@ -1238,28 +1246,28 @@ EvmVault has a privileged function `payRewards`, as a backup in case LZ x-chain 
 2. `totalRequired` is updated on RewardsVaultV2
 3. Nothing done on EvmVault - it has no concept `totalRequired`
 
-### problem
+**Problem:**
 
 - withdraw on remote
 - home not updated, user calls [balance checks clears]
-- revert on remote
+- revert on remote due to insufficient token balance
 
-### What this means for deposit, withdraw and claiming?
+**What this means for deposit, withdraw and claiming?**
 
 - Can deposit/withdraw freely on EVMVault. `totalRequired` must be manually referenced.
-- updates between home and remote have to be async
-- could lead to situations where `totalDeposited` on home is stale, and reflects a larger figures than the actual balance on remote
-- hence, home claimRewards txns would not revert, while those on remote would, leading to a situation where storage on home incorrectly reflects what a user has claimed.
+- Updates between home and remote have to be async
+- Could lead to situations where `totalDeposited` on home is stale, and reflects a larger figures than the actual balance on remote
+- Hence, home claimRewards txns would not revert, while those on remote would, leading to a situation where storage on home incorrectly reflects what a user has claimed.
 
 **To avoid this, it is sensible to design it such that reverts are not an issue.**
 
 - If `_lzReceive` fails on EVMVault.sol due to insufficient balance, store difference as unclaimable.
 - When updating, avoid a situation where the incoming update could lead to shortage or invalid claims.
 
-### if withdraw [or totalRequired decreases]
+### If withdraw [or totalRequired decreases]
 
-1. reduce on home, via `updatedDistribution` on StakingPro
-2. then withdraw on remote
+1. Reduce on home, via `updatedDistribution` on StakingPro
+2. Then withdraw on remote
 
 Incoming claimRewards calls will be immediately treated on the update, as StakingPro and RewardsVault are updated.
 This prevents invalid claimRewards txns from going x-chain.
@@ -1280,10 +1288,10 @@ This prevents invalid claimRewards txns from going x-chain.
         
         To avoid this, user can call `collectUnclaimedRewards` to claim their rewards.
 
-### if deposit [or totalRequired increases]
+### If deposit [or totalRequired increases]
 
-1. deposit on remote first.
-2. update on home, via `updatedDistribution` on StakingPro
+1. Deposit on remote first.
+2. Update on home, via `updatedDistribution` on StakingPro
 
 claimRewards txns revert until sufficient balance is available on remote chain.
 
@@ -1291,5 +1299,3 @@ claimRewards txns revert until sufficient balance is available on remote chain.
 
 Other cases of concern would be when partial deposits are made instead of the full amount upfront.
 The onus in upon the operator to keep track and update accordingly.
-
-
