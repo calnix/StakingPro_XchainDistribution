@@ -17,8 +17,6 @@ contract DeployTest is Script {
 
     ERC20Mock public mockToken;
 
-    function setUp() public {}
-
     function addressToBytes32(address addr) public pure returns(bytes32) {
         return bytes32(uint256(uint160(addr)));
     }
@@ -42,15 +40,15 @@ contract DeployTest is Script {
         uint256 creationNftsRequired = 5;
         uint256 vaultCoolDownDuration = 7 days;
         address owner = 0x8C9C001F821c04513616fd7962B2D8c62f925fD2;
-        address storedSigner;
-        uint256 storedSignerPrivateKey;
+        address storedSigner = 0x4260426ab18239De6678A5d2B6aDb31916D624D3;
+        //uint256 storedSignerPrivateKey;
 
         // .... deploy contracts ....
 
         // signer
-        (storedSigner, storedSignerPrivateKey) = makeAddrAndKey("storedSigner");
-        console.log("Stored signer:", storedSigner);
-        console.log("Stored signer private key:", storedSignerPrivateKey);
+        //(storedSigner, storedSignerPrivateKey) = makeAddrAndKey("storedSigner");
+        //console.log("Stored signer:", storedSigner);
+        //console.log("Stored signer private key:", storedSignerPrivateKey);
 
         pool = new StakingPro(
             registry,
@@ -98,14 +96,43 @@ contract DeployTest is Script {
 
 // forge script script/DeployTest.s.sol:DeployTest --rpc-url base_sepolia --broadcast --verify -vvvvv --etherscan-api-key base_sepolia
 
-
-contract SetupD1 is Script {
-    ERC20Mock public mockToken;
+abstract contract ContractAddresses {
 
     address public owner = 0x8C9C001F821c04513616fd7962B2D8c62f925fD2;
-    StakingPro public pool = StakingPro(0x4902da6825D1E77eFaCecAaD764c74b01100E4A7);
-    RewardsVaultV1 public rewardsVault = RewardsVaultV1(0xfE5F4B9d510C80EA13Ecf4be9B9Df00FA9bD28D4);
 
+    StakingPro public pool = StakingPro(0xfF86dFC230ef543B8828296ABa943C130cf81842);
+    RewardsVaultV1 public rewardsVault = RewardsVaultV1(0xec8708459FCC22F40B4F74Ee5fb37B4F423A5d00);
+}
+
+/*
+contract SetUpD0 is Script, ContractAddresses {
+
+    function run() public {
+        console.log("Setting up distribution 0...");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_TEST");
+        vm.startBroadcast(deployerPrivateKey);
+
+        // setup distribution
+        pool.setupDistribution(
+            0,
+            block.timestamp,
+            0,
+            1e18,
+            1E18,
+            0,
+            bytes32(0)
+        );
+
+        vm.stopBroadcast();   
+    }
+}*/
+
+// forge script script/DeployTest.s.sol:SetUpD0 --rpc-url base_sepolia --broadcast -vvvvv --etherscan-api-key base_sepolia
+
+
+contract SetupD1 is Script, ContractAddresses {
+    ERC20Mock public mockToken;
+    
     function run() public {
         console.log("Setting up distribution 1...");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_TEST");

@@ -10,7 +10,7 @@ StakingPro is a contract that allows users to stake tokens, nfts and earn reward
 - There are no limits on the amount of assets that can be staked.
 - The contract does not issue receipt tokens (e.g. stkMOCA) for staked assets.
 
-MocaNfts are bridge over from Mainnet to Base via NftLocker/Registry pair of contracts.
+MocaNfts are bridged over from Mainnet to Base via [NftLocker/Registry](https://github.com/mocaverse/NftLocker) pair of contracts.
 
 MocaTokens will be bridged over from Mainnet to Base via LayerZero.
 
@@ -20,6 +20,9 @@ RealmPoints are and off-chain resource, that is "onboarded" to the contract via 
 
 - StakingPro will be initially deployed on Base, paired with a RewardsVaultV1.sol contract.
 - Subsequently, StakingPro will be updated with paired with a RewardsVaultV2.sol contract.
+
+V1 supports distributing token rewards on Base only.
+V2 supports distributing token rewards X-chain via LayerZero. This utilizes EVMVault.sol as remote deployed peers to RewardsVaultV2.sol
 
 # Distributions, Vaults and Accounts
 
@@ -49,14 +52,15 @@ Attributes of a distribution:
 
 Each distribution has an id. This allows for two different distributions to have the same token, but different distribution schedules.
 
-StakingPro, allows for tokens to be distributed x-chain - that would be identified and handled by the rewards vault contract. Specifically RewardsVaultV2.sol.
-RewardsVaultV1.sol only support local chain distribution.
-
->Distribution ids are expected to be sequential, starting from 0.
-
 Note that since each distribution could have a different token precision, it is important to ensure that the token precision is correctly set and handled for each distribution. We elaborate on this in the section on handling varying decimal precisions of reward tokens.
 
-Note that distributionId:0 is reserved for staking power.
+DistributionId:0 is reserved for staking power.
+
+- staking power is an off-chain resource, and not represented by ERC20 tokens
+- D0 will not emit any token rewards, and there will be no asset transfers.
+- StakingPro will simply serve to account on-chain the total StakingPower accrued.
+
+>Distribution ids are expected to be sequential, starting from 0.
 
 ### Staking Power
 
@@ -65,7 +69,7 @@ Staking power is distributionId:0.
 - only distribution allowed to have an indefinite endTime
 - only distribution that does not emit token rewards
 
-Staking power is an off-chain resource - the contract only serves to record the allocation and distributions to users.
+Staking power is an off-chain resource - the contract only serves to record the allocation and accruals to users.
 
 - not meant to be claimed by users.
 - not represented as an ERC20 token.
@@ -82,11 +86,38 @@ Each vault has a unique id, that is generated randomly. See `_generateVaultId()`
 
 A vault can be thought of as a unique grouping of boosting effects and fees:
 
-- nfts staked contribute boosting effects to other staking assets: staked tokens, staked RealmPoints
-- fees are levied on the rewards accrued by the vault
+- nfts staked contribute boosting effects to other staking assets: staked Moca, staked RealmPoints.
+- fees are levied on the rewards accrued by the vault.
 - vault creator determines fees on vault creation and is free to update them, at any point in time.
 
 We will explain boosting and fees in later sections.
+
+```solidity
+    struct Vault {
+        address creator;
+        uint256[] creationTokenIds;     // nfts staked for creation
+
+        uint256 startTime;              
+        uint256 endTime;                // cooldown ends at this time
+        uint256 removed;                // flag to indicate if vault has been removed
+
+        // fees: pct values, sum <= MAXIMUM_FEE_FACTOR
+        // fee factors are expressed as w/ 1e18 precision
+        uint256 nftFeeFactor;
+        uint256 creatorFeeFactor;   
+        uint256 realmPointsFeeFactor;
+
+        // staked assets
+        uint256 stakedNfts;            //2^8 -1 NFTs. uint8
+        uint256 stakedTokens;
+        uint256 stakedRealmPoints;
+
+        // boosted balances 
+        uint256 totalBoostFactor;   // no. of nfts * nftBoostFactor | 1.XXX
+        uint256 boostedRealmPoints;
+        uint256 boostedStakedTokens; 
+    }
+```
 
 ## Accounts [user, vault]
 
@@ -100,6 +131,26 @@ Since there could be multiple distributions, each with their own token rewards, 
 - Vault account will record the vault's accrued and claimed rewards for that specific distribution.
 - Will track the total rewards earned by the vault before fees are deducted.
 
+```solidity
+    //Note: Each vault has an account for each distribution
+    struct VaultAccount {
+
+        // index: reward token
+        uint256 index;             //rewardsAccPerUnitBoostedBalance
+        uint256 nftIndex;          //rewardsAccPerNFT
+        uint256 rpIndex;           //rewardsAccPerRealmPoint 
+
+        // rewards: reward token | based on allocPoints
+        uint256 totalAccRewards;
+        uint256 accCreatorRewards;   
+        uint256 accNftStakingRewards;            
+        uint256 accRealmPointsRewards;
+
+        uint256 rewardsAccPerUnitStaked;    // rewardsAccPerUnitStaked: per unit rp or staked moca
+        uint256 totalClaimedRewards;        // total: staking, nft, creator, rp
+    }
+```
+
 Similarly, each user who stakes in a vault will have a user account per distribution that tracks:
 
 - Their share of the vault's rewards after fees
@@ -107,6 +158,31 @@ Similarly, each user who stakes in a vault will have a user account per distribu
 - The index used to calculate their rewards, which helps determine unclaimed rewards
 
 This dual account system allows precise tracking of rewards at both the vault and individual user level across multiple reward distributions.
+
+```solidity
+    struct UserAccount {
+
+        // indexes: precision is based on reward tokens
+        uint256 index; 
+        uint256 nftIndex;
+        uint256 rpIndex;           
+
+        //rewards: from staking MOCA; less of fees
+        uint256 accStakingRewards;          // receivable      
+        uint256 claimedStakingRewards;      // received
+
+        //rewards: NFTs
+        uint256 accNftStakingRewards; 
+        uint256 claimedNftRewards;
+
+        //rewards: RP
+        uint256 accRealmPointsRewards; 
+        uint256 claimedRealmPointsRewards;
+
+        //rewards: creatorFees
+        uint256 claimedCreatorRewards;
+    }
+```
 
 ### User accounts: pairwise combination of vault and distribution
 
@@ -117,7 +193,7 @@ Example:
 - 2 distributions: d0, d1
 - 2 vaults: vA, vB
 
-User 1 has staked into both vaults. User 1 has the following accounts:
+Assuming user 1 has staked into both vaults, user 1 will have the following accounts:
 
 - vA_d0: User 1's account for vault vA and distribution d0
 - vA_d1: User 1's account for vault vA and distribution d1
@@ -141,12 +217,14 @@ Consider the example where we want to stake to a vault. The process is as follow
 3. update all user accounts for specified vault  [per distribution]
 4. book stake and update vault assets
 
-The vault account is updated first, accounting for boosting effects and fees. I.e. the vault considers its boosted balance relative to the total boosted balance of all vaults, to calculate the rewards accrued by the vault.
+The vault account is updated first, accounting for boosting effects and fees.
+I.e. the vault considers its boosted balance relative to the total boosted balance of all vaults, to calculate the rewards accrued by the vault.
 
 The user account is updated next, accounting for the user's share of the rewards accrued by the vault.
 
 - The user account considers its unboosted balance relative to the vault's total unboosted balance, to calculate the rewards accrued by the user.
 - This is because all users within the same vault enjoy the same NFT_MULTIPLIER effects.
+- So we can compare them on normal terms, and ignore boosting.
 
 *Illustration:*
 
@@ -162,29 +240,18 @@ Fees are levied on the vault's accrued rewards, before the rewards are distribut
 - nftStakingFee: levied to pay for the staking of NFTs
 - rpStakingFee: levied to pay for the staking of RP
 
-- Fees set on creation cannot exceed `MAXIMUM_FEE_FACTOR`.
-- For fee updates, creator fee must be decreased to allow for increased nftStakingFee and rpStakingFee.
-- Alternatively, creator fee can be decreased singularly.
-- Irrespective of the fees set, `MAXIMUM_FEE_FACTOR` must be honoured.
+Total fees must stay within `MAXIMUM_FEE_FACTOR`
 
-Accrued vault rewards are paid out to it's stakers of moca tokens.
-
-- moca stakers earn rewards less of fees; be it token rewards or staking power.
-- `(10_000 - totalFeeFactors)` = proportion of rewards given to Moca stakers.
-
-Hence, it can be said that the rewards due to the vault's moca stakers are the rewards accrued, less of fees.
+- Creator can only decrease the creator fee share, either to reduce total fees or to increase nft/rp staking fees proportionally.
+- MOCA stakers receive vault rewards after fees are deducted. Their share is calculated as `(10_000 - totalFeeFactors)` of total rewards, applying to both token and staking power rewards.
 
 # Handling varying decimal precisions of reward tokens and staking assets
 
 Handling varying decimal precision for reward tokens, and ensuring that the index and emission calculations are correct.
 
-Staking Assets:
-
 - Moca: 1e18
 - Realm Points: 1e18
-- NFTs: N/A
-
-Staking power is treated in 1e18 precision.
+- Staking Power: 1e18
 
 ## 1. Decimal Precision for indexes and rewards
 
@@ -193,93 +260,7 @@ Rewards are rebased to its native precision before being being transferred to th
 
 While this has no impact on tokens of 1e18 precision, it is much more sympathetic towards tokens of lesser precision and does not subject them to intermediate rebasing actions which will result in compounded rounding down effect.
 
-Downside, tokens > 1E18 precision suffer; but there aren't many of those, so its acceptable.
-
-### Check and test if precision loss is a problem, given varying token precisions:
-
-Scenario 1: reward tokens are denominated in 1e1 precision
-
-```solidity
-        function indexPrecision() public pure returns(uint256) {
-        
-        uint256 totalBalance = 1.23 ether;
-        uint256 distribution_TOKEN_PRECISION = 1e1;
-        
-        // totalBalanceRebased = 12
-        uint256 totalBalanceRebased = (totalBalance * distribution_TOKEN_PRECISION) / 1E18;
-
-        //note: indexes are denominated in the distribution's precision
-        //assume first update, distribution_index = 0
-        uint256 distribution_index = 0;
-        
-        // assume emissionPerSecond is 1 unit of reward token
-        uint256 emittedRewards = (1 * distribution_TOKEN_PRECISION) * 1;      // emittedRewards = distribution.emissionPerSecond * timeDelta: 
-        // emittedRewards = 10
-
-        uint256 nextDistributionIndex = ((emittedRewards * distribution_TOKEN_PRECISION) / totalBalanceRebased) + distribution_index; 
-
-        // nextDistributionIndex = 8 = ((10 * 10) / 12) + 0
-        return nextDistributionIndex;   
-    }  
-```
-
-`nextDistributionIndex` = 0.8 units of reward tokens per unit MOCA staked
-We intended to distribute 1 reward token per unit MOCA staked. But ended up distributing 0.8 reward tokens per unit MOCA staked.
-
-check if correct:
-
-    - mocaStaked: 1.23e18
-    - emittedRewards = 1 unit of reward token, in 1e1 precision [10]
-
-    - mocaStakedRebased: (1.23e18 * 1e1) / 1e18 = 12
-    - rewardsPerMocaStakedRebased: (emittedRewards * rewardPrecision) / mocaStakedRebased = (10 * 1e1) / 12 = 8 
-    
-    0.8 reward tokens are given out per stakedMoca. [since 1 unit is 1e1]
-    0.8 * 1.23 = 0.984 reward tokens ought to be emitted in TOTAL 
-    slightly lesser than the 1 reward token that was meant to be emitted 
-
-Scenario 2: reward tokens are denominated in 1e21 precision
-
-```solidity
-    function indexPrecision2() public pure returns(uint256) {
-        
-        uint256 totalBalance = 1.23 ether;
-        uint256 distribution_TOKEN_PRECISION = 1e21;
-        
-        // totalBalanceRebased = 1230000000000000000000 = 1.23e21
-        uint256 totalBalanceRebased = (totalBalance * distribution_TOKEN_PRECISION) / 1E18;
-
-        //note: indexes are denominated in the distribution's precision
-        //assume first update, distribution_index = 0
-        uint256 distribution_index = 0;
-        
-        // assume emissionPerSecond is 1 reward token
-        uint256 emittedRewards = (1 * distribution_TOKEN_PRECISION) * 1;      // emittedRewards = distribution.emissionPerSecond * timeDelta: 
-        // emittedRewards = 1000000000000000000000 = 1e21
-
-        uint256 nextDistributionIndex = ((emittedRewards * distribution_TOKEN_PRECISION) / totalBalanceRebased) + distribution_index; 
-        
-        // nextDistributionIndex = 0.813008130081300813008 = ((1e21 * 1e21) / 1.23e21) + 0
-        return nextDistributionIndex;   
-    }  
-```
-
-`nextDistributionIndex` = 0.813008130081300813008 units of reward tokens per unit MOCA staked
-We intended to distribute 1 reward token per unit MOCA staked. But ended up distributing 0.813008130081300813008 reward tokens per unit MOCA staked.
-
-check if correct:
-
-    - mocaStaked: 1.23e18
-    - emittedRewards = 1 unit of reward token, in 1e21 precision [1e21]
-
-    - mocaStakedRebased: (1.23e18 * 1e21) / 1e18 = 1.23e21
-    - rewardsPerMocaStakedRebased: (emittedRewards * rewardPrecision) / mocaStakedRebased = (1e21 * 1e21) / 1.23e21 = 0.813008130081300813008
-    
-    0.813008130081300813008 reward tokens are given out per stakedMoca. [since 1 unit is 1e21]
-    0.813008130081300813008 * 1.23 = 0.99999999999999999999984 reward tokens ought to be emitted in TOTAL 
-    slightly lesser than the 1 reward token that was meant to be emitted 
-
-**CONCLUSION: Regardless of the precision of the reward tokens, and its impact on index calculation, the total rewards emitted will be slightly lesser than the intended amount. This is fine.**
+Downside, tokens with more than 1E18 precision suffer; but there aren't many of those, so its acceptable.
 
 There should not be any issues with rewards and index calculations, as long as none of the following variables are zero:
 
@@ -429,7 +410,7 @@ If we only wanted to express fee factors in integer values, (meaning 0 precision
 
 On deployment, the following must be defined:
 
-1. address of nft registry 
+1. address of nft registry
 2. address of staked token [MOCA]
 3. startTime:
     - user are only able to call staking functions after startTime.
@@ -450,7 +431,7 @@ This expects that the nft registry contract should be deployed in advance.
 After deployment, we need to:
 
 1. Deploy RewardsVault contract
-2. Set RewardsVault address on stakingPro contract
+2. Set RewardsVault address on stakingPro contract: `setRewardsVault`
 3. Call `setPool` on NftRegistry contract
 
 ## Roles & Addresses
@@ -463,49 +444,46 @@ Addresses:
 
 Roles:
 
-1. `MONITOR_ROLE`: can only call `pause();` for risk monitoring scripts
-2. `OPERATOR_ROLE`: for update various pool parameters and `stakeOnBehalfOf()`
-3. `DEFAULT_ADMIN_ROLE`: Owner multiSig; can assign/revoke roles to other addresses
+1. `MONITOR_ROLE`: For risk monitoring scripts to call `pause()`
+2. `OPERATOR_ROLE`: For updating pool parameters and calling `stakeOnBehalfOf()`
+3. `DEFAULT_ADMIN_ROLE`: Owner multiSig that can assign/revoke roles
 
-> Roles are referred to by their `bytes32` identifier
+> Roles are referred to by their bytes32 identifier
 
-Note:
+The `DEFAULT_ADMIN_ROLE`:
+
+- Is the global admin that can grant/revoke all roles
+- Is its own admin (can grant/revoke itself)
+- Cannot call role-restricted functions unless explicitly granted those roles
+
+*Note*
 
 1. Admins can add other admins.
 2. Admins can grant and revoke roles to any addresses.
 3. The only way for an admin to lose its admin role is to renounce from it.
 
-By default, the admin role for all roles is `DEFAULT_ADMIN_ROLE`, which means that only accounts with this role will be able to grant or revoke other roles.
-The `DEFAULT_ADMIN_ROLE` is also its own admin: it has permission to grant and revoke this role.
+**Role Assignments:**
 
-While the `DEFAULT_ADMIN_ROLE` is global admin, it does not mean it has access to call the other roles' functions.
-it can only set/revoke roles to addresses. if we want it to be able to call these restricted functions, it must grantRole to itself.
+Owner multiSig:
 
-### Owner multiSig address is assigned:
+- Has all roles (`MONITOR_ROLE`, `OPERATOR_ROLE`, `DEFAULT_ADMIN_ROLE`)
+- Can assign/revoke roles, pause contract, update parameters
 
-1. `MONITOR_ROLE`
-2. `OPERATOR_ROLE`
-3. `DEFAULT_ADMIN_ROLE`
+Risk Monitor [EOA]:
 
-With the default admin role, it can assign/revoke roles to other addresses.
-With the monitor role, it can call `pause();` to pause the contract.
-With the operator role, it can call update various pool parameters and `stakeOnBehalfOf()`.
+- Has `MONITOR_ROLE` only
+- Can pause contract only
 
-### Risk monitoring script address is assigned:
+Operator [EOA]:
 
-1. `MONITOR_ROLE`
+- Has `OPERATOR_ROLE` only
+- Can update pool parameters
+- Role remains unassigned by default
+- When needed, Owner multisig grants role to operator
+- Operator revokes own role after use
 
-With the monitor role, it can call `pause();` to pause the contract.
-
-### Operator address is assigned:
-
-1. `OPERATOR_ROLE`
-
-With the operator role, it can call update various pool parameters.
-On deployment, no operator address is assigned. When required, the DAT team is to call `grantRole(bytes32 role, address account)` to assign the operator role to the supplied address.
-
-Once the necessary changes are made, the operator address is to call `revokeRole(bytes32 role, address account)` to revoke the operator role from itself.
-This is to ensure that the operator role is kept unassigned, unless it is required.
+> Owner multisig calls grantRole(bytes32 role, address account) to assign the operator role.
+> Operator calls revokeRole(bytes32 role, address account) to revoke the operator role from itself.
 
 ## Pool States
 
@@ -538,7 +516,7 @@ Note: `emergencyExit()` assumes that the contract is broken and any state update
 
 ### Under Maintenance
 
-Contract is set to `underMaintenance` when there is a need to update the NFT_MULTIPLIER value.
+Contract is set to `underMaintenance` when there is a need to update the `NFT_MULTIPLIER` value.
 
 Process:
     1. enableMaintenance
@@ -549,13 +527,13 @@ Process:
     6. disableMaintenance
 
 Setting the contract to `underMaintenance` will prevent users from staking, unstaking, claiming rewards, or creating new vaults.
-This is to ensure that the NFT_MULTIPLIER is updated correctly, and that the boosted balances are updated correctly.
+This is to ensure that the `NFT_MULTIPLIER` is updated correctly, and that the boosted balances are updated correctly.
 
 ### Why have both states [paused & underMaintenance]?
 
 - maintenance fns should not be callable during a paused state.
 - consider the case when a security event occurs during maintenance mode
-- maintenance should not be allowed to continue, should stop to assess the situation.
+- maintenance **should not** be allowed to continue, should stop to assess the situation.
 
 We want the risk controls to be able to override and lock the contract if an issue occurs during maintenance process.
 
@@ -604,8 +582,8 @@ stakeNfts(bytes32 vaultId, uint256[] calldata tokenIds) external whenStartedAndN
 Allows users to stake NFTs into a specified vault:
 
 - Checks that the vault exists and is not ended
-- Calls NFT_REGISTRY.checkIfUnassignedAndOwned(), to check if the NFTs are unassigned and owned by the user
-- Calls NFT_REGISTRY.recordStake(), to record vault assignment so that the NFTs cannot be staked in another vault
+- Calls `NFT_REGISTRY.checkIfUnassignedAndOwned()`, to check if the NFTs are unassigned and owned by the user
+- Calls `NFT_REGISTRY.recordStake()`, to record vault assignment so that the NFTs cannot be staked in another vault
 
 The staked NFTs contribute to boosting the vault's staked Tokens and Realm Points, which determines its share of rewards from active distributions.
 
@@ -657,7 +635,7 @@ Allows users to unstake their staked tokens and Nfts from a specified vault:
 
 **Will revert w/o error if the tokenIds provided are not staked by the user.**
 
-- The dynamic nature of the fn limits how many Nfts can be unstaked at once, due to gas cost involving array manipulations. 
+- The dynamic nature of the fn limits how many Nfts can be unstaked at once, due to gas cost involving array manipulations.
 - The greater the number of Nfts needed to be unstaked at once, will result in increasing gas costs.
 - This has no impact on unstaking tokens.
 
@@ -680,15 +658,17 @@ Allows users to claim rewards from a specified vault:
 ```solidity
 updateVaultFees(bytes32 vaultId, uint256 nftFeeFactor, uint256 creatorFeeFactor, uint256 realmPointsFeeFactor) external whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance
 ```
+
 Updates the vault fee structure. Only the vault creator can update fees, with restrictions:
 
 - Creator can only decrease their creator fee factor (but may increase other fees proportionally)
 - Total fees (NFT + creator + realm points) cannot exceed `MAXIMUM_FEE_FACTOR`
+- Creator cannot increase fees unilaterally
 
 ## activateCooldown
 
 ```solidity
-activateCooldown(bytes32 vaultId) external whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance
+activateCooldown(bytes32 vaultId) external whenStarted whenNotPaused whenNotUnderMaintenance
 ```
 
 Activates the cooldown period for a vault:
@@ -697,13 +677,13 @@ Activates the cooldown period for a vault:
 - When removed, all vault's staked assets are deducted from global totals
 
 If `VAULT_COOLDOWN_DURATION` is of non-zero value, the vault's endTime is set to `block.timestamp` + `VAULT_COOLDOWN_DURATION`.
-While this sets the endTime of the vault, it does not necessarily mean that the vault will be removed from circulation immediately.
+This only sets the endTime of the vault, it does not remove from circulation.
 That would be handled by the `endVaults()` function.
 
 ## endVaults
 
 ```solidity
-endVaults(bytes32[] calldata vaultIds) external whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance
+endVaults(bytes32[] calldata vaultIds) external whenStarted whenNotPaused whenNotUnderMaintenance
 ```
 
 - Ends multiple vaults
@@ -755,6 +735,15 @@ Key aspects:
 - Takes effect immediately for future reward distributions
 
 This provides flexibility to upgrade reward distribution logic while maintaining core staking functionality.
+
+## updateActiveDistributions
+
+```solidity
+updateActiveDistributions(uint256 newMaxActiveAllowed) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE)
+```
+
+- Updates the maximum number of active distributions allowed
+- Cannot reduce below current number of active distributions
 
 ## updateMaximumFeeFactor
 
@@ -816,16 +805,17 @@ Creates a new distribution with specified parameters:
 
 ### Staking Power
 
-- Distribution Id 0 is reserved for staking power
-- It can be set to have indefinite endTime.
-- Does not require a dstEid or tokenAddress.
+- Distribution ID 0 is special and used only for staking power
+- Runs indefinitely (endTime = 0)
+- Uses 18 decimals precision
+- No LayerZero parameters needed
 
-### Token setup
+### Token
 
-- both start and end times must be defined
-- else, we would be emitting token rewards indefinitely
-- calls RewardsVault to setup the Distribution there as well
-- does not expect tokens to have been deposited; that comes after the distribution is setup
+- Distribution requires both start and end times to be specified to prevent indefinite token emissions
+- Sets up the corresponding Distribution in the RewardsVault contract
+- Token deposits can occur after distribution setup is complete
+- StakingPro contract simply forwards claim requests to RewardsVault without checking deposit status
 
 ### LayerZero
 
@@ -833,22 +823,6 @@ Creates a new distribution with specified parameters:
 - tokenAddress: Address of the reward token
 
 Use of bytes32 for tokenAddress is to standardize across evm and non-evm chains.
-
-### Staking power setup
-
-- distributionId: 0
-- token precision: 1e18
-
-startTime should be the same as stakingPro. endTime to be left as 0.
-
-staking power will be identified by its distribution id as 0, throughout the contract.
-
-### Token setup
-
-- both start and end times must be defined
-- else, we would be emitting token rewards indefinitely
-- stakingPro does not check if tokens have been deposited or not; it will only make a call to RewardsVault contract to transfer
-
 
 ## updateDistribution
 
@@ -876,7 +850,7 @@ This function enables flexible management of reward distributions by allowing ad
 ## endDistributionImmediately
 
 ```solidity
-endDistributionImmediately(uint256 distributionId) external whenNotEnded whenNotFrozen onlyRole(OPERATOR_ROLE)
+endDistributionImmediately(uint256 distributionId) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE)
 ```
 
 Allows owner to immediately terminate an active distribution:
@@ -1307,3 +1281,5 @@ claimRewards txns revert until sufficient balance is available on remote chain.
 
 Other cases of concern would be when partial deposits are made instead of the full amount upfront.
 The onus in upon the operator to keep track and update accordingly.
+
+

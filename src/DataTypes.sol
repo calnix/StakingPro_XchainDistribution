@@ -12,11 +12,11 @@ contract DataTypes {
         address creator;
         uint256[] creationTokenIds;     // nfts staked for creation
 
-        uint256 startTime;              // uint40
+        uint256 startTime;              
         uint256 endTime;                // cooldown ends at this time
         uint256 removed;                // flag to indicate if vault has been removed
 
-        // fees: pct values, sum <= 50%
+        // fees: pct values, sum <= MAXIMUM_FEE_FACTOR
         // fee factors are expressed as w/ 1e18 precision
         uint256 nftFeeFactor;
         uint256 creatorFeeFactor;   
@@ -35,9 +35,6 @@ contract DataTypes {
 
     //Note: Each vault has an account for each distribution
     struct VaultAccount {
-//        uint256 chainId;    
-//        bytes32 tokenAddr;  
-
         // index: reward token
         uint256 index;             //rewardsAccPerUnitBoostedBalance
         uint256 nftIndex;          //rewardsAccPerNFT

@@ -3,11 +3,11 @@
 StakingPro is a contract that allows users to stake tokens, nfts and earn rewards.
 
 - Users stake MOCA tokens, MocaNFTs, and Realm Points (RP) into vaults to earn rewards.
-- Each vault is created by a MocaNFT holder who locks 5 NFTs and sets the fee structure.
+- Each vault is created by a MocaNFT holder who locks some number of NFTs and sets the fee structure.
 - Vaults have no expiry date unless deactivated by the creator.
 - Vault levy fees on the rewards it accrues.
 - Rewards come in the form of ERC20 tokens and Staking Power (an off-chain resource).
-- There are no limits on the amount of assets that can be staked.
+- There are no limits on the amount of assets that can be staked into a vault.
 - The contract does not issue receipt tokens (e.g. stkMOCA) for staked assets.
 
 Chain: Base
@@ -24,13 +24,13 @@ When users stake MOCA or any other asset, they do not get a ERC20 stk equivalent
 
 ## Rewards assets
 
-- $MOCA tokens
+- ERC20 tokens
 - Staking Power [off-chain]
 
 ## Vault creation
 
 - Only MocaNFT holders can create vaults
-- 5 NFTs required to create a single vault
+- As a starting point, 5 NFTs required to create a single vault
 - Creation NFTs are locked to created vault
 - Creation NFTs do not count towards rewards calc. or boosting.
 - Creator will have to define the fee structure levied upon rewards earned by vault
@@ -50,7 +50,7 @@ When users stake MOCA or any other asset, they do not get a ERC20 stk equivalent
 - Vault can be deactivated by the owner.
 - Vault will enter a 7-day cooldown period.
 
-- During cooldown, vault will continue to earn rewards as per normal. However, there can be no inflow of assets.
+- During cooldown, vault will continue to earn rewards as per normal; but users can no longer stake to it.
   - this is to facilitate users early warning notice to move their assets to another pool, avoiding disruption.
 
 - After cooldown, the vault creator can unstake creation NFTs.
@@ -79,15 +79,19 @@ All participants ($MOCA stakers, Moca NFT Stakers, RP Stakers, Pool Creator) wil
 ### Rewards emissions calculation
 
 Eligibility track:
-- For a vault to be eligible for token rewards, it must have staked MOCA
-- For a vault to be eligible for stake power rewards, it must have staked Realm points.
+
+- For a vault to be eligible for token rewards, it must have staked MOCA.
+- For a vault to be eligible for Staking Power rewards, it must have staked Realm points.
 
 Rewards Calculations:
-- Token rewards are calculated based on staked MOCA, accounting for NFT boosting effect
-- Staking power rewards are calculated based on staked RP, accounting for NFT boosting effect
+
+- Token rewards are calculated based on staked MOCA, accounting for NFT boosting effect.
+- Staking power rewards are calculated based on staked RP, accounting for NFT boosting effect.
 
 Fee structure:
-There is a single fee structure that is applied to both token and staking power emissions.
+
+Vaults have a single fee structure that is applied to both token and staking power emissions.
+
 - Therefore, RP stakers would also be eligible for token rewards; although their RP contribution does not have weight upon token rewards calculation.
 - Vice versa, this applies to MOCA token stakers as well.
 
@@ -95,16 +99,16 @@ There is a single fee structure that is applied to both token and staking power 
 
 ## Rewards boosters
 
-**Applicable to Moca NFTs Only**
-
 - Staking Moca NFTs boosts both staked moca tokens and staked RP
 - Creation NFTs do not provide a boost
-- Each staked NFT provides a flat 10% boost to base rewards
-- Maximum boost is capped at total number of staked NFTs × 10%
+- Each staked NFT provides a flat X% boost to base rewards
+- No maximum limit on boosting effects on a vault or nft staking limits.
 
 ### Rewards and Boost calculations
 
-Formula: `finalRewards = baseRewards × (1 + (numberOfStakedNFTs × 0.1))`
+Assuming each NFT staked contributes a 10% boost; formula:
+
+ `finalRewards = baseRewards × (1 + (numberOfStakedNFTs × 0.1))`
 
 Example:
 - With 3 staked NFTs: `finalRewards = baseRewards × (1 + (3 × 0.1)) = baseRewards × 1.3`
@@ -129,9 +133,11 @@ Rules:
 - Creators can only decrease the creator fee % to benefit other participants
 - I.e. reduce creator fee to increase the other fee components -> this means that moca token stakers will receive the same cut.
 
+*By introducing `MAXIMUM_FEE_FACTOR`, we have made the minimum split of rewards to MOCA stakers be updatable.*
+
 ## Claiming Rewards
 
-- Only tokens claimable on-chain
+- Only tokens are claimable on-chain
 - Single-click claim for all reward types (NFT staking, creator, token rewards)
 - Users can claim all reward types at a token level. I.e. everything that has been emitted to them in tokenA.
 
@@ -169,7 +175,7 @@ So will staking power.
 
 Modifying the boost per NFT, impacts all vaults in existence.
 
-All `userIndexes` must be synced upon update - requires off-chain support.
+All `vaultIndexes` must be synced upon update - requires off-chain support.
 
 Assuming there are vaults still stale across more than 1 update, the rewards calculation will be off at a user Index level.
 This is because on the most latest checkpoint, the user's rewards are: `(currentVaultIndex - staleUserIndex) * userAllocPoints`,

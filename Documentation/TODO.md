@@ -7,12 +7,6 @@
 
 ---
 
-# NftLocker
-
-## 1. test new functions
-
----
-
 # STAKING PRO MISC
 
 1. RP can be uint128; struct packing
