@@ -117,7 +117,7 @@ contract EVMVault is OApp, Pausable, Ownable2Step, AccessControl {
      * @param from The address the tokens are being deposited from
      * @param distributionId The ID of the distribution these tokens are for
      */
-    function deposit(address token, uint256 amount, address from, uint256 distributionId) external payable whenNotPaused onlyRole(MONEY_MANAGER_ROLE) {
+    function deposit(address token, uint256 amount, address from, uint256 distributionId) external whenNotPaused onlyRole(MONEY_MANAGER_ROLE) {
         if(token == address(0)) revert Errors.InvalidTokenAddress();
         if(distributionId == 0) revert Errors.InvalidDistributionId();
         
@@ -135,7 +135,7 @@ contract EVMVault is OApp, Pausable, Ownable2Step, AccessControl {
      * @param to The address the tokens are being withdrawn to
      * @param distributionId The ID of the distribution these tokens are for
      */
-    function withdraw(address token, uint256 amount, address to, uint256 distributionId) external payable whenNotPaused onlyRole(MONEY_MANAGER_ROLE) {
+    function withdraw(address token, uint256 amount, address to, uint256 distributionId) external whenNotPaused onlyRole(MONEY_MANAGER_ROLE) {
         if(token == address(0)) revert Errors.InvalidTokenAddress();
 
         TokenInfo memory tokenInfo = tokens[token];

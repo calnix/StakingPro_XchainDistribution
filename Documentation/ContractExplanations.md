@@ -886,11 +886,11 @@ This provides an emergency mechanism to halt reward distributions if needed, whi
 
 ## Risk Management
 
-- The expectation is that there OPERATOR_ROLE is only assigned to the owner multiSig at rest.
-- When there is requirement to call these functions, the owner multiSig will assign and EOA address to the OPERATOR_ROLE.
+- The expectation is that there `OPERATOR_ROLE` is only assigned to the owner multiSig at rest.
+- When there is requirement to call these functions, the owner multiSig will assign and EOA address to the `OPERATOR_ROLE`.
 - This EOA address is expected to be a trusted address, and will be used to power a script that will call these functions.
 - Once the update process is complete, the EOA will renounce the OPERATOR_ROLE.
-- Owner multiSig will continue to hold the MONITOR_ROLE.
+- Owner multiSig will continue to hold the `MONITOR_ROLE`.
 
 ## enableMaintenance
 
@@ -954,11 +954,21 @@ updateBoostedBalances(bytes32[] calldata vaultIds) external whenNotEnded whenNot
 
 # Risk Management functions
 
+In the event of a suspected security issue, we pause the contract.
+Pausing should only lead to unpausing or freezing.
+
+1. Confirmed security issue: pause -> freeze -> emergencyExit
+2. Security issue proves to be invalid: pause -> unpause
+
+Functions like `endDistributionImmediately` are not remediative functions.
+Where token exfiltration is the concern, RewardsVault should be similarly paused and assets withdrawn.
+
 ## pause
 
 ```solidity
 pause() external whenNotPaused onlyRole(MONITOR_ROLE)
 ```
+
 - pause contract
 - only callable by MONITOR_ROLE
 - MONITOR_ROLE is expected to be assigned to the monitoring script as well as owner multiSig
@@ -980,10 +990,12 @@ freeze() external whenPaused onlyRole(DEFAULT_ADMIN_ROLE)
 
 - freeze contract
 - only callable by DEFAULT_ADMIN_ROLE
+- allows `emergencyExit` to be called
 
 ## emergencyExit
 
-Assuming black swan event, users call `emergencyExit` to exit.
+Assuming black swan event, users call `emergencyExit` to exit their principal assets.
+`OPERATOR_ROLE` can assist users by calling on their behalf.
 
 1. pause(): all user fns are disabled
 2. freeze(): cannot unpause; only emergencyExit() can be called
@@ -995,10 +1007,9 @@ emergencyExit(bytes32[] calldata vaultIds, address onBehalfOf) external whenStar
 
 - only callable when contract is paused and frozen
 - callable by users to exfil their assets
-- Rewards and fees are not withdrawn; indexes are not updated. Preserves state history at time of failure.
+- rewards and fees are not withdrawn; indexes are not updated.
 
-- This allows users to recover their principal assets in a black swan event.
-- It does not allow users to recover their rewards or fees.
+> does not allow users to recover their rewards or fees.
 
 **This is the contrasting point versus calling `unstakeAll` and `emergencyExit`. Why?**
 
@@ -1011,7 +1022,7 @@ emergencyExit(bytes32[] calldata vaultIds, address onBehalfOf) external whenStar
 - This is done by checking the `onBehalfOf` address.
 - The reason for this is to allow both users and us to call the function, to allow for a swift exit.
 
-# Execution Flow
+# Execution Flows
 
 ## 1. Creating a distribution
 
@@ -1027,7 +1038,7 @@ Nested call within stakingPro so that we do not have to make 2 independent txns 
 **The rewardsVault must be set before any distributions can be created**
 
 - Via `pool.setRewardsVault(address(rewardsVault));`
-- If not, distributions cannot be created, as the nested call to rewardsVault will revert.
+- If not, distributions cannot be created as the nested call to rewardsVault will revert.
 - Address cannot be set to a zero address.
 - If RewardsVault contract is paused, distributions cannot be created or ended, rewards cannot be claimed. [revert]
 
@@ -1042,8 +1053,7 @@ Nested call within stakingPro so that we do not have to make 2 independent txns 
 ### Remote token
 
 - Token exists on a different chain as the StakingPro
-- `MONEY_MANAGER` to call `deposit()` on EvmVault, which exists on the remote chain
-- `deposit(address token, uint256 amount, address from, uint256 distributionId) external payable onlyOwner`
+- `MONEY_MANAGER` to call `deposit()` on **EvmVault**, which exists on the remote chain
 - This is a LayerZero enabled function, so it is payable
 - Will fire off a cross-chain message to the home chain, to update rewardsVault
 - `totalDeposited` is incremented on rewardsVault
@@ -1057,7 +1067,7 @@ Nested call within stakingPro so that we do not have to make 2 independent txns 
 
 ### Remote token
 
-- MONEY_MANAGER to call withdraw() on evmVault, which exists on the remote chain
+- MONEY_MANAGER to call `withdraw()` on EvmVault, which exists on the remote chain
 - `withdraw(address token, uint256 amount, address to, uint256 distributionId) external onlyOwner`
 - this is a LZ enabled fn, so it is payable
 - will fire off a xchain message to the home chain, to update rewardsVault
