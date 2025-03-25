@@ -5,6 +5,10 @@
 - Contract paused: PoolT56p_Risk
 - Contract under maintenance: PoolT46p_MaintenanceMode
 
+## Pool Logic functions
+
+- cache: testCacheRevertsIfVaultDoesNotExist
+
 ## createVault
 
 Contract states:
@@ -32,16 +36,13 @@ VaultId collision states:
 ## stakeTokens + executeStakeTokens
 
 - Contract not started (should revert) | testCannotStakeTokensWhenNotStarted
-- Contract ended (should revert)
-- Contract paused (should revert)
-- Contract under maintenance (should revert)
+- Contract ended (should revert) | testCannotStakeTokensAfterContractEnded
+- Contract paused (should revert) | testCannotStakeTokensWhenPaused
+- Contract under maintenance (should revert) | testCannotStakeTokensWhenInMaintenanceMode
 
-Vault states:
-(-) Vault does not exist [`_cache`]
-(-) `vault.endTime > 0`
+(-) Amount = 0 (revert: `InvalidAmount`) | testCannotStakeZeroTokens
+(-) `vault.endTime > 0` | testCannotStakeTokensOnceCooldownActivated
 
-Token validation states:
-(-) Amount = 0 (revert: `InvalidAmount`)
 (+) Sufficient balance and approval (should succeed)
 
 ## stakeNfts + executeStakeNfts

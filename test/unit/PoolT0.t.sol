@@ -48,16 +48,6 @@ contract StateT0_DeployTest is StateT0_Deploy {
         pool.createVault(user1NftsArray, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
     }
 
-    function testCannotCreateVaultInvalidCreationNfts() public {
-        vm.prank(user1);
-
-        uint256[] memory invalidCreationNfts = new uint256[](1);
-        invalidCreationNfts[0] = 1;
-
-        vm.expectRevert(Errors.InvalidCreationNfts.selector);
-        pool.createVault(invalidCreationNfts, 1000, 1000, 1000);
-    }
-
     function testCannotCreateVaultWithOthersNfts() public {
         vm.prank(user2);
 
@@ -65,19 +55,12 @@ contract StateT0_DeployTest is StateT0_Deploy {
         pool.createVault(user1NftsArray, 1000, 1000, 1000);
     }
 
-    function testCannotCreateVaultWithInvalidFeeFactors() public {
-        vm.prank(user1);
-
-        vm.expectRevert(Errors.MaximumFeeFactorExceeded.selector);
-        pool.createVault(user1NftsArray, 10000, 10000, 10000);
-    }
-
     // ------ stakeTokens ------
     function testCannotStakeTokensWhenNotStarted() public {
         vm.prank(user1);
 
         vm.expectRevert(Errors.NotStarted.selector);
-        pool.stakeTokens(user1NftsArray, 1000);
+        pool.stakeTokens(bytes32(uint256(1)), 1000);
     }
     
 

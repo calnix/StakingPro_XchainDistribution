@@ -31,6 +31,8 @@ abstract contract PoolNoActiveDistributions is TestingHarness {
 contract PoolNoActiveDistributionsTest is PoolNoActiveDistributions {
 
     function testCannotCreateVaultWhenNoActiveDistributions() public {
+        vm.warp(startTime + 1);
+        
         vm.expectRevert(Errors.NoActiveDistributions.selector);
         pool.createVault(user1NftsArray, 1000, 1000, 1000);
     }

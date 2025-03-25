@@ -107,6 +107,23 @@ abstract contract StateT1_CreateVault1 is StateT1_Started {
 }
 
 contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
+    
+    function testCannotCreateVaultInvalidCreationNfts() public {
+        vm.prank(user1);
+
+        uint256[] memory invalidCreationNfts = new uint256[](1);
+        invalidCreationNfts[0] = 1;
+
+        vm.expectRevert(Errors.InvalidCreationNfts.selector);
+        pool.createVault(invalidCreationNfts, 1000, 1000, 1000);
+    }
+    
+    function testCannotCreateVaultWithInvalidFeeFactors() public {
+        vm.prank(user1);
+
+        vm.expectRevert(Errors.MaximumFeeFactorExceeded.selector);
+        pool.createVault(user1NftsArray, 10000, 10000, 10000);
+    }
 
     function testCannotCreateAnotherVaultWithLockedNfts() public {
         vm.prank(user1);

@@ -65,7 +65,7 @@ abstract contract StateT61_Vault2CooldownActivated is StateT56_UsersClaimRewards
 
 contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivated {
     
-    // ---------------- base assets ----------------
+// ---------------- base assets ----------------
 
     function testPool_T61() public {
         DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
@@ -146,7 +146,7 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
         assertEq(vault2.realmPointsFeeFactor, 750);  
     }
 
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
 
     // previously updated at T51
     function testDistribution0_T61() public {
@@ -514,7 +514,7 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
             assertEq(claimableRewards, expectedClaimableRewards, "claimableRewards mismatch"); 
         }
 
-    // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
 
     function testDistribution1_T61() public {
         DataTypes.Distribution memory distribution = getDistribution(1);
@@ -869,7 +869,17 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
             assertEq(claimableRewards, expectedClaimableRewards, "claimableRewards mismatch"); 
         }        
 
-    // --------------- connector ---------------
+// --------------- other state tests ---------------
+
+    function testCannotStakeTokensOnceCooldownActivated() public {
+
+        vm.prank(user1);
+        vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
+        pool.stakeTokens(vaultId2, 1000);
+    }
+
+
+// --------------- connector ---------------
 
     function testAnyoneCanEndVault() public {
 
