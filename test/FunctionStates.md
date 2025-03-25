@@ -1,23 +1,28 @@
 # StakingPro: Function states
 
+- Contract not started: PoolT0
+- Contract ended: PoolT86471_ContractEnded
+- Contract paused: PoolT56p_Risk
+- Contract under maintenance: PoolT46p_MaintenanceMode
+
 ## createVault
 
 Contract states:
-- Contract not started (should revert)
-- Contract ended (should revert)
-- Contract paused (should revert)
-- Contract under maintenance (should revert)
-- No active distributions (should revert)
+- Contract not started (should revert) | testCannotCreateVault
+- Contract ended (should revert) | testCannotCreateVaultAfterContractEnded
+- Contract paused (should revert) | testCannotCreateVaultWhenPaused
+- Contract under maintenance (should revert) | testCannotCreateVaultWhenInMaintenanceMode
+- No active distributions (should revert) | testCannotCreateVaultWhenNoActiveDistributions
 
-NFT validation states:
-(-) Number of NFTs != CREATION_NFTS_REQUIRED (revert: `InvalidCreationNfts`)
-(-) NFTs not owned by caller (revert on: `checkIfUnassignedAndOwned`)
-(-) NFTs already staked in another vault (revert on: `checkIfUnassignedAndOwned`)
+(-) Number of NFTs != CREATION_NFTS_REQUIRED (revert: `InvalidCreationNfts`) | testCannotCreateVaultInvalidCreationNfts
+(-) NFTs not owned by caller (revert on: `checkIfUnassignedAndOwned`) | testCannotCreateVaultWithOthersNfts  
+(-) NFTs already staked in another vault (revert on: `checkIfUnassignedAndOwned`) | testCannotCreateAnotherVaultWithLockedNfts
+(-) Total fees > MAXIMUM_FEE_FACTOR | testCannotCreateVaultWithInvalidFeeFactors
+
 (+) NFTs properly owned and unstaked
 (+) CREATION_NFTS_REQUIRED = 0 (should succeed without NFTs)
 
 Fee factor states:
-(-) Total fees > MAXIMUM_FEE_FACTOR
 (+) Total fees <= MAXIMUM_FEE_FACTOR (should succeed)
 
 VaultId collision states:
@@ -26,8 +31,7 @@ VaultId collision states:
 
 ## stakeTokens + executeStakeTokens
 
-Contract states:
-- Contract not started (should revert)
+- Contract not started (should revert) | testCannotStakeTokensWhenNotStarted
 - Contract ended (should revert)
 - Contract paused (should revert)
 - Contract under maintenance (should revert)

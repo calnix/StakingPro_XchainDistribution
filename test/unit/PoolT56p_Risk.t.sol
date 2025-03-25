@@ -43,6 +43,12 @@ contract StateT56p_PausedTest is StateT56p_Paused {
 
         assertEq(pool.isFrozen(), 1, "pool not frozen");
     }
+
+    function testCannotCreateVaultWhenPaused() public {
+        vm.prank(user1);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.createVault(user1NftsArray, 1000, 1000, 1000);
+    }
 }
 
 abstract contract StateT56p_Frozen is StateT56p_Paused {

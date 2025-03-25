@@ -35,8 +35,9 @@ contract StateT0_DeployTest is StateT0_Deploy {
         assertEq(pool.hasRole(pool.MONITOR_ROLE(), monitor), true);
         assertEq(pool.hasRole(pool.OPERATOR_ROLE(), operator), true);
     }
-
-    function testCannotCreateVault() public {
+    
+    // ------ create vault ------
+    function testCannotCreateVaultWhenNotStarted() public {
         vm.prank(user1);
 
         vm.expectRevert(Errors.NotStarted.selector);
@@ -46,6 +47,40 @@ contract StateT0_DeployTest is StateT0_Deploy {
         uint256 realmPointsFeeFactor = 1000;
         pool.createVault(user1NftsArray, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
     }
+
+    function testCannotCreateVaultInvalidCreationNfts() public {
+        vm.prank(user1);
+
+        uint256[] memory invalidCreationNfts = new uint256[](1);
+        invalidCreationNfts[0] = 1;
+
+        vm.expectRevert(Errors.InvalidCreationNfts.selector);
+        pool.createVault(invalidCreationNfts, 1000, 1000, 1000);
+    }
+
+    function testCannotCreateVaultWithOthersNfts() public {
+        vm.prank(user2);
+
+        vm.expectRevert();
+        pool.createVault(user1NftsArray, 1000, 1000, 1000);
+    }
+
+    function testCannotCreateVaultWithInvalidFeeFactors() public {
+        vm.prank(user1);
+
+        vm.expectRevert(Errors.MaximumFeeFactorExceeded.selector);
+        pool.createVault(user1NftsArray, 10000, 10000, 10000);
+    }
+
+    // ------ stakeTokens ------
+    function testCannotStakeTokensWhenNotStarted() public {
+        vm.prank(user1);
+
+        vm.expectRevert(Errors.NotStarted.selector);
+        pool.stakeTokens(user1NftsArray, 1000);
+    }
+    
+
 
     function testOperatorCanSetupDistribution() public {
         vm.prank(operator);
@@ -60,6 +95,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
             bytes32 tokenAddress = 0x00;
         pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);        
     }
+
 
     /**
         note: test the other whenNotStarted

@@ -206,7 +206,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             // update global count: storage assignment
             totalCreationNfts += incomingNfts;    
         } 
-        // else: no NFTs required; no need to assign creationTokenIds. increment global state, or interact w/ registry
+        // else: no NFTs required; no need to assign creationTokenIds, increment global state, or interact w/ registry
 
         // update storage
         vaults[vaultId] = vault;
