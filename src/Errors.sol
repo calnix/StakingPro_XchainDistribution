@@ -27,7 +27,9 @@ library Errors {
     error MinimumRpRequired();
     error InvalidSignature();
     error UserHasNothingStaked(bytes32 vaultId, address user);
-    
+    // migrateRealmPoints
+    error InsufficientRealmPoints(uint256 userStakedRealmPoints);
+
     // claimRewards
     error NoStakedAssets();
     error StakingPowerDistribution();

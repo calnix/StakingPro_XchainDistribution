@@ -159,7 +159,7 @@ library PoolLogic {
         if(newVault.endTime > 0) revert Errors.VaultEndTimeSet(newVaultParams.vaultId);
 
         // sanity check: user must have sufficient RP in old vault
-        if(userOldVaultAssets.stakedRealmPoints < amount) revert Errors.UserHasNothingStaked(oldVaultParams.vaultId, oldVaultParams.user);
+        if(userOldVaultAssets.stakedRealmPoints < amount) revert Errors.InsufficientRealmPoints(userOldVaultAssets.stakedRealmPoints);
 
         // storage update: vault and user accounting across all active reward distributions
         _updateUserAccounts(activeDistributions, distributions, vaultAccounts, userAccounts, oldVault, userOldVaultAssets, oldVaultParams);

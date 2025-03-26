@@ -886,7 +886,7 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
     }
 
     function testCannotStakeRpOnceCooldownActivated() public {
-        bytes memory signature = generateSignature(user1, vaultId2, 1000 ether, block.timestamp + 1, 1);
+        bytes memory signature = generateSignature(user1, vaultId2, 1000 ether, block.timestamp + 1, 0);
         
         vm.prank(user1);
         vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
