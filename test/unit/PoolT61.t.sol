@@ -878,6 +878,13 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
         pool.stakeTokens(vaultId2, 1000);
     }
 
+    function testCannotStakeNftsOnceCooldownActivated() public {
+        
+        vm.prank(user3);
+        vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
+        pool.stakeNfts(vaultId2, user3NftsArray);
+    }
+
 
 // --------------- connector ---------------
 

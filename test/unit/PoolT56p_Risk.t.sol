@@ -56,6 +56,12 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         pool.stakeTokens(vaultId1, 1000);
     }
     
+    function testCannotStakeNftsWhenPaused() public {
+        vm.prank(user1);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.stakeNfts(vaultId1, user1NftsArray);
+    }
+    
     
 }
 

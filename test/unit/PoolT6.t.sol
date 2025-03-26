@@ -48,7 +48,7 @@ abstract contract StateT6_User2StakeAssetsToVault1 is StateT1_User1StakeAssetsTo
 
 //note: 5 seconds delta. 5 ether of staking power emitted @1ether/second
 contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault1 {
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
 
     function testPool_T6() public {
 
@@ -251,7 +251,7 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
         assertEq(rewards, 0);
     }
 
-    // state transition
+// state transition
     function testOperatorCanSetupDistribution() public {
         // operator sets up distribution
         vm.startPrank(operator);

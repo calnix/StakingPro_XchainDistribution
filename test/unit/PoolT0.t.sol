@@ -48,19 +48,19 @@ contract StateT0_DeployTest is StateT0_Deploy {
         pool.createVault(user1NftsArray, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
     }
 
-    function testCannotCreateVaultWithOthersNfts() public {
-        vm.prank(user2);
-
-        vm.expectRevert();
-        pool.createVault(user1NftsArray, 1000, 1000, 1000);
-    }
-
     // ------ stakeTokens ------
     function testCannotStakeTokensWhenNotStarted() public {
         vm.prank(user1);
 
         vm.expectRevert(Errors.NotStarted.selector);
         pool.stakeTokens(bytes32(uint256(1)), 1000);
+    }
+
+    function testCannotStakeNftsWhenNotStarted() public {
+        vm.prank(user1);
+
+        vm.expectRevert(Errors.NotStarted.selector);
+        pool.stakeNfts(bytes32(uint256(1)), user1NftsArray);
     }
     
 

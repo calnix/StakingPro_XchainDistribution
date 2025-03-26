@@ -40,6 +40,13 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         vm.stopPrank();
     }
 
+    function testCannotStakeNftsWhenInMaintenanceMode() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.InMaintenance.selector);
+            pool.stakeNfts(vaultId1, user1NftsArray);
+        vm.stopPrank();
+    }
+
     function testOperatorCanUpdateDistributions() public {
         
         // check distributions before

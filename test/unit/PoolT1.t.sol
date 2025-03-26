@@ -107,7 +107,7 @@ abstract contract StateT1_CreateVault1 is StateT1_Started {
 }
 
 contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
-    
+
     function testCannotCreateVaultInvalidCreationNfts() public {
         vm.prank(user1);
 
@@ -118,6 +118,13 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         pool.createVault(invalidCreationNfts, 1000, 1000, 1000);
     }
     
+    function testCannotCreateVaultWithOthersNfts() public {
+        vm.prank(user2);
+
+        vm.expectRevert();
+        pool.createVault(user1NftsArray, 1000, 1000, 1000);
+    }
+
     function testCannotCreateVaultWithInvalidFeeFactors() public {
         vm.prank(user1);
 
@@ -137,6 +144,13 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
 
         vm.expectRevert(Errors.InvalidAmount.selector);
         pool.stakeTokens(vaultId1, 0);
+        vm.stopPrank();
+    }
+
+    function testCannotStakeZeroNfts() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.InvalidAmount.selector);
+            pool.stakeNfts(vaultId1, new uint256[](0));
         vm.stopPrank();
     }
 
@@ -374,7 +388,19 @@ contract StateT1_User1StakeAssetsToVault1Test is StateT1_User1StakeAssetsToVault
         assertEq(userAccount.claimedCreatorRewards, 0);
     }
 
+    function testCannotStakeAssignedNfts() public {
+        vm.startPrank(user1);
+            vm.expectRevert();
+            pool.stakeNfts(vaultId1, user1NftsArray);
+        vm.stopPrank();
+    }
 
+    function testCannotStakeNotOwnedNfts() public {
+        vm.startPrank(user1);
+            vm.expectRevert();
+            pool.stakeNfts(vaultId1, user2NftsArray);
+        vm.stopPrank();
+    }
 
     // transition fn: parallel test
     function testOperatorCanUpdateMinimumRealmPoints() public {

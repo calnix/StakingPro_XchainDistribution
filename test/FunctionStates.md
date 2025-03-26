@@ -35,6 +35,7 @@ VaultId collision states:
 
 ## stakeTokens + executeStakeTokens
 
+Contract states:
 - Contract not started (should revert) | testCannotStakeTokensWhenNotStarted
 - Contract ended (should revert) | testCannotStakeTokensAfterContractEnded
 - Contract paused (should revert) | testCannotStakeTokensWhenPaused
@@ -48,19 +49,18 @@ VaultId collision states:
 ## stakeNfts + executeStakeNfts
 
 Contract states:
-- Contract not started (should revert)
-- Contract ended (should revert)
-- Contract paused (should revert)
-- Contract under maintenance (should revert)
+- Contract not started (should revert) | testCannotStakeNftsWhenNotStarted
+- Contract ended (should revert) | testCannotStakeNftsAfterContractEnded
+- Contract paused (should revert) | testCannotStakeNftsWhenPaused
+- Contract under maintenance (should revert) | testCannotStakeNftsWhenInMaintenanceMode
 
 Vault states:
-(-) Vault does not exist [`_cache`]
-(-) `vault.endTime > 0`
+(-) No NFTs provided | testCannotStakeZeroNfts
+(-) `vault.endTime > 0` | testCannotStakeNftsOnceCooldownActivated
 
 NFT validation states:
-(-) No NFTs provided
-(-) NFTs not owned by caller (revert on: `checkIfUnassignedAndOwned`)
-(-) NFTs already staked in another vault (revert on: `checkIfUnassignedAndOwned`)
+(-) NFTs not owned by caller (revert on: `checkIfUnassignedAndOwned`) | testCannotStakeNotOwnedNfts
+(-) NFTs already staked in another vault (revert on: `checkIfUnassignedAndOwned`) | testCannotStakeAssignedNfts
 (+) NFTs properly owned and unstaked (should succeed: check `_concatArrays`)
 
 ## stakeRP + executeStakeRP
