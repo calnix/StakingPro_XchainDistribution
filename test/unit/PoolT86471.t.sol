@@ -90,23 +90,6 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
         assertLe(vaultAfter.endTime, block.timestamp + pool.VAULT_COOLDOWN_DURATION(), "Vault end time should not exceed contract end time");
     }
 
-    function testCanEndVaultsAfterContractEnded() public {
-        // get initial vault state
-        DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
-
-        vm.startPrank(user1);
-            pool.activateCooldown(vaultId1);
-
-            bytes32[] memory vaultIds = new bytes32[](1);
-            vaultIds[0] = vaultId1;
-            pool.endVaults(vaultIds);
-        vm.stopPrank();
-
-        // check that vault state has changed
-        DataTypes.Vault memory vaultAfter = pool.getVault(vaultId1);
-        assertEq(vaultAfter.removed, 1, "Vault is not removed");
-    }
-
     function testCanUnstakeAfterContractEnded() public {
         // Get initial vault and user state
         DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
@@ -125,6 +108,23 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
         // Check user state after unstake
         DataTypes.User memory userAfter = pool.getUser(user1, vaultId1);
         assertEq(userAfter.stakedTokens, userBefore.stakedTokens - unstakeAmount, "User staked tokens not reduced correctly");
+    }
+    
+    function testCanEndVaultsAfterContractEnded() public {
+        // get initial vault state
+        DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
+
+        vm.startPrank(user1);
+            pool.activateCooldown(vaultId1);
+
+            bytes32[] memory vaultIds = new bytes32[](1);
+            vaultIds[0] = vaultId1;
+            pool.endVaults(vaultIds);
+        vm.stopPrank();
+
+        // check that vault state has changed
+        DataTypes.Vault memory vaultAfter = pool.getVault(vaultId1);
+        assertEq(vaultAfter.removed, 1, "Vault is not removed");
     }
 
     function testCanClaimRewardsAfterContractEnded() public {

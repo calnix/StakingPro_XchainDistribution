@@ -108,23 +108,24 @@ Contract states:
 (-) Contract not started (should revert) | testCannotUnstakeWhenNotStarted
 (-) Contract paused (should revert) | testCannotUnstakeWhenPaused
 (-) Contract under maintenance (should revert) | testCannotUnstakeWhenInMaintenanceMode
+(+) Contract ended | testCanUnstakeAfterContractEnded
 
 Token validation states:
-(-) Amount = 0 (revert: `InvalidAmount`)
-(-) Amount > staked amount (revert: `InsufficientBalance`)
-(+) Amount <= staked amount (should succeed)
+(-) Amount = 0 (revert: `InvalidAmount`) | testCannotUnstakeZero_T31
+(-) Amount > staked amount (revert: `InsufficientBalance`) | testUserCannotUnstakeMoreThanStaked_T31
+(+) Amount <= staked amount (should succeed) | testUser2CanUnstakeAssets_T31
 
 NFT validation states:
-(-) NFTs not staked in vault (revert: `NftNotStaked`)
-(-) NFTs not owned by vault (revert: `NftNotStaked`)
-(+) NFTs properly staked in vault (should succeed)
+(-) userVaultAssets.tokenIds.length <= numOfNftsToUnstake | testCannotUnstakeMoreNftsThanStaked_T31
+(-) NFTs not staked in vault (revert: `NftNotStaked`) | testCannotUnstakeNftsNotStaked_T31
+(-) TokenIds do not match what user has staked | testCannotUnstakeIncorrectNfts_T31
+(-) NFTS not owned by user (revert: `NftNotStaked`) | testCannotUnstakeNftsStakedByOtherUser_T31
+(-) Cannot unstake repeatedly | testCannotUnstakeRepeatedly_T36
+(+) NFTs properly staked in vault (should succeed) | testUser2CanUnstakeAssets_T31
 
 Vault states:
-(-) Vault does not exist [`_cache`]
-(-) `vault.endTime > 0`
+(-) `vault.endTime > 0` | testCannotUnstakeTokensOnceCooldownActivated
 
-RP validation states:
-(-) Amount > staked RP (revert: `InsufficientBalance`)
-(+) Amount <= staked RP (should succeed)
+**consider additional cases, as per conditional logic in unstake()**
 
-## _updateUserAccounts
+## claimRewards

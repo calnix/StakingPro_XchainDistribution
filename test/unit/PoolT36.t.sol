@@ -73,6 +73,17 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         note: test stuff related to unstaking tokens+nfts
      */
 
+    function testCannotUnstakeRepeatedly_T36() public {
+        uint256[] memory nftsToUnstake = new uint256[](2);
+        nftsToUnstake[0] = user2NftsArray[0];
+        nftsToUnstake[1] = user2NftsArray[1];
+
+        vm.startPrank(user2);
+            vm.expectRevert();
+            pool.unstake(vaultId1, 0, nftsToUnstake);
+        vm.stopPrank();
+    }
+
     // ---------------- base assets ----------------
 
     function testPool_T36() public {

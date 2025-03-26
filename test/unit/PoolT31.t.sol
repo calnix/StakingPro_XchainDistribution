@@ -725,6 +725,58 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
     // 1. user2 cannot unstake nfts not present within vault1
     // 2. user2 can unstake the correct nfts from vault1
 
+    function testCannotUnstakeZero_T31() public {
+        vm.startPrank(user2);
+            vm.expectRevert(Errors.InvalidAmount.selector);
+            pool.unstake(vaultId1, 0, new uint256[](0));
+        vm.stopPrank();
+    }
+
+    function testCannotUnstakeMoreTokensThanStaked_T31() public {
+        vm.startPrank(user2);
+            vm.expectRevert(Errors.InvalidAmount.selector);
+            pool.unstake(vaultId1, user2Moca + 1, new uint256[](0));
+        vm.stopPrank();
+    }
+    
+    function testCannotUnstakeMoreNftsThanStaked_T31() public {
+        uint256[] memory nftsToUnstake = new uint256[](6);
+        nftsToUnstake[0] = user2NftsArray[0];
+        nftsToUnstake[1] = user2NftsArray[1];
+        nftsToUnstake[2] = user2NftsArray[2];
+        nftsToUnstake[3] = user2NftsArray[3];
+        nftsToUnstake[4] = user2NftsArray[4];
+        nftsToUnstake[5] = 6;
+
+
+        vm.startPrank(user2);
+            vm.expectRevert(Errors.InvalidAmount.selector);
+            pool.unstake(vaultId1, 0, nftsToUnstake);
+        vm.stopPrank();
+    }
+
+    function testCannotUnstakeNftsNotStaked_T31() public {
+        vm.startPrank(user3);
+            vm.expectRevert(Errors.InvalidAmount.selector);
+            pool.unstake(vaultId1, 0, user3NftsArray);
+        vm.stopPrank();
+    }
+
+    function testCannotUnstakeIncorrectNfts_T31() public {
+        vm.startPrank(user2);
+            vm.expectRevert();
+            pool.unstake(vaultId1, 0, user3NftsArray);
+        vm.stopPrank();
+    }
+
+    function testCannotUnstakeNftsStakedByOtherUser_T31() public {
+        vm.startPrank(user3);
+            vm.expectRevert(Errors.InvalidAmount.selector);
+
+            pool.unstake(vaultId1, 0, new uint256[](2));
+        vm.stopPrank();
+    }
+
     // user2 unstakes half their tokens and 2 nfts, from vault1
     function testUser2CanUnstakeAssets_T31() public {
         // vault state before unstake
