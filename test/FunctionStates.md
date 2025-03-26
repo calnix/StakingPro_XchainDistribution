@@ -100,14 +100,14 @@ RP validation states:
 (-) User has nothing staked in source vault (revert: `UserHasNothingStaked`) | testCannotMigrateRpWhenNothingStakedInFrom_T26
 (+) Amount <= staked amount (should succeed)
 
-*consider additional states wrt to `flag`, `totalBoostedDelta` and if-else loop in `migrateRealmPoints`*
+**consider additional states wrt to `flag`, `totalBoostedDelta` and if-else loop in `migrateRealmPoints`**
 
 ## unstake + executeUnstake
 
 Contract states:
-(-) Contract not started (should revert)
-(-) Contract paused (should revert)
-(-) Contract under maintenance (should revert)
+(-) Contract not started (should revert) | testCannotUnstakeWhenNotStarted
+(-) Contract paused (should revert) | testCannotUnstakeWhenPaused
+(-) Contract under maintenance (should revert) | testCannotUnstakeWhenInMaintenanceMode
 
 Token validation states:
 (-) Amount = 0 (revert: `InvalidAmount`)

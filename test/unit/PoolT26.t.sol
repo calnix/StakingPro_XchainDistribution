@@ -467,19 +467,19 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
         vm.stopPrank();
     }
     
-    function testCannotMigrateMoreThanStakedRp_T26() public {
-        vm.startPrank(user1);
-            vm.expectRevert(Errors.InvalidAmount.selector);
-            pool.migrateRealmPoints(vaultId1, vaultId2, user2Rp + 1);
-        vm.stopPrank();
-    }
-
     function testCannotMigrateRpWhenNothingStakedInFrom_T26() public {
         vm.startPrank(user3);
-            vm.expectRevert(Errors.InvalidAmount.selector);
+            vm.expectRevert(Errors.UserHasNothingStaked.selector);
             pool.migrateRealmPoints(vaultId1, vaultId2, 1000);
         vm.stopPrank();
     }   
+
+    function testCannotMigrateMoreThanStakedRp_T26() public {
+        vm.startPrank(user2);
+            vm.expectRevert(Errors.InvalidAmount.selector);
+            pool.migrateRealmPoints(vaultId1, vaultId2, user2Rp + 1 ether);
+        vm.stopPrank();
+    }
 
     function testUser2MigrateRp() public {
         

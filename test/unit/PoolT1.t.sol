@@ -169,9 +169,28 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
     }
 
     function testCannotStakeRpInvalidSignature() public {
+        // Pack the struct data
+        bytes32 structHash = keccak256(
+            abi.encode(
+                pool.TYPEHASH(),
+                user1,
+                vaultId1,
+                1000 ether,
+                block.timestamp + 1,
+                1
+            )
+        );
+        
+        // Get the digest using the contract's domain separator
+        bytes32 digest = pool.hashTypedDataV4(structHash);
+        // Sign the digest
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(uint256(1), digest);
+        // format
+        bytes memory invalidSignature = abi.encodePacked(r, s, v);
+
         vm.startPrank(user1);
             vm.expectRevert(Errors.InvalidSignature.selector);
-            pool.stakeRP(vaultId1, 1000 ether, block.timestamp + 1, bytes("invalid"));
+            pool.stakeRP(vaultId1, 1000 ether, block.timestamp + 1, invalidSignature);
         vm.stopPrank();
     }
 

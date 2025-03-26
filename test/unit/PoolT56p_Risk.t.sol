@@ -33,7 +33,6 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         assertEq(pool.paused(), false, "pool not unpaused");
     }
 
-
     function testAdminCanFreezePool() public {
         vm.startPrank(owner);
             vm.expectEmit(true, true, true, true);
@@ -43,6 +42,7 @@ contract StateT56p_PausedTest is StateT56p_Paused {
 
         assertEq(pool.isFrozen(), 1, "pool not frozen");
     }
+
 
     function testCannotCreateVaultWhenPaused() public {
         vm.prank(user1);
@@ -72,6 +72,12 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         vm.prank(user1);
         vm.expectRevert(Pausable.EnforcedPause.selector);
         pool.migrateRealmPoints(vaultId1, vaultId2, 1000);
+    }
+
+    function testCannotUnstakeWhenPaused() public {
+        vm.prank(user1);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.unstake(vaultId1, 1000, new uint256[](0));
     }
 }
 

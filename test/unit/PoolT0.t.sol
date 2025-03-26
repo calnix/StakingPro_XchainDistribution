@@ -77,6 +77,13 @@ contract StateT0_DeployTest is StateT0_Deploy {
         pool.migrateRealmPoints(bytes32(uint256(1)), bytes32(uint256(2)), 1000);
     }
 
+    function testCannotUnstakeWhenNotStarted() public {
+        vm.prank(user1);
+
+        vm.expectRevert(Errors.NotStarted.selector);
+        pool.unstake(bytes32(uint256(1)), 1000, new uint256[](0));
+    }
+
     function testOperatorCanSetupDistribution() public {
         vm.prank(operator);
         
