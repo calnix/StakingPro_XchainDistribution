@@ -62,7 +62,17 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         pool.stakeNfts(vaultId1, user1NftsArray);
     }
     
-    
+    function testCannotStakeRPWhenPaused() public {
+        vm.prank(user1);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.stakeRP(vaultId1, 1000, block.timestamp + 1, bytes(""));
+    }
+
+    function testCannotMigrateRpWhenPaused() public {
+        vm.prank(user1);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.migrateRealmPoints(vaultId1, vaultId2, 1000);
+    }
 }
 
 abstract contract StateT56p_Frozen is StateT56p_Paused {

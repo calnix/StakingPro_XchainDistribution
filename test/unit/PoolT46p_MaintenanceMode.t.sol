@@ -47,6 +47,20 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         vm.stopPrank();
     }
 
+    function testCannotStakeRPWhenInMaintenanceMode() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.InMaintenance.selector);
+            pool.stakeRP(vaultId1, 1000, block.timestamp + 1, bytes(""));
+        vm.stopPrank();
+    }
+
+    function testCannotMigrateRpWhenInMaintenanceMode() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.InMaintenance.selector);
+            pool.migrateRealmPoints(vaultId1, vaultId2, 1000);
+        vm.stopPrank();
+    }
+
     function testOperatorCanUpdateDistributions() public {
         
         // check distributions before

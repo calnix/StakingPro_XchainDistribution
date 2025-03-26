@@ -154,6 +154,27 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         vm.stopPrank();
     }
 
+    function testCannotStakeRpExpiredSignature() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.SignatureExpired.selector);
+            pool.stakeRP(vaultId1, 1000, block.timestamp - 1, bytes(""));
+        vm.stopPrank();
+    }
+
+    function testCannotStakeRpLessThanMinimumRealmPoints() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.MinimumRpRequired.selector);
+            pool.stakeRP(vaultId1, 1000, block.timestamp + 1, bytes(""));
+        vm.stopPrank();
+    }
+
+    function testCannotStakeRpInvalidSignature() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.InvalidSignature.selector);
+            pool.stakeRP(vaultId1, 1000 ether, block.timestamp + 1, bytes("invalid"));
+        vm.stopPrank();
+    }
+
     function testVault1CreatedCorrectly() public {
         DataTypes.Vault memory vault = pool.getVault(vaultId1);
         

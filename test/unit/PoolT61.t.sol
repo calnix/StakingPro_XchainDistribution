@@ -885,6 +885,19 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
         pool.stakeNfts(vaultId2, user3NftsArray);
     }
 
+    function testCannotStakeRpOnceCooldownActivated() public {
+        bytes memory signature = generateSignature(user1, vaultId2, 1000, block.timestamp + 1, 1);
+        
+        vm.prank(user1);
+        vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
+        pool.stakeRP(vaultId2, 1000 ether, block.timestamp + 1, signature);
+    }
+
+    function testCannotMigrateRpToVaultOnceCooldownActivated() public {
+        vm.prank(user2);
+        vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
+        pool.migrateRealmPoints(vaultId2, vaultId1, 1000);
+    }
 
 // --------------- connector ---------------
 

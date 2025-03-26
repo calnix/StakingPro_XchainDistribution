@@ -63,7 +63,19 @@ contract StateT0_DeployTest is StateT0_Deploy {
         pool.stakeNfts(bytes32(uint256(1)), user1NftsArray);
     }
     
+    function testCannotStakeRpWhenNotStarted() public {
+        vm.prank(user1);
 
+        vm.expectRevert(Errors.NotStarted.selector);
+        pool.stakeRP(bytes32(uint256(1)), 1000, block.timestamp + 1, bytes(""));
+    }
+
+    function testCannotMigrateRpWhenNotStarted() public {
+        vm.prank(user1);
+
+        vm.expectRevert(Errors.NotStarted.selector);
+        pool.migrateRealmPoints(bytes32(uint256(1)), bytes32(uint256(2)), 1000);
+    }
 
     function testOperatorCanSetupDistribution() public {
         vm.prank(operator);

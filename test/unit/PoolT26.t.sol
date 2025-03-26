@@ -437,7 +437,50 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
         assertEq(vaultAccount.totalClaimedRewards, 0);
     }
 
-    // state transition
+// state transition
+
+    function testCannotMigrateRpFromNonExistentVault_T26() public {
+        vm.startPrank(user1);
+            vm.expectRevert(abi.encodeWithSelector(Errors.NonExistentVault.selector, bytes32(uint256(1))));
+            pool.migrateRealmPoints(bytes32(uint256(1)), vaultId2, 1000);
+        vm.stopPrank();
+    }
+
+    function testCannotMigrateRpToNonExistentVault_T26() public {
+        vm.startPrank(user1);
+            vm.expectRevert(abi.encodeWithSelector(Errors.NonExistentVault.selector, bytes32(uint256(1))));
+            pool.migrateRealmPoints(vaultId1, bytes32(uint256(1)), 1000);
+        vm.stopPrank();
+    }
+
+    function testCannotMigrateZeroRp_T26() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.InvalidAmount.selector);
+            pool.migrateRealmPoints(vaultId1, vaultId2, 0);
+        vm.stopPrank();
+    }
+
+    function testCannotMigrateRpToSameVault_T26() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.InvalidVaultId.selector);
+            pool.migrateRealmPoints(vaultId1, vaultId1, 1000);
+        vm.stopPrank();
+    }
+    
+    function testCannotMigrateMoreThanStakedRp_T26() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.InvalidAmount.selector);
+            pool.migrateRealmPoints(vaultId1, vaultId2, user2Rp + 1);
+        vm.stopPrank();
+    }
+
+    function testCannotMigrateRpWhenNothingStakedInFrom_T26() public {
+        vm.startPrank(user3);
+            vm.expectRevert(Errors.InvalidAmount.selector);
+            pool.migrateRealmPoints(vaultId1, vaultId2, 1000);
+        vm.stopPrank();
+    }   
+
     function testUser2MigrateRp() public {
         
         // get initial values

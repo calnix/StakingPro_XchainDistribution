@@ -62,7 +62,7 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
         vm.stopPrank();
     }
 
-    function testCannotMigrateRealmPointsAfterContractEnded() public {
+    function testCannotMigrateRpAfterContractEnded() public {
         vm.startPrank(user1);
             vm.expectRevert(Errors.StakingEnded.selector);
             pool.migrateRealmPoints(vaultId1, vaultId2, 250 ether);

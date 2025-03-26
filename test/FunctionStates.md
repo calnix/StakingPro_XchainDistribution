@@ -66,21 +66,41 @@ NFT validation states:
 ## stakeRP + executeStakeRP
 
 Contract states:
-- Contract not started (should revert)
-- Contract ended (should revert)
-- Contract paused (should revert)
-- Contract under maintenance (should revert)
+- Contract not started (should revert) | testCannotStakeRPWhenNotStarted
+- Contract ended (should revert) | testCannotStakeRpAfterContractEnded
+- Contract paused (should revert) | testCannotStakeRPWhenPaused
+- Contract under maintenance (should revert) | testCannotStakeRPWhenInMaintenanceMode
 
 RP validation states:
-(-) expiry < block.timestamp revert Errors.SignatureExpired()
-(-) amount < MINIMUM_REALMPOINTS_REQUIRED revert Errors.MinimumRpRequired()
-(-) signer != STORED_SIGNER revert Errors.InvalidSignature()
-(-) RP transfer not approved (revert on RP transfer)
-(+) Sufficient balance and approval (should succeed)
+(-) expiry < block.timestamp revert Errors.SignatureExpired() | testCannotStakeRpExpiredSignature
+(-) amount < MINIMUM_REALMPOINTS_REQUIRED revert Errors.MinimumRpRequired() | testCannotStakeRpLessThanMinimumRealmPoints
+(-) signer != STORED_SIGNER revert Errors.InvalidSignature() | testCannotStakeRpInvalidSignature
 
 Vault states:
-(-) Vault does not exist [`_cache`]
-(-) `vault.endTime > 0`
+(-) `vault.endTime > 0` | testCannotStakeRpOnceCooldownActivated
+
+## migrateRealmPoints + executeMigrateRealmPoints
+
+Contract states:
+- Contract not started (should revert) | testCannotMigrateRpWhenNotStarted
+- Contract ended (should revert) | testCannotMigrateRpAfterContractEnded
+- Contract paused (should revert) | testCannotMigrateRpWhenPaused
+- Contract under maintenance (should revert) | testCannotMigrateRpWhenInMaintenanceMode
+
+Vault states:
+(-) Source vault does not exist | testCannotMigrateRpFromNonExistentVault_T26
+(-) Target vault does not exist | testCannotMigrateRpToNonExistentVault_T26
+(-) Target vault.endTime > 0 | testCannotMigrateRpToVaultOnceCooldownActivated
+(+) Source vault.endTime > 0 | testCanMigrateRpFromEndedVault
+
+RP validation states:
+(-) Amount = 0 (revert: `InvalidAmount`) | testCannotMigrateZeroRp_T26
+(-) VaultIds match (revert: `InvalidVaultId`)| testCannotMigrateRpToSameVault_T26
+(-) Amount > staked amount (revert: `InsufficientBalance`) | testCannotMigrateMoreThanStakedRp_T26
+(-) User has nothing staked in source vault (revert: `UserHasNothingStaked`) | testCannotMigrateRpWhenNothingStakedInFrom_T26
+(+) Amount <= staked amount (should succeed)
+
+*consider additional states wrt to `flag`, `totalBoostedDelta` and if-else loop in `migrateRealmPoints`*
 
 ## unstake + executeUnstake
 
@@ -96,7 +116,7 @@ Token validation states:
 
 NFT validation states:
 (-) NFTs not staked in vault (revert: `NftNotStaked`)
-(-) NFTs not owned by vault (revert: `NftNotStaked`) 
+(-) NFTs not owned by vault (revert: `NftNotStaked`)
 (+) NFTs properly staked in vault (should succeed)
 
 Vault states:

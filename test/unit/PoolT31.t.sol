@@ -78,7 +78,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
          its vaultAccounts and related userAccounts should primarily be 0.
      */
 
-    // ---------------- base assets ----------------
+// ---------------- base assets ----------------
 
     //pool & vaults should be updated
     function testPool_T31() public {
@@ -155,7 +155,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         assertEq(vault2.boostedStakedTokens, expectedBoostedTokens);
     }
 
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
 
     function testDistribution0_T31() public {
 
@@ -435,7 +435,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
     }
 
 
-    // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
 
     // STARTED AT T21
     function testDistribution1_T31() public {
@@ -719,7 +719,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         assertEq(claimableRewards, userAccount.accStakingRewards + userAccount.accNftStakingRewards + userAccount.accRealmPointsRewards, "viewFn accountState mismatch");
     }
 
-    // ---------------- others ----------------
+// ---------------- others ----------------
 
     // TODO connector fns
     // 1. user2 cannot unstake nfts not present within vault1
