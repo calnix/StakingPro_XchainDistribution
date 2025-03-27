@@ -5,6 +5,17 @@
 - Contract paused: PoolT56p_Risk
 - Contract under maintenance: PoolT46p_MaintenanceMode
 
+**TODO**
+
+Check if repeating the exact same actions more than once and see if it breaks something.
+
+- stakeNfts
+- stakeRp [same nonce]
+- claimRewards [no double claiming]
+- createVault [w/ same nfts]
+- activateCooldown
+- endVaults
+
 ## Pool Logic functions
 
 - cache: testCacheRevertsIfVaultDoesNotExist

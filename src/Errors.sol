@@ -33,6 +33,7 @@ library Errors {
     // claimRewards
     error NoStakedAssets();
     error StakingPowerDistribution();
+    error DistributionDoesNotExist();
 
     // activateCooldown
     error VaultAlreadyRemoved();
