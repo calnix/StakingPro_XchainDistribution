@@ -906,8 +906,8 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
 
     function testCannotClaimFromNonExistentVault_T51() public {
         vm.prank(user1);
-        vm.expectRevert(abi.encodeWithSelector(Errors.NonExistentVault.selector));
-        pool.claimRewards(bytes32(uint256(1)), 0);
+        vm.expectRevert(abi.encodeWithSelector(Errors.NonExistentVault.selector, bytes32(uint256(1))));
+        pool.claimRewards(bytes32(uint256(1)), 1);
     }
 
     function testClaimRewards_T51() public {

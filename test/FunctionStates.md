@@ -161,6 +161,6 @@ Vault states:
 
 Reward states:
 (+) No rewards to claim | testRepeatedClaimRewards_T56
-(+) Rewards available to claim | testUser1CanClaimRewards_T56
+(+) Rewards available to claim | testClaimRewards_T51
 
-**consider additional states for reward calculation logic and fee distribution**
+## updateVaultFees + executeUpdateVaultFees
