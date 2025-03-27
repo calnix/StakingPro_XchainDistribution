@@ -124,7 +124,7 @@ NFT validation states:
 (+) NFTs properly staked in vault (should succeed) | testUser2CanUnstakeAssets_T31
 
 Vault states:
-(-) `vault.endTime > 0` | testCannotUnstakeTokensOnceCooldownActivated
+(-) `vault.endTime > 0` | testCanUnstakeTokensOnceCooldownActivated
 
 **consider additional cases, as per conditional logic in unstake()**
 

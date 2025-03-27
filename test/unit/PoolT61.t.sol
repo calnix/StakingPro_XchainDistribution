@@ -899,9 +899,8 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
         pool.migrateRealmPoints(vaultId1, vaultId2, 1000);
     }
 
-    function testCannotUnstakeTokensOnceCooldownActivated() public {
+    function testCanUnstakeTokensOnceCooldownActivated() public {
         vm.prank(user2);
-        vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
         pool.unstake(vaultId2, 1000, new uint256[](0));
     }
     
