@@ -11,7 +11,7 @@ Check if repeating the exact same actions more than once and see if it breaks so
 
 - stakeNfts
 - stakeRp [same nonce]
-- claimRewards [no double claiming]
+- claimRewards [no double claiming]  | testRepeatedClaimRewards_T56
 - createVault [w/ same nfts]
 - activateCooldown
 - endVaults
@@ -151,8 +151,8 @@ Distribution states:
 (-) Distribution Zero; cannot claim | testCannotClaimForStakingPowerDistribution_T51
 (-) Distribution does not exist (revert: `DistributionDoesNotExist`) | testCannotClaimFromNonExistentDistribution_T51
 (-) Distribution not started | testCannotClaimFromDistributionNotStarted_T16
-(-) Distribution manually ended | testCannotClaimFromManuallyEndedDistribution
-(+) Distribution active | testUser1CanClaimRewards_T56
+(+) Distribution manually ended | PoolT46p_EndDistribution.t.sol
+(+) Distribution active | PoolT56.t.sol
 
 Vault states:
 (-) User has nothing staked in vault (revert: `UserHasNothingStaked`) | testCannotClaimWhenNothingStaked_T51

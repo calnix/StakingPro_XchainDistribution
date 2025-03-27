@@ -153,7 +153,7 @@ abstract contract StateT46_EndDistribution is StateT41_User2StakesToVault2 {
 
 contract StateT46_EndDistributionTest is StateT46_EndDistribution {
 
-    // ---------------- base assets ----------------
+// ---------------- base assets ----------------
 
     function testPool_T46() public {
         DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
@@ -226,7 +226,7 @@ contract StateT46_EndDistributionTest is StateT46_EndDistribution {
         assertEq(vault2.boostedStakedTokens, expectedBoostedTokens);
     }
 
-    // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
   
     function testDistribution1_T46() public {
         DataTypes.Distribution memory distribution = getDistribution(1);
@@ -563,8 +563,8 @@ contract StateT46_EndDistributionTest is StateT46_EndDistribution {
         // check view fn
         assertEq(pool.getClaimableRewards(user2, vaultId2, 1), 0, "view fn mismatch: T46");
     }
-    
-    // ---- state transition: test changing rewardsVault ----
+
+// ---- state transition: test changing rewardsVault ----
 
     function testCanSetRewardsVaultIfNoActiveDistribution() public {
 
