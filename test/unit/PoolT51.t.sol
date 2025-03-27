@@ -900,7 +900,7 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
 
     function testCannotClaimFromNonExistentDistribution_T51() public {
         vm.prank(user1);
-        vm.expectRevert(abi.encodeWithSelector(Errors.DistributionNotStarted.selector));
+        vm.expectRevert(abi.encodeWithSelector(Errors.DistributionDoesNotExist.selector));
         pool.claimRewards(vaultId1, 2);
     }
 

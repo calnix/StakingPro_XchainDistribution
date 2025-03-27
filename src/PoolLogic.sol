@@ -315,7 +315,7 @@ library PoolLogic {
         DataTypes.Distribution memory distribution = distributions[distributionId];
         if(distribution.startTime == 0) revert Errors.DistributionDoesNotExist();
         if(block.timestamp < distribution.startTime) revert Errors.DistributionNotStarted();
-
+        
         
         // get corresponding user+vault account for distribution         
         DataTypes.VaultAccount memory vaultAccount = vaultAccounts[params.vaultId][distributionId];
