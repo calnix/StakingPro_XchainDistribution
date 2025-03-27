@@ -461,7 +461,10 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             distributionId);
 
         // transfer rewards to user, from rewardsVault
-        if(totalUnclaimedRewardsInNative > 0) REWARDS_VAULT.payRewards{value: msg.value}(distributionId, totalUnclaimedRewardsInNative, msg.sender);
+        if(totalUnclaimedRewardsInNative > 0){
+            emit RewardsClaimed(distributionId, vaultId, msg.sender, totalUnclaimedRewardsInNative);
+            REWARDS_VAULT.payRewards{value: msg.value}(distributionId, totalUnclaimedRewardsInNative, msg.sender);
+        } 
     }
 
     /**

@@ -76,7 +76,8 @@ abstract contract StateT56_UsersClaimRewardsFromBothVaults is StateT51_BothVault
 */
 
 contract StateT56_UsersClaimRewardsFromBothVaultsTest is StateT56_UsersClaimRewardsFromBothVaults {
-    
+
+    // does not revert. allows contract state to be updated. but user should not have anything tangible to claim    
     function testRepeatedClaimRewards_T56() public {
         // get initial states
         DataTypes.VaultAccount memory vault1AccountBefore = getVaultAccount(vaultId1, 1);

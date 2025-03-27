@@ -152,15 +152,15 @@ Distribution states:
 (-) Distribution does not exist (revert: `DistributionDoesNotExist`) | testCannotClaimFromNonExistentDistribution_T51
 (-) Distribution not started | testCannotClaimFromDistributionNotStarted_T16
 (+) Distribution manually ended | PoolT46p_EndDistribution.t.sol
-(+) Distribution active | PoolT56.t.sol
+(+) Distribution active | testClaimRewards_T51
 
 Vault states:
 (-) User has nothing staked in vault (revert: `UserHasNothingStaked`) | testCannotClaimWhenNothingStaked_T51
-(-) Vault does not exist (revert: `NonExistentVault`) | testCannotClaimFromNonExistentVault_T56
-(+) User has assets staked in vault | testUser1CanClaimRewards_T56
+(-) Vault does not exist (revert: `NonExistentVault`) | testCannotClaimFromNonExistentVault_T51
+(+) User has assets staked in vault | testClaimRewards_T51
 
 Reward states:
-(-) No rewards to claim (revert: `NoRewardsAvailable`) | testCannotClaimWhenNoRewardsAvailable_T56
+(+) No rewards to claim | testRepeatedClaimRewards_T56
 (+) Rewards available to claim | testUser1CanClaimRewards_T56
 
 **consider additional states for reward calculation logic and fee distribution**

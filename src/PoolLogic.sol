@@ -386,7 +386,6 @@ library PoolLogic {
 
         // rebase totalUnclaimedRewards to native precision
         uint256 totalUnclaimedRewardsInNative = totalUnclaimedRewards * distribution.TOKEN_PRECISION / 1E18;
-        emit RewardsClaimed(distributionId, params.vaultId, params.user, totalUnclaimedRewardsInNative);
 
         return totalUnclaimedRewardsInNative;
     }

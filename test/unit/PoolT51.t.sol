@@ -904,7 +904,12 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
         pool.claimRewards(vaultId1, 2);
     }
 
-    // TODO: claimRewards: check tokens transferred, events emitted
+    function testCannotClaimFromNonExistentVault_T51() public {
+        vm.prank(user1);
+        vm.expectRevert(abi.encodeWithSelector(Errors.NonExistentVault.selector));
+        pool.claimRewards(bytes32(uint256(1)), 0);
+    }
+
     function testClaimRewards_T51() public {
         // get initial token balance
         uint256 user1BalanceBefore = rewardsToken1.balanceOf(user1);
