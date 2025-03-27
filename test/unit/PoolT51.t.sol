@@ -907,28 +907,17 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
     // TODO: claimRewards: check tokens transferred, events emitted
     function testClaimRewards_T51() public {
         // get initial token balance
-        uint256 user1BalanceBefore = mocaToken.balanceOf(user1);
+        uint256 user1BalanceBefore = rewardsToken1.balanceOf(user1);
 
         // get vault1 account state before claim
         DataTypes.VaultAccount memory vaultAccount = getVaultAccount(vaultId1, 1);
         DataTypes.UserAccount memory userAccount = getUserAccount(user1, vaultId1, 1);
 
-        // calculate expected rewards
-        uint256 numOfNfts = 2;
-        uint256 stakedTokens = user1Moca;
-        uint256 stakedRP = user1Rp;
-
-        uint256 prevUserIndex = user1Vault1Account1_T46.index;
-        uint256 prevUserNftIndex = user1Vault1Account1_T46.nftIndex;
-        uint256 prevUserRpIndex = user1Vault1Account1_T46.rpIndex;
-        uint256 prevAccStakingRewards = user1Vault1Account1_T46.accStakingRewards;
-        uint256 prevAccNftStakingRewards = user1Vault1Account1_T46.accNftStakingRewards;
-        uint256 prevAccRealmPointsRewards = user1Vault1Account1_T46.accRealmPointsRewards;
-
-        uint256 expectedStakingRewards = calculateRewards(stakedTokens, vaultAccount.rewardsAccPerUnitStaked, prevUserIndex, 1E18) + prevAccStakingRewards;
-        uint256 expectedNftRewards = ((vaultAccount.nftIndex - prevUserNftIndex) * numOfNfts) + prevAccNftStakingRewards;
-        uint256 expectedRpRewards = calculateRewards(stakedRP, vaultAccount.rpIndex, prevUserRpIndex, 1E18) + prevAccRealmPointsRewards;
-        uint256 expectedCreatorRewards = user1 == pool.getVault(vaultId1).creator ? vaultAccount.accCreatorRewards : 0;
+        // user1 is vault1 creator
+        uint256 expectedStakingRewards = user1Vault1Account1_T51.accStakingRewards;
+        uint256 expectedNftRewards = user1Vault1Account1_T51.accNftStakingRewards;
+        uint256 expectedRpRewards = user1Vault1Account1_T51.accRealmPointsRewards;
+        uint256 expectedCreatorRewards = vault1Account1_T51.accCreatorRewards;
 
         uint256 totalExpectedRewards = expectedStakingRewards + expectedNftRewards + expectedRpRewards + expectedCreatorRewards;
 
@@ -940,7 +929,7 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
         vm.stopPrank();
 
         // verify token transfer
-        uint256 user1BalanceAfter = mocaToken.balanceOf(user1);
+        uint256 user1BalanceAfter = rewardsToken1.balanceOf(user1);
         assertEq(user1BalanceAfter - user1BalanceBefore, totalExpectedRewards, "token transfer amount mismatch");
 
         // verify user account updated

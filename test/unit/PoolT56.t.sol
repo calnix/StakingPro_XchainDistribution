@@ -77,7 +77,63 @@ abstract contract StateT56_UsersClaimRewardsFromBothVaults is StateT51_BothVault
 
 contract StateT56_UsersClaimRewardsFromBothVaultsTest is StateT56_UsersClaimRewardsFromBothVaults {
     
-    // ---------------- base assets ----------------
+    function testRepeatedClaimRewards_T56() public {
+        // get initial states
+        DataTypes.VaultAccount memory vault1AccountBefore = getVaultAccount(vaultId1, 1);
+        DataTypes.VaultAccount memory vault2AccountBefore = getVaultAccount(vaultId2, 1);
+        DataTypes.UserAccount memory user1Vault1AccountBefore = getUserAccount(user1, vaultId1, 1);
+        DataTypes.UserAccount memory user2Vault1AccountBefore = getUserAccount(user2, vaultId1, 1);
+        DataTypes.UserAccount memory user2Vault2AccountBefore = getUserAccount(user2, vaultId2, 1);
+
+        // attempt to claim again
+        vm.startPrank(user1);
+            pool.claimRewards(vaultId1, 1);
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+            pool.claimRewards(vaultId1, 1);
+            pool.claimRewards(vaultId2, 1);
+        vm.stopPrank();
+
+        // verify vault states unchanged
+        DataTypes.VaultAccount memory vault1AccountAfter = getVaultAccount(vaultId1, 1);
+        DataTypes.VaultAccount memory vault2AccountAfter = getVaultAccount(vaultId2, 1);
+        assertEq(vault1AccountAfter.totalAccRewards, vault1AccountBefore.totalAccRewards, "vault1 total rewards changed");
+        assertEq(vault2AccountAfter.totalAccRewards, vault2AccountBefore.totalAccRewards, "vault2 total rewards changed");
+        assertEq(vault1AccountAfter.accCreatorRewards, vault1AccountBefore.accCreatorRewards, "vault1 creator rewards changed");
+        assertEq(vault2AccountAfter.accCreatorRewards, vault2AccountBefore.accCreatorRewards, "vault2 creator rewards changed");
+
+        // verify user states unchanged
+        DataTypes.UserAccount memory user1Vault1AccountAfter = getUserAccount(user1, vaultId1, 1);
+        DataTypes.UserAccount memory user2Vault1AccountAfter = getUserAccount(user2, vaultId1, 1);
+        DataTypes.UserAccount memory user2Vault2AccountAfter = getUserAccount(user2, vaultId2, 1);
+
+        assertEq(user1Vault1AccountAfter.accStakingRewards, user1Vault1AccountBefore.accStakingRewards, "user1 vault1 staking rewards changed");
+        assertEq(user1Vault1AccountAfter.accNftStakingRewards, user1Vault1AccountBefore.accNftStakingRewards, "user1 vault1 nft rewards changed");
+        assertEq(user1Vault1AccountAfter.accRealmPointsRewards, user1Vault1AccountBefore.accRealmPointsRewards, "user1 vault1 rp rewards changed");
+        assertEq(user1Vault1AccountAfter.claimedStakingRewards, user1Vault1AccountBefore.claimedStakingRewards, "user1 vault1 claimed staking changed");
+        assertEq(user1Vault1AccountAfter.claimedNftRewards, user1Vault1AccountBefore.claimedNftRewards, "user1 vault1 claimed nft changed");
+        assertEq(user1Vault1AccountAfter.claimedRealmPointsRewards, user1Vault1AccountBefore.claimedRealmPointsRewards, "user1 vault1 claimed rp changed");
+        assertEq(user1Vault1AccountAfter.claimedCreatorRewards, user1Vault1AccountBefore.claimedCreatorRewards, "user1 vault1 claimed creator changed");
+
+        assertEq(user2Vault1AccountAfter.accStakingRewards, user2Vault1AccountBefore.accStakingRewards, "user2 vault1 staking rewards changed");
+        assertEq(user2Vault1AccountAfter.accNftStakingRewards, user2Vault1AccountBefore.accNftStakingRewards, "user2 vault1 nft rewards changed");
+        assertEq(user2Vault1AccountAfter.accRealmPointsRewards, user2Vault1AccountBefore.accRealmPointsRewards, "user2 vault1 rp rewards changed");
+        assertEq(user2Vault1AccountAfter.claimedStakingRewards, user2Vault1AccountBefore.claimedStakingRewards, "user2 vault1 claimed staking changed");
+        assertEq(user2Vault1AccountAfter.claimedNftRewards, user2Vault1AccountBefore.claimedNftRewards, "user2 vault1 claimed nft changed");
+        assertEq(user2Vault1AccountAfter.claimedRealmPointsRewards, user2Vault1AccountBefore.claimedRealmPointsRewards, "user2 vault1 claimed rp changed");
+        assertEq(user2Vault1AccountAfter.claimedCreatorRewards, user2Vault1AccountBefore.claimedCreatorRewards, "user2 vault1 claimed creator changed");
+
+        assertEq(user2Vault2AccountAfter.accStakingRewards, user2Vault2AccountBefore.accStakingRewards, "user2 vault2 staking rewards changed");
+        assertEq(user2Vault2AccountAfter.accNftStakingRewards, user2Vault2AccountBefore.accNftStakingRewards, "user2 vault2 nft rewards changed");
+        assertEq(user2Vault2AccountAfter.accRealmPointsRewards, user2Vault2AccountBefore.accRealmPointsRewards, "user2 vault2 rp rewards changed");
+        assertEq(user2Vault2AccountAfter.claimedStakingRewards, user2Vault2AccountBefore.claimedStakingRewards, "user2 vault2 claimed staking changed");
+        assertEq(user2Vault2AccountAfter.claimedNftRewards, user2Vault2AccountBefore.claimedNftRewards, "user2 vault2 claimed nft changed");
+        assertEq(user2Vault2AccountAfter.claimedRealmPointsRewards, user2Vault2AccountBefore.claimedRealmPointsRewards, "user2 vault2 claimed rp changed");
+        assertEq(user2Vault2AccountAfter.claimedCreatorRewards, user2Vault2AccountBefore.claimedCreatorRewards, "user2 vault2 claimed creator changed");
+    }
+
+// ---------------- base assets ----------------
 
     function testPool_T56() public {
         DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
@@ -158,7 +214,7 @@ contract StateT56_UsersClaimRewardsFromBothVaultsTest is StateT56_UsersClaimRewa
         assertEq(vault2.realmPointsFeeFactor, 750);  
     }
 
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
     
     // stale: claimRewards does not update d0
     /*function testDistribution0_T56() public {
@@ -574,7 +630,7 @@ contract StateT56_UsersClaimRewardsFromBothVaultsTest is StateT56_UsersClaimRewa
             assertEq(claimableRewards, expectedClaimableRewards, "claimableRewards mismatch"); 
         }*/
 
-    // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
 
     function testDistribution1_T56() public {
         DataTypes.Distribution memory distribution = getDistribution(1);
@@ -924,7 +980,7 @@ contract StateT56_UsersClaimRewardsFromBothVaultsTest is StateT56_UsersClaimRewa
         }
 
     
-    // --------------- state transition ---------------
+// --------------- state transition ---------------
 
     function testUserCannotActivateCooldown() public {
         
