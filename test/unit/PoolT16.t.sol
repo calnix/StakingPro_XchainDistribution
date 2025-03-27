@@ -130,7 +130,7 @@ contract StateT16_BothUsersStakeAgainTest is StateT16_BothUsersStakeAgain {
         assertEq(user.stakedRealmPoints, user2Rp);
     }
 
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
 
     function testDistribution0_T16() public {
 
@@ -311,7 +311,7 @@ contract StateT16_BothUsersStakeAgainTest is StateT16_BothUsersStakeAgain {
         assertEq(claimableRewards, expectedClaimableRewards); 
     }
 
-    // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
     
     // distribution 1 not yet started
     function testDistribution1_T16() public {
@@ -398,7 +398,13 @@ contract StateT16_BothUsersStakeAgainTest is StateT16_BothUsersStakeAgain {
         assertEq(userAccount.claimedCreatorRewards, 0);
     }    
 
-    // ---------------- others ----------------
+// ---------------- others ----------------
+
+    function testCannotClaimFromDistributionNotStarted_T16() public {
+        vm.prank(user1);
+        vm.expectRevert(abi.encodeWithSelector(Errors.DistributionNotStarted.selector));
+        pool.claimRewards(vaultId1, 1);
+    }
 
     function testNonOperatorCannotUpdateCreationNfts(uint256 newAmount) public {
         vm.startPrank(user1);

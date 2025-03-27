@@ -84,6 +84,13 @@ contract StateT0_DeployTest is StateT0_Deploy {
         pool.unstake(bytes32(uint256(1)), 1000, new uint256[](0));
     }
 
+    function testCannotClaimRewardsWhenNotStarted() public {
+        vm.prank(user1);
+
+        vm.expectRevert(Errors.NotStarted.selector);
+        pool.claimRewards(bytes32(uint256(1)), 0);
+    }
+
     function testOperatorCanSetupDistribution() public {
         vm.prank(operator);
         

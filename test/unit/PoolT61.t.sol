@@ -903,7 +903,20 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
         vm.prank(user2);
         pool.unstake(vaultId2, 1000, new uint256[](0));
     }
+
+    function testCanUnstakeNftsOnceCooldownActivated() public {
+        uint256[] memory tokenIds = new uint256[](2);
+        tokenIds[0] = user2NftsArray[0];
+        tokenIds[1] = user2NftsArray[1];
+
+        vm.prank(user2);
+        pool.unstake(vaultId2, 0, tokenIds);
+    }   
     
+    function testCanClaimRewardsAfterContractEnded() public {
+        vm.prank(user2);
+        pool.claimRewards(vaultId2, 1);
+    }
     
 
 // --------------- connector ---------------

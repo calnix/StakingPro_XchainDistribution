@@ -73,7 +73,6 @@ contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
     }
 
 
-
     function testOperatorCannotUpdateActiveDistributionsToZero() public {
         vm.startPrank(operator);
             vm.expectRevert(abi.encodeWithSelector(Errors.InvalidMaxActiveAllowed.selector));
@@ -101,4 +100,5 @@ contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
         assertEq(pool.getActiveDistributionsLength(), 2);
         assertEq(pool.maxActiveAllowed(), 3);
     }
+
 }

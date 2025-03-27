@@ -90,7 +90,7 @@ abstract contract StateT51_BothVaultsFeesUpdated is StateT46_BothVaultsFeesUpdat
 
 contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
 
-    // ---------------- base assets ----------------
+// ---------------- base assets ----------------
 
     function testPool_T51() public {
         DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
@@ -171,7 +171,7 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
         assertEq(vault2.realmPointsFeeFactor, 750);  
     }
 
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
     
     function testDistribution0_T51() public {
         DataTypes.Distribution memory distribution = getDistribution(0);
@@ -535,7 +535,7 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
             assertEq(claimableRewards, expectedClaimableRewards, "claimableRewards mismatch"); 
         }
 
-    // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
 
     function testDistribution1_T51() public {
         DataTypes.Distribution memory distribution = getDistribution(1);
@@ -883,10 +883,76 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
             assertEq(claimableRewards, expectedClaimableRewards, "claimableRewards mismatch"); 
         }
     
+
+// --------------- state transition: PoolT56.t.sol ---------------
+
+    function testCannotClaimForStakingPowerDistribution_T51() public {
+        vm.prank(user1);
+        vm.expectRevert(abi.encodeWithSelector(Errors.StakingPowerDistribution.selector));
+        pool.claimRewards(vaultId1, 0);
+    }
+
+    function testCannotClaimWhenNothingStaked_T51() public {
+        vm.prank(user3);
+        vm.expectRevert(abi.encodeWithSelector(Errors.NoStakedAssets.selector));
+        pool.claimRewards(vaultId1, 1);
+    }
+
+    function testCannotClaimFromNonExistentDistribution_T51() public {
+        vm.prank(user1);
+        vm.expectRevert(abi.encodeWithSelector(Errors.DistributionNotStarted.selector));
+        pool.claimRewards(vaultId1, 2);
+    }
+
     // TODO: claimRewards: check tokens transferred, events emitted
+    function testClaimRewards_T51() public {
+        // get initial token balance
+        uint256 user1BalanceBefore = mocaToken.balanceOf(user1);
+
+        // get vault1 account state before claim
+        DataTypes.VaultAccount memory vaultAccount = getVaultAccount(vaultId1, 1);
+        DataTypes.UserAccount memory userAccount = getUserAccount(user1, vaultId1, 1);
+
+        // calculate expected rewards
+        uint256 numOfNfts = 2;
+        uint256 stakedTokens = user1Moca;
+        uint256 stakedRP = user1Rp;
+
+        uint256 prevUserIndex = user1Vault1Account1_T46.index;
+        uint256 prevUserNftIndex = user1Vault1Account1_T46.nftIndex;
+        uint256 prevUserRpIndex = user1Vault1Account1_T46.rpIndex;
+        uint256 prevAccStakingRewards = user1Vault1Account1_T46.accStakingRewards;
+        uint256 prevAccNftStakingRewards = user1Vault1Account1_T46.accNftStakingRewards;
+        uint256 prevAccRealmPointsRewards = user1Vault1Account1_T46.accRealmPointsRewards;
+
+        uint256 expectedStakingRewards = calculateRewards(stakedTokens, vaultAccount.rewardsAccPerUnitStaked, prevUserIndex, 1E18) + prevAccStakingRewards;
+        uint256 expectedNftRewards = ((vaultAccount.nftIndex - prevUserNftIndex) * numOfNfts) + prevAccNftStakingRewards;
+        uint256 expectedRpRewards = calculateRewards(stakedRP, vaultAccount.rpIndex, prevUserRpIndex, 1E18) + prevAccRealmPointsRewards;
+        uint256 expectedCreatorRewards = user1 == pool.getVault(vaultId1).creator ? vaultAccount.accCreatorRewards : 0;
+
+        uint256 totalExpectedRewards = expectedStakingRewards + expectedNftRewards + expectedRpRewards + expectedCreatorRewards;
+
+        vm.startPrank(user1);
+            vm.expectEmit(true, true, true, true);
+            emit RewardsClaimed(1, vaultId1, user1, totalExpectedRewards);
+            
+            pool.claimRewards(vaultId1, 1);
+        vm.stopPrank();
+
+        // verify token transfer
+        uint256 user1BalanceAfter = mocaToken.balanceOf(user1);
+        assertEq(user1BalanceAfter - user1BalanceBefore, totalExpectedRewards, "token transfer amount mismatch");
+
+        // verify user account updated
+        DataTypes.UserAccount memory userAccountAfter = getUserAccount(user1, vaultId1, 1);
+        assertEq(userAccountAfter.claimedStakingRewards, expectedStakingRewards, "claimed staking rewards mismatch");
+        assertEq(userAccountAfter.claimedNftRewards, expectedNftRewards, "claimed nft rewards mismatch"); 
+        assertEq(userAccountAfter.claimedRealmPointsRewards, expectedRpRewards, "claimed rp rewards mismatch");
+        assertEq(userAccountAfter.claimedCreatorRewards, expectedCreatorRewards, "claimed creator rewards mismatch");
+    }
 
 
-    // ---- state transition: PoolT56p_Risk.t.sol  ----
+// ---- state transition: PoolT56p_Risk.t.sol  ----
     function testUserCannotPausePool() public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.MONITOR_ROLE()));
