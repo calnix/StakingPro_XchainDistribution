@@ -525,7 +525,7 @@ library PoolLogic {
                 if(vault.creator == address(0)) continue;
                 // cooldown NOT activated; cannot end vault: skip
                 if(vault.endTime == 0) continue;
-                // cooldown not ended: skip
+                // cooldown not elapsed: skip
                 if(block.timestamp < vault.endTime) continue;
                 // vault has been removed from circulation: skip
                 if(vault.removed == 1) continue;

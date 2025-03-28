@@ -75,6 +75,44 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
         vm.stopPrank();
     }
 
+    // if(vault.removed == 1) continue;
+    function testContinueEndVaultsIfVaultRemoved_T86461() public {
+        // due to continue, 1 vault will be skipped
+        uint256 vaultsSkipped = 1;
+
+        // global state: before
+        uint256 totalNftsBefore = pool.totalStakedNfts();
+        uint256 totalTokensBefore = pool.totalStakedTokens();
+        uint256 totalRPBefore = pool.totalStakedRealmPoints();
+        uint256 totalBoostedTokensBefore = pool.totalBoostedStakedTokens();
+        uint256 totalBoostedRPBefore = pool.totalBoostedRealmPoints();
+
+        // array
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId2;
+
+        vm.startPrank(user1);
+            vm.expectEmit(true, true, true, true);
+            emit VaultsEnded(vaultIds, vaultsSkipped);
+            pool.endVaults(vaultIds);
+        vm.stopPrank();
+
+        // global state: after
+        uint256 totalNftsAfter = pool.totalStakedNfts();
+        uint256 totalTokensAfter = pool.totalStakedTokens();
+        uint256 totalRPAfter = pool.totalStakedRealmPoints();
+        uint256 totalBoostedTokensAfter = pool.totalBoostedStakedTokens();
+        uint256 totalBoostedRPAfter = pool.totalBoostedRealmPoints();
+
+        // check global state unchanged
+        assertEq(totalNftsBefore, totalNftsAfter, "totalStakedNfts changed");
+        assertEq(totalTokensBefore, totalTokensAfter, "totalStakedTokens changed");
+        assertEq(totalRPBefore, totalRPAfter, "totalStakedRealmPoints changed");
+        assertEq(totalBoostedTokensBefore, totalBoostedTokensAfter, "totalBoostedStakedTokens changed");
+        assertEq(totalBoostedRPBefore, totalBoostedRPAfter, "totalBoostedRealmPoints changed");   
+        
+    }
+
 // ---------------- base assets ----------------
     function testPool_T86461() public {
         DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
