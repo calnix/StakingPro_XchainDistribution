@@ -70,7 +70,7 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
 
     function testCannotActivateCooldownOnEndedVault_T86461() public {
         vm.startPrank(user2);
-            vm.expectRevert(Errors.VaultAlreadyRemoved.selector);
+            vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
             pool.activateCooldown(vaultId2);
         vm.stopPrank();
     }
@@ -138,6 +138,7 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
     // vault2 assets are removed from the system, but still exist in the vault
     function testVault2_T86461() public {
         DataTypes.Vault memory vault2 = pool.getVault(vaultId2);
+        assertEq(vault2.removed, 1);
         
         // Check base balances
         assertEq(vault2.stakedRealmPoints, user2Rp/2);

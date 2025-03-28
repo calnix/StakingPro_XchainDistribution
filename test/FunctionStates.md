@@ -195,5 +195,8 @@ Contract states:
 Vault states:
 (-) Vault cooldown already activated (revert: `VaultEndTimeSet`) | testCannotActivateCooldownRepeatedly_T61
 (-) Caller is not vault creator (revert: `UserIsNotCreator`) | testNonCreatorCannotActivateCooldown_T56
-(-) Cannot activateCooldown on ended vault (revert: `VaultAlreadyRemoved`) | testCannotActivateCooldownOnEndedVault_T86461
+(-) Cannot activateCooldown on ended vault (revert: `VaultEndTimeSet`) | testCannotActivateCooldownOnEndedVault_T86461
 (+) Creator can activate cooldown on their vault | testVault2ActivateCooldown_T56
+
+## endVaults
+
