@@ -67,7 +67,7 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
 
     function testCannotActivateCooldownRepeatedly_T61() public {
         vm.startPrank(user2);
-            vm.expectRevert(Errors.VaultEndTimeSet.selector);
+            vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
             pool.activateCooldown(vaultId2);
         vm.stopPrank();
     }

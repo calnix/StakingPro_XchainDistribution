@@ -200,3 +200,15 @@ Vault states:
 
 ## endVaults
 
+Contract states:
+(-) Contract not started (should revert) | testCannotEndVaultWhenNotStarted
+(-) Contract paused (should revert) | testCannotEndVaultWhenPaused
+(-) Contract under maintenance (should revert) | testCannotEndVaultWhenInMaintenanceMode
+(+) Contract ended | testCanEndVaultAfterContractEnded
+
+Vault states:
+(-) Vault cooldown not activated (revert: `CooldownNotActivated`) | testCannotEndVaultBeforeCooldown_T56
+(-) Cooldown period not elapsed (revert: `CooldownPeriodNotElapsed`) | testCannotEndVaultBeforeCooldownPeriod_T61
+(-) Vault already ended (revert: `VaultAlreadyEnded`) | testCannotEndVaultTwice_T86461
+(-) Vault does not exist (revert: `NonExistentVault`) | testCannotEndNonExistentVault_T86461
+(+) Cooldown activated and period elapsed | testEndVault_T86461
