@@ -164,3 +164,22 @@ Reward states:
 (+) Rewards available to claim | testClaimRewards_T51
 
 ## updateVaultFees + executeUpdateVaultFees
+
+Contract states:
+(-) Contract not started | testCannotUpdateVaultFeesWhenNotStarted
+(-) Contract paused (should revert) | testCannotUpdateVaultFeesWhenPaused
+(-) Contract under maintenance (should revert) | testCannotUpdateVaultFeesWhenInMaintenanceMode
+(-) Contract ended | testCannotUpdateVaultFeesAfterContractEnded
+
+Vault states:
+(-) Vault cooldown activated (revert: `VaultEndTimeSet`) | testCannotUpdateFeesAfterCooldownActivated
+(-) Caller is not vault creator (revert: `UserIsNotCreator`) | testUserCannotUpdateVaultFees_T41
+
+Fee validation states:
+(-) Total fees > MAXIMUM_FEE_FACTOR (revert: `MaximumFeeFactorExceeded`) | testCannotExceedMaximumFeeFactor_T41
+(-) Creator fee increased (revert: `CreatorFeeCanOnlyBeDecreased`) | testCreatorCannotIncreaseCreatorFees_T41
+(-) NFT fee decreased (revert: `NftFeeCanOnlyBeIncreased`) | testCreatorCannotDecreaseNftFees_T41
+(-) RP fee decreased (revert: `RealmPointsFeeCanOnlyBeIncreased`) | testCreatorCannotDecreaseRpFees_T41
+(-) Creator reduces creator fee but increases other fees by more than reduction (revert: `IncorrectFeeComposition`) | testCreatorCannotIncreaseOtherFeesMoreThanReduction_T41
+
+(+) Creator can update fees (decrease creator fee, increase NFT/RP fees) within MAXIMUM_FEE_FACTOR | testCreatorCanUpdateVaultFees_T41

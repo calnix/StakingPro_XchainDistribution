@@ -83,7 +83,7 @@ abstract contract StateT41_User2StakesToVault2 is StateT36_User2UnstakesFromVaul
 
 contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
 
-    // ---------------- base assets ----------------
+// ---------------- base assets ----------------
 
     function testPool_T41() public {
         DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
@@ -156,7 +156,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         assertEq(vault2.boostedStakedTokens, expectedBoostedTokens);
     }
 
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
 
     // updated: T36-T41
     function testDistribution0_T41() public {
@@ -638,16 +638,16 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
             assertEq(claimableRewards, 0, "claimableRewards mismatch"); 
         }
 
-    // ---- state transition: for PoolT46.t.sol ----
+// ---- state transition: for PoolT46.t.sol ----
 
-    function testUserCannotUpdateVaultFees() public {
+    function testUserCannotUpdateVaultFees_T41() public {
         vm.startPrank(user2);
             vm.expectRevert(Errors.UserIsNotCreator.selector);
             pool.updateVaultFees(vaultId1, 1000, 1000, 1000);
         vm.stopPrank();
     }
 
-    function testCannotExceedMaximumFeeFactor() public {
+    function testCannotExceedMaximumFeeFactor_T41() public {
         // Get current creator fee
         uint256 currentCreatorFee = pool.getVault(vaultId1).creatorFeeFactor;
         
@@ -661,7 +661,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         vm.stopPrank();
     }
 
-    function testCreatorCannotIncreaseCreatorFees() public {
+    function testCreatorCannotIncreaseCreatorFees_T41() public {
         // Get current creator fee
         uint256 currentCreatorFee = pool.getVault(vaultId1).creatorFeeFactor;
         
@@ -674,7 +674,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         vm.stopPrank();
     }
 
-    function testCreatorCannotDecreaseNftFees() public {
+    function testCreatorCannotDecreaseNftFees_T41() public {
         // Get current nft fee
         uint256 currentNftFee = pool.getVault(vaultId1).nftFeeFactor;
         
@@ -687,7 +687,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         vm.stopPrank();
     }
 
-    function testCreatorCannotDecreaseRpFees() public {
+    function testCreatorCannotDecreaseRpFees_T41() public {
         // Get current rp fee
         uint256 currentRpFee = pool.getVault(vaultId1).realmPointsFeeFactor;
         
@@ -700,13 +700,47 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         vm.stopPrank();
     }
 
-    function testCreatorCanUpdateVaultFees() public {
+    // creator can only increase other fees, by the portion he is reducing creator fees
+    function testCreatorCannotIncreaseOtherFeesMoreThanReduction_T41() public {
+        // Get current fees
+        DataTypes.Vault memory vault = pool.getVault(vaultId1);
+
+        uint256 delta = 500;
+        uint256 creatorFeeFactor1 = vault.creatorFeeFactor - delta;
+        uint256 nftFeeFactor1 = vault.nftFeeFactor + (delta * 2);
+        uint256 realmPointsFeeFactor1 = vault.realmPointsFeeFactor + (delta * 2);
+
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.IncorrectFeeComposition.selector);
+            pool.updateVaultFees(vaultId1, nftFeeFactor1, creatorFeeFactor1, realmPointsFeeFactor1);
+        vm.stopPrank();
+    }
+    function testCreatorCanUpdateVaultFees_T41() public {
+        // incoming fees
         // Vault1 fees - user1 reduces creator fee, increases nft and rp fees
         uint256 creatorFeeFactor1 = 500; // Reduced from 1000
         uint256 nftFeeFactor1 = 1250;
         uint256 realmPointsFeeFactor1 = 1250;
+        
+        // Get current fees
+        DataTypes.Vault memory vault = pool.getVault(vaultId1);
+        
+        // Check fees are different
+        if (vault.creatorFeeFactor == creatorFeeFactor1 &&
+            vault.nftFeeFactor == nftFeeFactor1 &&
+            vault.realmPointsFeeFactor == realmPointsFeeFactor1) {
+            revert("New fees must be different from current fees");
+        }
 
         vm.startPrank(user1);
+            // events
+            vm.expectEmit(true, true, false, false);
+            emit CreatorFeeFactorUpdated(vaultId1, vault.creatorFeeFactor, creatorFeeFactor1);
+            vm.expectEmit(true, true, false, false);
+            emit NftFeeFactorUpdated(vaultId1, vault.nftFeeFactor, nftFeeFactor1);
+            vm.expectEmit(true, true, false, false);
+            emit RealmPointsFeeFactorUpdated(vaultId1, vault.realmPointsFeeFactor, realmPointsFeeFactor1);
+
             pool.updateVaultFees(vaultId1, nftFeeFactor1, creatorFeeFactor1, realmPointsFeeFactor1);
         vm.stopPrank();
 
@@ -715,7 +749,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         assertEq(pool.getVault(vaultId1).realmPointsFeeFactor, realmPointsFeeFactor1);
     }
 
-    // ---- state transition: for PoolT46p_EndDistribution.t.sol ----
+// ---- state transition: for PoolT46p_EndDistribution.t.sol ----
 
     function testUserCannotEndDistribution() public {
         vm.startPrank(user1);
