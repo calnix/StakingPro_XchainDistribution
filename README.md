@@ -1,7 +1,5 @@
 # Overview
 
-## Versions 
-
 - StakingPro will be initially deployed on Base, paired with a RewardsVaultV1.sol contract.
 - Subsequently, StakingPro will be updated with paired with a RewardsVaultV2.sol contract.
 
@@ -16,12 +14,12 @@ That's maybe for V3. However, I am building it in mind to allow for such modular
 
 While we initially began building this to be specifically for our internal use - meaning with MocaNFTS, MocaTokens and RealmPoints.
 
-We wanted this to be useable by other projects in the future. That would require this working w/o RealmPoints or a different NFT collection, perhaps no NFTs at all. To that end, some parts are made modular/flexible - where certain specifics are not enforced/checked. 
+We wanted this to be useable by other projects in the future. That would require this working w/o RealmPoints or a different NFT collection, perhaps no NFTs at all. To that end, some parts are made modular/flexible - where certain specifics are not enforced/checked.
 
 ## Doc directory
 
-* ContractExplanations.md explains and walkthrough contract functionality. I've tried to be as detailed as possible.
-* Risk.md covers the risk approach - like pausing contracts, in what order and such.
-* test/TestOverview.md describes the core unit testing scenarios covered in sequence and parallel.
-* Additional coverage tests can be found at test/FunctionStates.md.
+* [Documentation\ContractExplanations.md](Documentation\ContractExplanations.md) explains and walkthrough contract functionality. I've tried to be as detailed as possible.
+* [Documentation\Risk.md](Documentation\Risk.md) covers the risk approach - like pausing contracts, in what order and such.
+* [test\TestOverview.md](test\TestOverview.md) describes the core unit testing scenarios covered in sequence and parallel.
+* Additional coverage tests can be found at [test\FunctionStates.md](test\FunctionStates.md).
 * src/ignore is out of scope. please ignore.
