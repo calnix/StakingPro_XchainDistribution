@@ -64,6 +64,13 @@ abstract contract StateT61_Vault2CooldownActivated is StateT56_UsersClaimRewards
 
 
 contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivated {
+
+    function testCannotActivateCooldownRepeatedly_T61() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.VaultEndTimeSet.selector);
+            pool.activateCooldown(vaultId1);
+        vm.stopPrank();
+    }
     
 // ---------------- base assets ----------------
 

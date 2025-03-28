@@ -13,8 +13,8 @@ Check if repeating the exact same actions more than once and see if it breaks so
 - stakeRp [same nonce]
 - claimRewards [no double claiming]  | testRepeatedClaimRewards_T56
 - createVault [w/ same nfts]
-- activateCooldown
-- endVaults
+- activateCooldown | testCannotActivateCooldownRepeatedly_T61
+- endVaults | 
 
 ## Pool Logic functions
 
@@ -183,3 +183,17 @@ Fee validation states:
 (-) Creator reduces creator fee but increases other fees by more than reduction (revert: `IncorrectFeeComposition`) | testCreatorCannotIncreaseOtherFeesMoreThanReduction_T41
 
 (+) Creator can update fees (decrease creator fee, increase NFT/RP fees) within MAXIMUM_FEE_FACTOR | testCreatorCanUpdateVaultFees_T41
+
+## activateCooldown + executeActivateCooldown
+
+Contract states:
+(-) Contract not started (should revert) | testCannotActivateCooldownWhenNotStarted
+(-) Contract paused (should revert) | testCannotActivateCooldownWhenPaused
+(-) Contract under maintenance (should revert) | testCannotActivateCooldownWhenInMaintenanceMode
+(+) Contract ended | testCanActivateCooldownAfterContractEnded
+
+Vault states:
+(-) Vault cooldown already activated (revert: `VaultEndTimeSet`) | testCannotActivateCooldownRepeatedly_T61
+(-) Caller is not vault creator (revert: `UserIsNotCreator`) | testNonCreatorCannotActivateCooldown_T56
+(-) Cannot activateCooldown on ended vault (revert: `VaultAlreadyRemoved`) | testCannotActivateCooldownOnEndedVault_T86461
+(+) Creator can activate cooldown on their vault | testVault2ActivateCooldown_T56

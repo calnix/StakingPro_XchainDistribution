@@ -92,7 +92,11 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         pool.updateVaultFees(vaultId1, 1000, 1000, 1000);
     }
     
-    
+    function testCannotActivateCooldownWhenPaused() public {
+        vm.prank(user1);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.activateCooldown(vaultId1);
+    }
 }
 
 abstract contract StateT56p_Frozen is StateT56p_Paused {

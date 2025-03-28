@@ -68,6 +68,14 @@ abstract contract StateT86461_Vault2Ended is StateT61_Vault2CooldownActivated {
 
 contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
 
+    function testCannotActivateCooldownOnEndedVault_T86461() public {
+        vm.startPrank(user2);
+            vm.expectRevert(Errors.VaultAlreadyRemoved.selector);
+            pool.activateCooldown(vaultId2);
+        vm.stopPrank();
+    }
+
+// ---------------- base assets ----------------
     function testPool_T86461() public {
         DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
         DataTypes.Vault memory vault2 = pool.getVault(vaultId2);
@@ -151,7 +159,7 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
         assertEq(vault2.realmPointsFeeFactor, 750);  
     }    
 
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
     
     // previously updated at T61
     function testDistribution0_T86461() public {
@@ -522,7 +530,7 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
             assertEq(claimableRewards, expectedClaimableRewards, "claimableRewards mismatch"); 
         }*/
 
-    // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
 
     function testDistribution1_T86461() public {
         DataTypes.Distribution memory distribution = getDistribution(1);
@@ -682,7 +690,7 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
     }
 
 
-    // --------------- connector ---------------
+// --------------- state transition ---------------
 
     function testUser2CanUnstakeAfterVault2Ended() public {
         

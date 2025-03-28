@@ -98,6 +98,13 @@ contract StateT0_DeployTest is StateT0_Deploy {
         pool.updateVaultFees(bytes32(uint256(1)), 1000, 1000, 1000);
     }
 
+    function testCannotActivateCooldownWhenNotStarted() public {
+        vm.prank(user1);
+
+        vm.expectRevert(Errors.NotStarted.selector);
+        pool.activateCooldown(bytes32(uint256(1)));
+    }
+
     function testOperatorCanSetupDistribution() public {
         vm.prank(operator);
         

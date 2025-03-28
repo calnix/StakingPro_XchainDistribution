@@ -76,20 +76,6 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
         vm.stopPrank();
     }
 
-    function testCanActivateCooldownAfterContractEnded() public {
-        // get initial vault state
-        DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
-
-        vm.startPrank(user1);
-            pool.activateCooldown(vaultId1);
-        vm.stopPrank();
-
-        // check that vault state has changed
-        DataTypes.Vault memory vaultAfter = pool.getVault(vaultId1);
-        assertEq(vaultAfter.endTime, pool.endTime(), "Vault end time not set correctly");
-        assertLe(vaultAfter.endTime, block.timestamp + pool.VAULT_COOLDOWN_DURATION(), "Vault end time should not exceed contract end time");
-    }
-
     function testCanUnstakeAfterContractEnded() public {
         // Get initial vault and user state
         DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
@@ -108,6 +94,21 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
         // Check user state after unstake
         DataTypes.User memory userAfter = pool.getUser(user1, vaultId1);
         assertEq(userAfter.stakedTokens, userBefore.stakedTokens - unstakeAmount, "User staked tokens not reduced correctly");
+    }
+    
+    function testCanActivateCooldownAfterContractEnded() public {
+        // Get initial vault state
+        DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
+        assertEq(vaultBefore.endTime, 0, "Vault end time should be 0");
+
+        vm.startPrank(user1);
+            pool.activateCooldown(vaultId1);
+        vm.stopPrank();
+
+        // Check vault state after cooldown activation
+        DataTypes.Vault memory vaultAfter = pool.getVault(vaultId1);
+        assertEq(vaultAfter.endTime, pool.endTime(), "Vault end time not set correctly");
+        assertLe(vaultAfter.endTime, block.timestamp + pool.VAULT_COOLDOWN_DURATION(), "Vault end time should not exceed contract end time");
     }
     
     function testCanEndVaultsAfterContractEnded() public {

@@ -983,7 +983,7 @@ contract StateT56_UsersClaimRewardsFromBothVaultsTest is StateT56_UsersClaimRewa
     
 // --------------- state transition ---------------
 
-    function testUserCannotActivateCooldown() public {
+    function testNonCreatorCannotActivateCooldown_T56() public {
         
         vm.startPrank(user1);
             vm.expectRevert(Errors.UserIsNotCreator.selector);
@@ -991,7 +991,7 @@ contract StateT56_UsersClaimRewardsFromBothVaultsTest is StateT56_UsersClaimRewa
         vm.stopPrank();
     }
 
-    function testVault2ActivateCooldown() public {
+    function testVault2ActivateCooldown_T56() public {
         uint256 expectedEndTime = block.timestamp + pool.VAULT_COOLDOWN_DURATION();
 
         vm.startPrank(user2);
@@ -1005,7 +1005,7 @@ contract StateT56_UsersClaimRewardsFromBothVaultsTest is StateT56_UsersClaimRewa
         assertEq(vault.endTime, expectedEndTime, "Incorrect endTime");
     }
 
-    // state transition: for parallel tests - `PoolT61p_UpdateVaultCooldown`
+// state transition: for parallel tests - `PoolT61p_UpdateVaultCooldown`
     function testUserCannotUpdateVaultCooldown() public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));

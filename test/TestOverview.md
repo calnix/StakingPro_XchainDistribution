@@ -80,8 +80,8 @@ Use of RewardsVaultV1.sol.
     - both distributions updated
     - both vault accounts updated
     - user1+vault1 updated
-    - user2+vault1 NOT updated
-    - user1+vault2 NOT updated
+    - *user2+vault1 NOT updated*
+    - *user1+vault2 NOT updated*
     - user2+vault2 updated
 
 13. T56: Claim Rewards
