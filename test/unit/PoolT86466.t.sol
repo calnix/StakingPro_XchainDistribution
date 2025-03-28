@@ -57,6 +57,13 @@ contract StateT86466_User2UnstakedFromVault2Test is StateT86466_User2UnstakedFro
         assertApproxEqAbs(claimableRewards, claimableAtT86461, 1676, "Claimed rewards do not match expected amount from T86461");   
     }
 
+    function testUserCannotSetEndTime() public {
+        vm.startPrank(user1);
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            pool.setEndTime(block.timestamp + 1);
+        vm.stopPrank();
+    }
+
     function testCannotSetZeroEndTime() public {
         vm.startPrank(operator);
             vm.expectRevert(Errors.InvalidEndTime.selector);

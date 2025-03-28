@@ -36,7 +36,8 @@ contract StateT0_DeployTest is StateT0_Deploy {
         assertEq(pool.hasRole(pool.OPERATOR_ROLE(), operator), true);
     }
     
-    // ------ create vault ------
+// ------ user fns ------
+
     function testCannotCreateVaultWhenNotStarted() public {
         vm.prank(user1);
 
@@ -48,7 +49,6 @@ contract StateT0_DeployTest is StateT0_Deploy {
         pool.createVault(user1NftsArray, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
     }
 
-    // ------ stakeTokens ------
     function testCannotStakeTokensWhenNotStarted() public {
         vm.prank(user1);
 
@@ -112,6 +112,29 @@ contract StateT0_DeployTest is StateT0_Deploy {
         pool.endVaults(new bytes32[](1));
     }
 
+// ------ operator fns ------
+
+    function testCannotStakeOnBehalfWhenNotStarted() public {
+        vm.prank(operator);
+
+        vm.expectRevert(Errors.NotStarted.selector);
+        pool.stakeOnBehalfOf(new bytes32[](1), new address[](1), new uint256[](1));
+    }
+
+    function testCanSetEndTimeWhenNotStarted() public {
+        // Check initial end time
+        assertEq(pool.endTime(), 0);
+        
+        uint256 newEndTime = block.timestamp + 1;
+        
+        vm.prank(operator);
+        pool.setEndTime(newEndTime);
+        
+        // Check end time was updated
+        assertEq(pool.endTime(), newEndTime);
+    }
+    
+
     function testOperatorCanSetupDistribution() public {
         vm.prank(operator);
         
@@ -126,18 +149,6 @@ contract StateT0_DeployTest is StateT0_Deploy {
         pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);        
     }
 
-    function testCannotStakeOnBehalfWhenNotStarted() public {
-        vm.prank(operator);
-
-        vm.expectRevert(Errors.NotStarted.selector);
-        pool.stakeOnBehalfOf(new bytes32[](1), new address[](1), new uint256[](1));
-    }
-
-    /**
-        note: test the other whenNotStarted
-        - all stake fns
-        - claim, etc
-     */   
 }
 
 abstract contract StateT0_DeployAndSetupStakingPower is StateT0_Deploy {

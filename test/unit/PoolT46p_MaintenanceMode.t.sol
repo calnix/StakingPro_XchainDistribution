@@ -108,6 +108,19 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         vm.stopPrank();
     }
 
+    function testCanSetEndTimeWhenInMaintenanceMode() public {
+        // Check initial end time
+        assertEq(pool.endTime(), 0);
+        
+        uint256 newEndTime = block.timestamp + 1;
+        
+        vm.startPrank(operator);
+            pool.setEndTime(newEndTime);
+        vm.stopPrank();
+
+        assertEq(pool.endTime(), newEndTime);
+    }
+
     function testOperatorCanUpdateDistributions() public {
         
         // check distributions before

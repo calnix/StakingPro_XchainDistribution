@@ -14,7 +14,7 @@ Check if repeating the exact same actions more than once and see if it breaks so
 - claimRewards [no double claiming]  | testRepeatedClaimRewards_T56
 - createVault [w/ same nfts]
 - activateCooldown | testCannotActivateCooldownRepeatedly_T61
-- endVaults |
+- endVaults | testCannotSetEndTimeAfterContractEnded
 
 ## Pool Logic functions
 
@@ -236,3 +236,19 @@ Vault states:
 
 (-) Users cannot call (revert) | testUserCannotStakeOnBehalfOf_T36
 (+) Successful stakeOnBehalfOf| testOperatorCanStakeOnBehalfOfUser2_T36
+
+## setEndTime
+
+Contract states:
+(-) Contract paused (should revert)    | testCannotSetEndTimeWhenPaused
+(+) Contract under maintenance         | testCanSetEndTimeWhenInMaintenanceMode
+(+) Contract not started               | testCanSetEndTimeWhenNotStarted
+(+) Contract ended                     | testCanSetEndTimeAfterContractEnded
+
+(-) Zero end time (revert: `InvalidEndTime`) | testCannotSetZeroEndTime
+(-) Past end time (revert: `InvalidEndTime`) | testCannotSetEndTimeInPast
+(-) Users cannot set end time (revert)       | testUserCannotSetEndTime
+(-) Operator cannot set endTime when ended   | testCannotSetEndTimeAfterContractEnded
+(+) Operator can set and overwrite end Time  | testCanSetEndTimeMultipleTimes
+(+) Operator can set end time                | testSetContractEndTime
+

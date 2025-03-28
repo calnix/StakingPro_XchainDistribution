@@ -113,6 +113,12 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         vm.expectRevert(Pausable.EnforcedPause.selector);
         pool.stakeOnBehalfOf(new bytes32[](1), new address[](1), new uint256[](1));
     }
+
+    function testCannotSetEndTimeWhenPaused() public {
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.setEndTime(block.timestamp + 1);
+    }
 }
 
 abstract contract StateT56p_Frozen is StateT56p_Paused {

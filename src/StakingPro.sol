@@ -658,7 +658,11 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(newRewardsVault == address(0)) revert Errors.InvalidAddress();   
 
         // other than D0, there should not be any other active distributions
-        if(activeDistributions.length > 1) revert Errors.ActiveTokenDistributions();
+        if(activeDistributions.length > 1) {
+            
+            DataTypes.Distribution storage distribution = distributions[activeDistributions[0]];
+            if(distribution.distributionId != 0) revert Errors.ActiveTokenDistributions();
+        }
 
         emit RewardsVaultSet(address(REWARDS_VAULT), newRewardsVault);
         REWARDS_VAULT = IRewardsVault(newRewardsVault);    
