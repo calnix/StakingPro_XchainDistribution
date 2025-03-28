@@ -900,10 +900,24 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
         pool.stakeRP(vaultId2, 1000 ether, block.timestamp + 1, signature);
     }
 
+    // from vault1 to vault2. vault2 on cooldown 
     function testCannotMigrateRpToVaultOnceCooldownActivated() public {
         vm.prank(user2);
         vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
         pool.migrateRealmPoints(vaultId1, vaultId2, 1000);
+    }
+
+    function testCannotStakeOnBehalfAfterCooldownActivated_T61() public {
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId2;
+        address[] memory onBehalfOfs = new address[](1);
+        onBehalfOfs[0] = user2;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1000;  
+
+        vm.prank(operator);
+        vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
+        pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
     }
 
     function testCanUnstakeTokensOnceCooldownActivated() public {
@@ -966,7 +980,6 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
         assertEq(totalBoostedTokensBefore, totalBoostedTokensAfter, "totalBoostedStakedTokens changed");
         assertEq(totalBoostedRPBefore, totalBoostedRPAfter, "totalBoostedRealmPoints changed");
     }
-    
     
     // if(vault.endTime == 0) continue;
     function testContinueEndVaultsOnVaultWithNoEndTime_T61() public {

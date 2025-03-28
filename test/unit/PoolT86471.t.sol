@@ -76,6 +76,13 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
         vm.stopPrank();
     }
 
+    function testCannotStakeOnBehalfAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.stakeOnBehalfOf(new bytes32[](1), new address[](1), new uint256[](1));
+        vm.stopPrank();
+    }
+
     function testCanUnstakeAfterContractEnded() public {
         // Get initial vault and user state
         DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);

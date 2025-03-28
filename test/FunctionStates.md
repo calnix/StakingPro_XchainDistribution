@@ -216,3 +216,23 @@ Vault states:
 (+) endVaults executes as expected when conditions are met | testAnyoneCanEndVault
 
 **check that track assets in executeEndVaults() only executes once, on the final**
+
+## stakeOnBehalfOf + executeStakeOnBehalfOf
+
+Contract states:
+(-) Contract not started (should revert) | testCannotStakeOnBehalfWhenNotStarted
+(-) Contract paused (should revert) | testCannotStakeOnBehalfWhenPaused
+(-) Contract under maintenance (should revert) | testCannotStakeOnBehalfWhenInMaintenanceMode
+(-) Contract ended (should revert) | testCannotStakeOnBehalfAfterContractEnded
+
+Inputs checks:
+(-) Invalid amounts array (revert: `InvalidArray`) | testCannotStakeOnBehalfInvalidAmountsArray_T36
+(-) Invalid vaultId length (revert: `InvalidVaultId`) | testCannotStakeOnBehalfInvalidVaultIdArray_T36
+(-) Invalid onBehalfOfs length (revert: `InvalidAddress`) | testCannotStakeOnBehalfInvalidAddressArray_T36
+
+Vault states:
+(-) Vault cooldown activated (revert: `VaultEndTimeSet`) | testCannotStakeOnBehalfAfterCooldownActivated_T61
+(-) Vault ended (revert: `VaultEndTimeSet`) | testCannotStakeOnBehalfToEndedVault_T86461
+
+(-) Users cannot call (revert) | testUserCannotStakeOnBehalfOf_T36
+(+) Successful stakeOnBehalfOf| testOperatorCanStakeOnBehalfOfUser2_T36

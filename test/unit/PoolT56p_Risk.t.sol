@@ -104,8 +104,14 @@ contract StateT56p_PausedTest is StateT56p_Paused {
 
         bytes32[] memory vaultIds = new bytes32[](1);
         vaultIds[0] = vaultId1;
-        
+
         pool.endVaults(vaultIds);
+    }
+
+    function testCannotStakeOnBehalfWhenPaused() public {
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.stakeOnBehalfOf(new bytes32[](1), new address[](1), new uint256[](1));
     }
 }
 

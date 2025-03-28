@@ -126,6 +126,12 @@ contract StateT0_DeployTest is StateT0_Deploy {
         pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);        
     }
 
+    function testCannotStakeOnBehalfWhenNotStarted() public {
+        vm.prank(operator);
+
+        vm.expectRevert(Errors.NotStarted.selector);
+        pool.stakeOnBehalfOf(new bytes32[](1), new address[](1), new uint256[](1));
+    }
 
     /**
         note: test the other whenNotStarted

@@ -104,7 +104,7 @@ abstract contract StateT41_User2StakesToVault2_OperatorStakesOnBehalf is StateT3
 
 contract StateT41_User2StakesToVault2_OperatorStakesOnBehalfTest is StateT41_User2StakesToVault2_OperatorStakesOnBehalf {
 
-    // ---------------- base assets ----------------
+// ---------------- base assets ----------------
 
     function testPool_T41() public {
         DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
@@ -177,7 +177,7 @@ contract StateT41_User2StakesToVault2_OperatorStakesOnBehalfTest is StateT41_Use
         assertEq(vault2.boostedStakedTokens, expectedBoostedTokens);
     }
 
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
 
     // updated: T36-T41
     function testDistribution0_T41() public {
@@ -417,7 +417,7 @@ contract StateT41_User2StakesToVault2_OperatorStakesOnBehalfTest is StateT41_Use
             assertEq(userAccount.claimedCreatorRewards, 0, "claimedCreatorRewards mismatch");
         }
 
-    // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
 
     // STARTED AT T21
     function testDistribution1_T41() public {
@@ -691,7 +691,7 @@ abstract contract StateT46_CheckRewardsAccrued_AfterStakeOnBehalf is StateT41_Us
 
 contract StateT46_CheckRewardsAccrued_AfterStakeOnBehalfTest is StateT46_CheckRewardsAccrued_AfterStakeOnBehalf {
 
-    // ---------------- base assets ----------------
+// ---------------- base assets ----------------
 
     function testPool_T46() public {
         DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
@@ -772,7 +772,7 @@ contract StateT46_CheckRewardsAccrued_AfterStakeOnBehalfTest is StateT46_CheckRe
         assertEq(vault2.realmPointsFeeFactor, 625);  // 5%
     }
 
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
 
     function testDistribution0_T46() public {
 
@@ -1139,7 +1139,7 @@ contract StateT46_CheckRewardsAccrued_AfterStakeOnBehalfTest is StateT46_CheckRe
         }
 
 
-    // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
   
     function testDistribution1_T46() public {
         DataTypes.Distribution memory distribution = getDistribution(1);

@@ -101,6 +101,13 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         vm.stopPrank();
     }
 
+    function testCannotStakeOnBehalfWhenInMaintenanceMode() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InMaintenance.selector);
+            pool.stakeOnBehalfOf(new bytes32[](1), new address[](1), new uint256[](1));
+        vm.stopPrank();
+    }
+
     function testOperatorCanUpdateDistributions() public {
         
         // check distributions before

@@ -720,9 +720,43 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
     }*/
 
 
-    // ---- state transition: for PoolT41p_StakeOnBehalfOf.t.sol ----
+// --------------- state transition: for PoolT41p_StakeOnBehalfOf.t.sol ---------------
 
-    function testUserCannotStakeOnBehalfOf() public {
+    function testCannotStakeOnBehalfInvalidAmountsArray_T36() public {
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId2;
+        address[] memory onBehalfOfs = new address[](1);
+        onBehalfOfs[0] = user2;
+        uint256[] memory amounts = new uint256[](0);
+
+        vm.expectRevert(Errors.InvalidArray.selector);
+        pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
+    }
+
+    function testCannotStakeOnBehalfInvalidVaultIdArray_T36() public {
+        bytes32[] memory vaultIds = new bytes32[](0);
+        
+        address[] memory onBehalfOfs = new address[](1);
+        onBehalfOfs[0] = user2;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = user2Moca/2;
+
+        vm.expectRevert(Errors.InvalidVaultId.selector);
+        pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
+    }   
+
+    function testCannotStakeOnBehalfInvalidAddressArray_T36() public {
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId2;
+        address[] memory onBehalfOfs = new address[](0);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = user2Moca/2;
+
+        vm.expectRevert(Errors.InvalidAddress.selector);
+        pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
+    }
+
+    function testUserCannotStakeOnBehalfOf_T36() public {
         bytes32[] memory vaultIds = new bytes32[](1);
         vaultIds[0] = vaultId2;
         
@@ -738,7 +772,7 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         vm.stopPrank();
     }
 
-    function testOperatorCanStakeOnBehalfOfUser2() public {
+    function testOperatorCanStakeOnBehalfOfUser2_T36() public {
         // check initial token balances
         uint256 operatorInitialBalance = mocaToken.balanceOf(operator);
         uint256 poolInitialBalance = mocaToken.balanceOf(address(pool));
