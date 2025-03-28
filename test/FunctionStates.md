@@ -14,7 +14,8 @@ Check if repeating the exact same actions more than once and see if it breaks so
 - claimRewards [no double claiming]  | testRepeatedClaimRewards_T56
 - createVault [w/ same nfts]
 - activateCooldown | testCannotActivateCooldownRepeatedly_T61
-- endVaults | testCannotSetEndTimeAfterContractEnded
+- endVaults |
+
 
 ## Pool Logic functions
 
