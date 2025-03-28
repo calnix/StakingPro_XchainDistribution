@@ -89,6 +89,18 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         vm.stopPrank();
     }
 
+    function testCannotEndVaultWhenInMaintenanceMode() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.InMaintenance.selector);
+
+            bytes32[] memory vaultIds = new bytes32[](1);
+            vaultIds[0] = vaultId1;
+        
+            pool.endVaults(vaultIds);
+        
+        vm.stopPrank();
+    }
+
     function testOperatorCanUpdateDistributions() public {
         
         // check distributions before

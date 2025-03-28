@@ -14,7 +14,7 @@ Check if repeating the exact same actions more than once and see if it breaks so
 - claimRewards [no double claiming]  | testRepeatedClaimRewards_T56
 - createVault [w/ same nfts]
 - activateCooldown | testCannotActivateCooldownRepeatedly_T61
-- endVaults | 
+- endVaults |
 
 ## Pool Logic functions
 
@@ -204,7 +204,7 @@ Contract states:
 (-) Contract not started (should revert) | testCannotEndVaultWhenNotStarted
 (-) Contract paused (should revert) | testCannotEndVaultWhenPaused
 (-) Contract under maintenance (should revert) | testCannotEndVaultWhenInMaintenanceMode
-(+) Contract ended | testCanEndVaultAfterContractEnded
+(+) Contract ended | testCanEndVaultsAfterContractEnded
 
 Vault states:
 (-) Vault cooldown not activated (revert: `CooldownNotActivated`) | testCannotEndVaultBeforeCooldown_T56

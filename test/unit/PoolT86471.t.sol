@@ -111,6 +111,7 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
         assertLe(vaultAfter.endTime, block.timestamp + pool.VAULT_COOLDOWN_DURATION(), "Vault end time should not exceed contract end time");
     }
     
+    // now: 86472. contract ended at 86471. vault should end at 86471
     function testCanEndVaultsAfterContractEnded() public {
         // get initial vault state
         DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
@@ -123,8 +124,12 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
             pool.endVaults(vaultIds);
         vm.stopPrank();
 
-        // check that vault state has changed
+        // check that vault endTime was set + removed
         DataTypes.Vault memory vaultAfter = pool.getVault(vaultId1);
+        // vault end Time cannot exceed contract end time
+        assertLt(vaultAfter.endTime, block.timestamp, "Vault endTime was not set to less than current timestamp");
+        assertEq(vaultAfter.endTime, pool.endTime(), "Vault endTime was not set to contract end time");
+        
         assertEq(vaultAfter.removed, 1, "Vault is not removed");
     }
 

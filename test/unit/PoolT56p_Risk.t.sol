@@ -97,6 +97,16 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         vm.expectRevert(Pausable.EnforcedPause.selector);
         pool.activateCooldown(vaultId1);
     }
+
+    function testCannotEndVaultWhenPaused() public {
+        vm.prank(user1);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId1;
+        
+        pool.endVaults(vaultIds);
+    }
 }
 
 abstract contract StateT56p_Frozen is StateT56p_Paused {
