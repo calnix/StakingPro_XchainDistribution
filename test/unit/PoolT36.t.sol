@@ -729,8 +729,10 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         onBehalfOfs[0] = user2;
         uint256[] memory amounts = new uint256[](0);
 
-        vm.expectRevert(Errors.InvalidArray.selector);
-        pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidArray.selector);
+            pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
+        vm.stopPrank();
     }
 
     function testCannotStakeOnBehalfInvalidVaultIdArray_T36() public {
@@ -741,8 +743,10 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = user2Moca/2;
 
-        vm.expectRevert(Errors.InvalidVaultId.selector);
-        pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidVaultId.selector);
+            pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
+        vm.stopPrank();
     }   
 
     function testCannotStakeOnBehalfInvalidAddressArray_T36() public {
@@ -752,8 +756,10 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = user2Moca/2;
 
-        vm.expectRevert(Errors.InvalidAddress.selector);
-        pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidAddress.selector);
+            pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
+        vm.stopPrank();
     }
 
     function testUserCannotStakeOnBehalfOf_T36() public {
