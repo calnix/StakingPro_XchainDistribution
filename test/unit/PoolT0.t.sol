@@ -112,6 +112,13 @@ contract StateT0_DeployTest is StateT0_Deploy {
         pool.endVaults(new bytes32[](1));
     }
 
+    function testUserCannotSetRewardsVault() public {
+        vm.startPrank(user1);
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            pool.setRewardsVault(address(123));
+        vm.stopPrank();
+    }
+
 // ------ operator fns ------
 
     function testCannotStakeOnBehalfWhenNotStarted() public {
@@ -134,7 +141,32 @@ contract StateT0_DeployTest is StateT0_Deploy {
         assertEq(pool.endTime(), newEndTime);
     }
     
+    function testCannotSetZeroAddressAsRewardsVault() public {
+        vm.prank(operator);
+        vm.expectRevert(Errors.InvalidAddress.selector);
+        pool.setRewardsVault(address(0));
+    }
 
+    function testCanSetRewardsVaultWhenNotStarted() public {
+        // Check initial rewards vault
+        address initialRewardsVault = address(pool.REWARDS_VAULT());
+        address newRewardsVault = address(123);
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit RewardsVaultSet(initialRewardsVault, newRewardsVault);
+
+            pool.setRewardsVault(newRewardsVault);
+        vm.stopPrank();
+        
+        // Check rewards vault was updated
+        address updatedRewardsVault = address(pool.REWARDS_VAULT());
+        assertEq(updatedRewardsVault, newRewardsVault);
+        assertNotEq(initialRewardsVault, updatedRewardsVault);
+    }
+
+
+// ------ state transition ------
     function testOperatorCanSetupDistribution() public {
         vm.prank(operator);
         

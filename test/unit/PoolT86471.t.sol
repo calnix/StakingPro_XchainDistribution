@@ -25,64 +25,7 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
         vm.stopPrank();
     }
 
-    function testCannotCreateVaultAfterContractEnded() public {
-        uint256[] memory tokenIds = new uint256[](3);
-        tokenIds[0] = user3NftsArray[0];
-        tokenIds[1] = user3NftsArray[1]; 
-        tokenIds[2] = user3NftsArray[2];
-
-        vm.startPrank(user3);
-            vm.expectRevert(Errors.StakingEnded.selector);
-            pool.createVault(tokenIds, 1000, 1000, 1000);
-        vm.stopPrank();
-    }
-
-    function testCannotStakeTokensAfterContractEnded() public {
-        vm.startPrank(user1);
-            vm.expectRevert(Errors.StakingEnded.selector);
-            pool.stakeTokens(vaultId1, 1000);
-        vm.stopPrank();
-    }
-
-    function testCannotStakeNftsAfterContractEnded() public {
-        uint256[] memory tokenIds = new uint256[](2);
-        tokenIds[0] = user3NftsArray[0];
-        tokenIds[1] = user3NftsArray[1];
-
-        vm.startPrank(user3);
-            vm.expectRevert(Errors.StakingEnded.selector);
-            pool.stakeNfts(vaultId1, tokenIds);
-        vm.stopPrank();
-    }
-
-    function testCannotStakeRpAfterContractEnded() public {
-        vm.startPrank(user1);
-            vm.expectRevert(Errors.StakingEnded.selector);
-            pool.stakeRP(vaultId1, 1000, block.timestamp + 1, bytes(""));
-        vm.stopPrank();
-    }
-
-    function testCannotMigrateRpAfterContractEnded() public {
-        vm.startPrank(user1);
-            vm.expectRevert(Errors.StakingEnded.selector);
-            pool.migrateRealmPoints(vaultId1, vaultId2, 250 ether);
-        vm.stopPrank();
-    }
-
-    function testCannotUpdateVaultFeesAfterContractEnded() public {
-        vm.startPrank(user1);
-            vm.expectRevert(Errors.StakingEnded.selector);
-            pool.updateVaultFees(vaultId1, 1000, 1000, 1000);
-        vm.stopPrank();
-    }
-
-    function testCannotStakeOnBehalfAfterContractEnded() public {
-        vm.startPrank(operator);
-            vm.expectRevert(Errors.StakingEnded.selector);
-            pool.stakeOnBehalfOf(new bytes32[](1), new address[](1), new uint256[](1));
-        vm.stopPrank();
-    }
-
+// ---- state tests ----
     function testCanUnstakeAfterContractEnded() public {
         // Get initial vault and user state
         DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
@@ -160,4 +103,73 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
         // Check no more rewards claimable
         assertEq(pool.getClaimableRewards(user1, vaultId1, 1), 0, "Distribution 1 still has claimable rewards");
     }
+
+// ---- users fns ----
+    function testCannotCreateVaultAfterContractEnded() public {
+        uint256[] memory tokenIds = new uint256[](3);
+        tokenIds[0] = user3NftsArray[0];
+        tokenIds[1] = user3NftsArray[1]; 
+        tokenIds[2] = user3NftsArray[2];
+
+        vm.startPrank(user3);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.createVault(tokenIds, 1000, 1000, 1000);
+        vm.stopPrank();
+    }
+
+    function testCannotStakeTokensAfterContractEnded() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.stakeTokens(vaultId1, 1000);
+        vm.stopPrank();
+    }
+
+    function testCannotStakeNftsAfterContractEnded() public {
+        uint256[] memory tokenIds = new uint256[](2);
+        tokenIds[0] = user3NftsArray[0];
+        tokenIds[1] = user3NftsArray[1];
+
+        vm.startPrank(user3);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.stakeNfts(vaultId1, tokenIds);
+        vm.stopPrank();
+    }
+
+    function testCannotStakeRpAfterContractEnded() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.stakeRP(vaultId1, 1000, block.timestamp + 1, bytes(""));
+        vm.stopPrank();
+    }
+
+    function testCannotMigrateRpAfterContractEnded() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.migrateRealmPoints(vaultId1, vaultId2, 250 ether);
+        vm.stopPrank();
+    }
+
+    function testCannotUpdateVaultFeesAfterContractEnded() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.updateVaultFees(vaultId1, 1000, 1000, 1000);
+        vm.stopPrank();
+    }
+
+// ---- operator fns ----
+    function testCannotStakeOnBehalfAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.stakeOnBehalfOf(new bytes32[](1), new address[](1), new uint256[](1));
+        vm.stopPrank();
+    }
+
+    function testCannotSetRewardsVaultAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.setRewardsVault(address(123));
+        vm.stopPrank();
+    }
+
+
 }   

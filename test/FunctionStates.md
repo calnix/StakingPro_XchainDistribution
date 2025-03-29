@@ -253,3 +253,26 @@ Contract states:
 (+) Operator can set and overwrite end Time  | testCanSetEndTimeMultipleTimes
 (+) Operator can set end time                | testSetContractEndTime
 
+## setRewardsVault
+
+Contract states:
+(+) Contract not started                          | testCanSetRewardsVaultWhenNotStarted
+(-) Contract paused (should revert)               | testCannotSetRewardsVaultWhenPaused
+(-) Contract under maintenance (should revert)    | testCannotSetRewardsVaultWhenInMaintenanceMode
+(-) Contract ended                                | testCannotSetRewardsVaultAfterContractEnded
+
+(-) Invalid address (revert: `InvalidAddress`)                      | testCannotSetZeroAddressAsRewardsVault
+(-) Active token distributions (revert: `ActiveTokenDistributions`) | testCannotSetRewardsVaultWhenTokenDistributionExists_T11
+(-) Users cannot set rewards vault (revert)                         | testUserCannotSetRewardsVault
+
+## updateActiveDistributions
+
+Contract states:
+(-) Contract not started (should revert) | testCannotUpdateActiveDistributionsWhenNotStarted
+(-) Contract paused (should revert) | testCannotUpdateActiveDistributionsWhenPaused
+(+) Contract under maintenance (should revert) | testCanSetRewardsVaultWhenInMaintenanceMode
+(-) Contract ended (should revert) | testCannotUpdateActiveDistributionsAfterContractEnded
+
+(-) Invalid max active allowed (revert: `InvalidMaxActiveAllowed`) | testCannotUpdateActiveDistributionsWithInvalidMaxActiveAllowed
+(-) Users cannot update active distributions (revert) | testUserCannotUpdateActiveDistributions
+(+) Operator can update active distributions | testOperatorCanUpdateActiveDistributions

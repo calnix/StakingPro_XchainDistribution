@@ -53,7 +53,14 @@ contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
         test post dstr setup stuff
      */
 
-    // ---------------- distribution 1 ----------------
+    function testCannotSetRewardsVaultWhenTokenDistributionExists_T11() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.ActiveTokenDistributions.selector);
+            pool.setRewardsVault(address(123));
+        vm.stopPrank();
+    }
+
+// ---------------- distribution 1 ----------------
 
     function testDistribution1_T11() public {
         DataTypes.Distribution memory distribution = getDistribution(1);

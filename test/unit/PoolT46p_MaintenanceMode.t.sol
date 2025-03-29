@@ -21,11 +21,12 @@ abstract contract StateT46p_MaintenanceMode is StateT41_User2StakesToVault2 {
 }
 
 contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
-
+    
     function testPool_InMaintenanceMode() public {
         assertEq(pool.isUnderMaintenance(), 1);
     }
 
+// ---- users fns ---- 
     function testCannotCreateVaultWhenInMaintenanceMode() public {
         vm.startPrank(user1);
             vm.expectRevert(Errors.InMaintenance.selector);
@@ -101,6 +102,7 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         vm.stopPrank();
     }
 
+// ---- operator fns ----
     function testCannotStakeOnBehalfWhenInMaintenanceMode() public {
         vm.startPrank(operator);
             vm.expectRevert(Errors.InMaintenance.selector);
@@ -111,7 +113,7 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
     function testCanSetEndTimeWhenInMaintenanceMode() public {
         // Check initial end time
         assertEq(pool.endTime(), 0);
-        
+
         uint256 newEndTime = block.timestamp + 1;
         
         vm.startPrank(operator);
@@ -121,6 +123,31 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         assertEq(pool.endTime(), newEndTime);
     }
 
+    function testCanSetRewardsVaultWhenInMaintenanceMode() public {
+
+        // assume stakingPro only has 1 active distribution: D0
+        vm.startPrank(operator);
+            pool.endDistribution(1);
+        vm.stopPrank();
+
+        assertEq(pool.getActiveDistributionsLength(), 1);
+        
+        // now that there is only 1 active distribution, we can set the rewards vault
+        address initialRewardsVault = address(pool.REWARDS_VAULT());
+        address newRewardsVault = address(123);
+
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit RewardsVaultSet(initialRewardsVault, newRewardsVault);
+            pool.setRewardsVault(newRewardsVault);
+        vm.stopPrank();
+
+        assertEq(address(pool.REWARDS_VAULT()), newRewardsVault);
+        assertNotEq(initialRewardsVault, newRewardsVault);
+    }
+
+
+// ---- state transition ----
     function testOperatorCanUpdateDistributions() public {
         
         // check distributions before

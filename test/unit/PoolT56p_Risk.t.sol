@@ -108,6 +108,7 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         pool.endVaults(vaultIds);
     }
 
+// ------ operator fns ------
     function testCannotStakeOnBehalfWhenPaused() public {
         vm.prank(operator);
         vm.expectRevert(Pausable.EnforcedPause.selector);
@@ -119,6 +120,14 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         vm.expectRevert(Pausable.EnforcedPause.selector);
         pool.setEndTime(block.timestamp + 1);
     }
+
+    function testCannotSetRewardsVaultWhenPaused() public { 
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.setRewardsVault(address(123));
+    }
+    
+    
 }
 
 abstract contract StateT56p_Frozen is StateT56p_Paused {
