@@ -268,11 +268,11 @@ Contract states:
 ## updateActiveDistributions
 
 Contract states:
-(-) Contract not started (should revert) | testCannotUpdateActiveDistributionsWhenNotStarted
-(-) Contract paused (should revert) | testCannotUpdateActiveDistributionsWhenPaused
-(+) Contract under maintenance (should revert) | testCanSetRewardsVaultWhenInMaintenanceMode
-(-) Contract ended (should revert) | testCannotUpdateActiveDistributionsAfterContractEnded
+(+) Contract not started                                | testCanUpdateActiveDistributionsWhenNotStarted
+(-) Contract paused (should revert)                     | testCannotUpdateActiveDistributionsWhenPaused
+(+) Contract under maintenance (should revert)          | testCanSetRewardsVaultWhenInMaintenanceMode
+(-) Contract ended (should revert)                      | testCannotUpdateActiveDistributionsAfterContractEnded
 
 (-) Invalid max active allowed (revert: `InvalidMaxActiveAllowed`) | testCannotUpdateActiveDistributionsWithInvalidMaxActiveAllowed
-(-) Users cannot update active distributions (revert) | testUserCannotUpdateActiveDistributions
-(+) Operator can update active distributions | testOperatorCanUpdateActiveDistributions
+(-) Users cannot update active distributions (revert)   | testUserCannotUpdateActiveDistributions
+(+) Operator can update active distributions            | testOperatorCanUpdateActiveDistributions

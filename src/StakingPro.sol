@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+/**
+ * @title StakingPro
+ * @custom:version 1.0
+ * @custom:author Calnix(@cal_nix)
+ * @notice Multi-asset staking contract with X-chain distriubtion capabilities
+ */
+
 import './Events.sol';
 import {Errors} from './Errors.sol';
 import {DataTypes} from './DataTypes.sol';

@@ -608,10 +608,10 @@ All prior nonces have been used up.
 
 > [signature malleability](https://github.com/kadenzipfel/smart-contract-vulnerabilities/blob/master/vulnerabilities/signature-malleability.md)
 
-## migrateRP
+## migrateRealmPoints
 
 ```solidity
-migrateRP(bytes32 oldVaultId, bytes32 newVaultId, uint256 amount) external whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance 
+migrateRealmPoints(bytes32 oldVaultId, bytes32 newVaultId, uint256 amount) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance 
 ```
 
 Allows users to migrate their staked RP from one vault to another:
@@ -1186,11 +1186,7 @@ The flow requires:
 - EVMVault to have sufficient token balance
 - LayerZero messaging to be operational
 
-If LayerZero messaging fails:
-
-1. Owner can call `payRewards()` directly on EVMVault as backup, instructing to pay specified user
-2. This privileged function allows manual reward distribution if needed
-3. RewardsVaultV2 state is still updated via LayerZero retry mechanism
+>If LayerZero messaging fails, we will move to distribute rewards to users directly, via airdrop or similar.
 
 Key considerations:
 
@@ -1235,8 +1231,6 @@ Example:
 2. StakingPro calculates rewards and calls `payRewards()` on RewardsVaultV2
 3. RewardsVaultV2 checks `dstEid`, and `payRewards` will trigger `_lzsend` to the corresponding EvmVault
 4. EvmVault will initiate token transfer to user on remote, via `_lzReceive`
-
-EvmVault has a privileged function `payRewards`, as a backup in case LZ x-chain communications fail.
 
 ![Claiming Remote Rewards Flow](claimingRemote.png)
 
