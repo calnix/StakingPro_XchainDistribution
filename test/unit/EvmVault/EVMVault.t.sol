@@ -457,6 +457,30 @@ abstract contract State_UnclaimedDueToPause is State_PauseEVMVault {
 
 contract State_UnclaimedDueToPause_Test is State_UnclaimedDueToPause {
 
+    function test_OwnerCanExit() public {
+
+        // Check token balances before exit
+        uint256 vaultBalanceBefore = rewardsToken1.balanceOf(address(evmVault));
+        uint256 ownerBalanceBefore = rewardsToken1.balanceOf(owner);
+        
+        // Check state before exit
+        assertTrue(evmVault.paused(), "Contract should be paused before test");
+
+        // Exit
+        vm.startPrank(owner);
+            evmVault.exit(address(rewardsToken1));
+        vm.stopPrank();
+
+        // Check token balances after exit
+        uint256 vaultBalanceAfter = rewardsToken1.balanceOf(address(evmVault));
+        uint256 ownerBalanceAfter = rewardsToken1.balanceOf(owner);
+        
+        // Verify tokens were transferred
+        assertEq(vaultBalanceAfter, 0, "Vault balance should be zero after exit");
+        assertEq(ownerBalanceAfter, ownerBalanceBefore + vaultBalanceBefore, "Owner should receive all tokens from vault");
+    }
+        
+
     function test_OwnerCanUnpause() public {
         
         // Check state before unpause
@@ -547,3 +571,4 @@ contract State_CollectUnclaimedRewards_Test is State_CollectUnclaimedRewards {
         assertEq(receiverBalanceAfter, receiverBalanceBefore + amount, "receiver balance should increase by amount");
     }
 }
+
