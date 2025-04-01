@@ -752,6 +752,11 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
         // cannot exceed max
         if(activeDistributions.length >= maxActiveAllowed) revert Errors.MaxActiveDistributions();
+
+        // d0 must be first
+        if(activeDistributions.length == 0) {
+            if(distributionId != 0) revert Errors.InvalidDistributionId();
+        }
             
         if(tokenPrecision == 0) revert Errors.ZeroTokenPrecision();
         if(emissionPerSecond == 0) revert Errors.ZeroEmissionRate();
