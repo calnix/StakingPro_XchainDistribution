@@ -77,7 +77,7 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
             if(msg.value < fee.nativeFee) revert Errors.InsufficientGas();
             
             // send
-            _lzSend(distribution.dstEid, payload, options, fee, payable(msg.sender));
+            _lzSend(distribution.dstEid, payload, options, fee, payable(staker));
         }
     }
 
