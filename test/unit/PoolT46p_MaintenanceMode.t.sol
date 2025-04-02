@@ -51,7 +51,7 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
     function testCannotStakeRPWhenInMaintenanceMode() public {
         vm.startPrank(user1);
             vm.expectRevert(Errors.InMaintenance.selector);
-            pool.stakeRP(vaultId1, 1000, block.timestamp + 1, bytes(""));
+            pool.stakeRealmPoints(vaultId1, 1000, block.timestamp + 1, bytes(""));
         vm.stopPrank();
     }
 

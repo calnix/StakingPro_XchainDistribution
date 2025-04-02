@@ -20,10 +20,10 @@ event StakedTokens(address indexed user, bytes32 indexed vaultId, uint256 amount
 event StakedNfts(address indexed user, bytes32 indexed vaultId, uint256[] tokenIds);
 event VaultBoostFactorUpdated(bytes32 indexed vaultId, uint256 oldBoostFactor, uint256 newBoostFactor);
 
-// stakeRP
+// stakeRealmPoints
 event StakedRealmPoints(address indexed user, bytes32 indexed vaultId, uint256 amount, uint256 boostedAmount);
 
-// migrateRP
+// migrateRealmPoints
 event RealmPointsMigrated(address indexed user, bytes32 indexed vaultId, bytes32 indexed newVaultId, uint256 amount);
 
 // unstakeAll

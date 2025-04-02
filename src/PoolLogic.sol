@@ -100,7 +100,7 @@ library PoolLogic {
         return ((vault.boostedStakedTokens - oldBoostedStakedTokens), (vault.boostedRealmPoints - oldBoostedRealmPoints));
     }
 
-    function executeStakeRP(
+    function executeStakeRealmPoints(
         uint256[] storage activeDistributions,
         mapping(bytes32 vaultId => DataTypes.Vault vault) storage vaults,
         mapping(uint256 distributionId => DataTypes.Distribution distribution) storage distributions,

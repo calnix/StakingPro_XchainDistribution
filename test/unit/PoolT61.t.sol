@@ -897,7 +897,7 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
         
         vm.prank(user3);
         vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
-        pool.stakeRP(vaultId2, 1000 ether, block.timestamp + 1, signature);
+        pool.stakeRealmPoints(vaultId2, 1000 ether, block.timestamp + 1, signature);
     }
 
     // from vault1 to vault2. vault2 on cooldown 

@@ -587,10 +587,10 @@ Allows users to stake NFTs into a specified vault:
 
 The staked NFTs contribute to boosting the vault's staked Tokens and Realm Points, which determines its share of rewards from active distributions.
 
-## stakeRP
+## stakeRealmPoints
 
 ```solidity
-stakeRP(bytes32 vaultId, uint256 amount, uint256 expiry, bytes calldata signature) external whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance
+stakeRealmPoints(bytes32 vaultId, uint256 amount, uint256 expiry, bytes calldata signature) external whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance
 ```
 
 Allows users to stake Realm Points into a specified vault:
@@ -763,7 +763,7 @@ updateMaximumFeeFactor(uint256 newFactor) external whenNotEnded whenNotPaused on
 updateMinimumRealmPoints(uint256 newAmount) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE)
 ```
 
-- Updates the storage variable `MINIMUM_REALMPOINTS_REQUIRED`; which is referenced in `stakeRP()`.
+- Updates the storage variable `MINIMUM_REALMPOINTS_REQUIRED`; which is referenced in `stakeRealmPoints()`.
 - Can increase/decrease it to adjust the barrier to entry.
 - Zero amount not allowed.
 
@@ -1133,8 +1133,6 @@ If verification fails, end the contract and redeploy.
 
 When all the vaults have been updated to use the latest `NFT_MULTIPLIER` value, `totalBoostedStakedTokens` and `totalBoostedRealmPoints` should match up.
 This serves as a sanity check to ensure that the multiplier is updated correctly, as well as the vaults are updated correctly.
-
-Note: `_updateDistributionIndex` returns if paused. This prevents multiple updates to distribution indexes during `updateAllVaultAccounts()`.
 
 ## 7. How to end stakingPro and/or migrate to a new stakingPro contract (endTime)
 

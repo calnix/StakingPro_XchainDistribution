@@ -31,8 +31,8 @@ contract StateT6_User2StakeAssetsToVault1_LowerMinimumRpTest is StateT6_User2Sta
             uint256 nonce = 0;
             bytes memory signature = generateSignature(user2, vaultId1, rpToStake, expiry, nonce);
             
-            vm.expectRevert(abi.encodeWithSelector(Errors.MinimumRpRequired.selector));
-            pool.stakeRP(vaultId1, rpToStake, expiry, signature);
+            vm.expectRevert(abi.encodeWithSelector(Errors.MinimumRealmPointsRequired.selector));
+            pool.stakeRealmPoints(vaultId1, rpToStake, expiry, signature);
         vm.stopPrank();
     }
 
@@ -49,7 +49,7 @@ contract StateT6_User2StakeAssetsToVault1_LowerMinimumRpTest is StateT6_User2Sta
             uint256 expiry = block.timestamp + 1 days;
             uint256 nonce = 0;  
             bytes memory signature = generateSignature(user2, vaultId1, rpToStake, expiry, nonce);
-            pool.stakeRP(vaultId1, rpToStake, expiry, signature);
+            pool.stakeRealmPoints(vaultId1, rpToStake, expiry, signature);
         vm.stopPrank();
 
 
@@ -117,8 +117,8 @@ contract StateT6_User2StakeAssetsToVault1_HigherMinimumRpTest is StateT6_User2St
             uint256 nonce = 0;
             bytes memory signature = generateSignature(user2, vaultId1, rpToStake, expiry, nonce);
             
-            vm.expectRevert(abi.encodeWithSelector(Errors.MinimumRpRequired.selector));
-            pool.stakeRP(vaultId1, rpToStake, expiry, signature);
+            vm.expectRevert(abi.encodeWithSelector(Errors.MinimumRealmPointsRequired.selector));
+            pool.stakeRealmPoints(vaultId1, rpToStake, expiry, signature);
         vm.stopPrank();
     }
 
@@ -135,7 +135,7 @@ contract StateT6_User2StakeAssetsToVault1_HigherMinimumRpTest is StateT6_User2St
             uint256 expiry = block.timestamp + 1 days;
             uint256 nonce = 0;  
             bytes memory signature = generateSignature(user2, vaultId1, rpToStake, expiry, nonce);
-            pool.stakeRP(vaultId1, rpToStake, expiry, signature);
+            pool.stakeRealmPoints(vaultId1, rpToStake, expiry, signature);
         vm.stopPrank();
 
         // check user after

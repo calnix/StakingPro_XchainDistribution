@@ -69,7 +69,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     // signature params
     address public immutable STORED_SIGNER;                 
     uint256 public MINIMUM_REALMPOINTS_REQUIRED;
-    bytes32 public constant TYPEHASH = keccak256("StakeRp(address user,bytes32 vaultId,uint256 amount,uint256 expiry,uint256 nonce)");
+    bytes32 public constant TYPEHASH = keccak256("StakeRealmPoints(address user,bytes32 vaultId,uint256 amount,uint256 expiry,uint256 nonce)");
 
     // distributions
     uint256[] public activeDistributions;    // array stores key values for distributions mapping; includes not yet started distributions  
@@ -303,9 +303,9 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * - Signature must be valid and from the stored signer
      * - Contract must not be paused and staking must have started
      */
-    function stakeRP(bytes32 vaultId, uint256 amount, uint256 expiry, bytes calldata signature) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance {
+    function stakeRealmPoints(bytes32 vaultId, uint256 amount, uint256 expiry, bytes calldata signature) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance {
         if(expiry < block.timestamp) revert Errors.SignatureExpired();
-        if(amount < MINIMUM_REALMPOINTS_REQUIRED) revert Errors.MinimumRpRequired();
+        if(amount < MINIMUM_REALMPOINTS_REQUIRED) revert Errors.MinimumRealmPointsRequired();
 
         // verify signature
         bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(TYPEHASH, msg.sender, vaultId, amount, expiry, userNonces[msg.sender])));
@@ -324,7 +324,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
         uint256 incomingBoostedRealmPoints 
-            = PoolLogic.executeStakeRP(activeDistributions, vaults, distributions, users, vaultAccounts, userAccounts, params,
+            = PoolLogic.executeStakeRealmPoints(activeDistributions, vaults, distributions, users, vaultAccounts, userAccounts, params,
                 amount);
 
         // update storage: pool assets
