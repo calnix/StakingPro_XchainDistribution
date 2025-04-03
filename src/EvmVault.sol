@@ -125,6 +125,9 @@ contract EVMVault is OApp, Pausable, Ownable2Step, AccessControl {
         tokens[token].totalDeposited += amount;
 
         emit Deposit(token, from, amount, distributionId);
+
+        // transfer from sender
+        IERC20(token).safeTransferFrom(from, address(this), amount);
     }
     
     /** Note: Refer to process comment block above for more details.
@@ -150,6 +153,8 @@ contract EVMVault is OApp, Pausable, Ownable2Step, AccessControl {
         tokens[token] = tokenInfo;
 
         emit Withdraw(token, to, amount, distributionId);  
+
+        IERC20(token).safeTransfer(to, amount);
     }
 
 //------------------------------- LAYERZERO --------------------------------------
