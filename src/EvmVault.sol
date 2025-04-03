@@ -149,7 +149,6 @@ contract EVMVault is OApp, Pausable, Ownable2Step, AccessControl {
 
         emit Withdraw(token, to, amount, distributionId);  
 
-        // transfer to receiver
         IERC20(token).safeTransfer(to, amount);
     }
 

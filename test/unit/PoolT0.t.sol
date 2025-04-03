@@ -165,7 +165,6 @@ contract StateT0_DeployTest is StateT0_Deploy {
         assertNotEq(initialRewardsVault, updatedRewardsVault);
     }
 
-
 // ------ state transition ------
     function testOperatorCanSetupDistribution() public {
         vm.prank(operator);

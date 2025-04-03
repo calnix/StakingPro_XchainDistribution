@@ -510,7 +510,7 @@ library PoolLogic {
             uint256 previousLastUpdateTimeStamp = distribution.lastUpdateTimeStamp;
 
             // Update distribution first
-            distribution = _updateDistributionIndex(distribution, activeDistributions, params.totalBoostedRealmPoints, params.totalBoostedStakedTokens, params.isPaused);
+            distribution = _updateDistributionIndex(distribution, activeDistributions, params.totalBoostedRealmPoints, params.totalBoostedStakedTokens);
             // only push to storage if distribution was updated
             if(distribution.lastUpdateTimeStamp > previousLastUpdateTimeStamp) distributions[distributionId] = distribution; 
             
@@ -632,8 +632,7 @@ library PoolLogic {
         uint256 newEndTime, 
         uint256 newEmissionPerSecond,
         uint256 totalBoostedRealmPoints,
-        uint256 totalBoostedStakedTokens,
-        bool isPaused
+        uint256 totalBoostedStakedTokens
     ) external returns(uint256) {
         
         DataTypes.Distribution memory distribution = distributions[distributionId];
@@ -643,7 +642,7 @@ library PoolLogic {
         if(block.timestamp >= distribution.endTime) revert Errors.DistributionEnded();
 
         // update distribution index
-        distribution = _updateDistributionIndex(distribution, activeDistributions, totalBoostedRealmPoints, totalBoostedStakedTokens, isPaused);
+        distribution = _updateDistributionIndex(distribution, activeDistributions, totalBoostedRealmPoints, totalBoostedStakedTokens);
 
         // startTime modification
         if(newStartTime > 0) {
@@ -747,12 +746,11 @@ library PoolLogic {
         uint256[] storage activeDistributions,
         DataTypes.Distribution memory distribution,
         uint256 totalBoostedRealmPoints,
-        uint256 totalBoostedStakedTokens,
-        bool isPaused
+        uint256 totalBoostedStakedTokens
     ) external returns(DataTypes.Distribution memory) {
 
         // update distribution index
-        distribution = _updateDistributionIndex(distribution, activeDistributions, totalBoostedRealmPoints, totalBoostedStakedTokens, isPaused);
+        distribution = _updateDistributionIndex(distribution, activeDistributions, totalBoostedRealmPoints, totalBoostedStakedTokens);
 
         return distribution;
     }
@@ -823,18 +821,11 @@ library PoolLogic {
         DataTypes.Distribution memory distribution, 
         uint256[] storage activeDistributions, 
         uint256 totalBoostedRealmPoints, 
-        uint256 totalBoostedStakedTokens,
-        bool isPaused
+        uint256 totalBoostedStakedTokens
     ) internal returns (DataTypes.Distribution memory) {
         
-        // if paused, do not update distribution
-        if(isPaused) return distribution;
-
         // distribution has ended, and final update done
         if(distribution.lastUpdateTimeStamp == distribution.endTime) return distribution;
-
-        // distribution already updated
-        // if(distribution.lastUpdateTimeStamp == block.timestamp) return distribution; note: can remove; checked in _calculateDistributionIndex
 
         // distribution has not started
         if(block.timestamp < distribution.startTime) return distribution;
@@ -942,8 +933,7 @@ library PoolLogic {
             distribution, 
             activeDistributions, 
             params.totalBoostedRealmPoints, 
-            params.totalBoostedStakedTokens,
-            params.isPaused
+            params.totalBoostedStakedTokens
         );
 
         // vault already been updated by a prior txn; skip updating vaultAccount

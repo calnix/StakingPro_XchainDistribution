@@ -19,6 +19,8 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
     uint128 public constant GAS_LIMIT = 90_000;
     uint128 public gasBuffer;
 
+    mapping(uint32 dstEid => uint128 gasBuffer) public dstGasBuffer;
+
 //------------------------------- constructor ----------------------------
     constructor(address moneyManager, address monitor, address owner, address pool, address endpoint) 
         RewardsVaultV1(moneyManager, monitor, owner, pool) OApp(endpoint, owner) Ownable(owner) {
@@ -68,22 +70,15 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
         }
         else { // we assume all else is x-chain evm
             
-            // ------------------------ LZ ----------------------------
-
-            // create options: dst gas needed for lzReceive execution on remote
-            bytes memory options;
-            options = OptionsBuilder.newOptions().addExecutorLzReceiveOption({_gas: GAS_LIMIT + gasBuffer, _value: 0});
-
-            // craft payload: beneficiary address + amount
-            bytes memory payload = abi.encode(distribution.tokenAddress, amount, receiver);
-
-            // check gas needed
+            (bytes memory payload, bytes memory options) = _buildPayloadAndOptions(distribution.tokenAddress, amount, receiver, distribution.dstEid);
+            
+            // quote: MessagingFee struct quotes in both native gas and ZRO token
             MessagingFee memory fee = _quote(distribution.dstEid, payload, options, false);
             if(msg.value < fee.nativeFee) revert Errors.InsufficientGas();
             
             // MessagingFee: Fee struct containing native gas and ZRO token
             // returns MessagingReceipt struct
-            _lzSend(distribution.dstEid, payload, options, fee, payable(msg.sender));
+            _lzSend(distribution.dstEid, payload, options, fee, payable(staker));
         }
     }
 
@@ -114,28 +109,48 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
      * @dev Should be left untouched, unless there is an unexpected breaking LZ change
      * @param gasBuffer_ Amount of additional gas for execution on dstChain
      */
-    function setGasBuffer(uint128 gasBuffer_) external onlyOwner {
-        gasBuffer = gasBuffer_;
+    function setGasBuffer(uint32 dstEid, uint128 gasBuffer_) external onlyOwner {
+        dstGasBuffer[dstEid] = gasBuffer_;
     } 
 
     /** 
-     * @dev Quotes the gas needed to pay for the full omnichain transaction.
-     * @param to Address of beneficiary
+     * @dev Quotes the gas needed to pay for the full x-chain transaction
+     * @param tokenAddress Address of token
      * @param amount Amount of tokens to be dispensed (expressed in its native precision)
+     * @param receiver Address of beneficiary
+     * @param dstEid Destination endpoint ID
      */
-    function quote(bytes32 to, uint256 amount, uint32 dstEid) external view returns (uint256 nativeFee, uint256 lzTokenFee) {
+    function quote(bytes32 tokenAddress, uint256 amount, address receiver, uint32 dstEid) external view returns (uint256 nativeFee, uint256 lzTokenFee) {
         if(amount == 0) revert Errors.InvalidAmount();
-        if(to == bytes32(0)) revert Errors.InvalidAddress();
-        
-        // payload
-        bytes memory payload = abi.encode(to, amount);
+        if(receiver == address(0)) revert Errors.InvalidAddress();
+        if(tokenAddress == bytes32(0)) revert Errors.InvalidAddress();
+
+        (bytes memory payload, bytes memory options) = _buildPayloadAndOptions(tokenAddress, amount, receiver, dstEid);
+
+        MessagingFee memory fee = _quote(dstEid, payload, options, false);
+
+        return (fee.nativeFee, fee.lzTokenFee);
+    }
+
+
+    /**
+     * @notice Internal function that builds the payload and options for cross-chain transfers
+     * @param tokenAddress The token address encoded as bytes32
+     * @param amount The amount of tokens to transfer
+     * @param receiver The address that will receive the tokens
+     * @param dstEid The destination endpoint ID
+     */
+    function _buildPayloadAndOptions(bytes32 tokenAddress, uint256 amount, address receiver, uint32 dstEid) internal view returns (bytes memory payload, bytes memory options) {
+
+        // craft payload: token address + amount + beneficiary address
+        bytes memory payload = abi.encode(tokenAddress, amount, receiver);
 
         // create options
         bytes memory options;
-        options = OptionsBuilder.newOptions().addExecutorLzReceiveOption({_gas: GAS_LIMIT + gasBuffer, _value: 0});
-
-        MessagingFee memory fee = _quote(dstEid, payload, options, false);
-        return (fee.nativeFee, fee.lzTokenFee);
+        options = OptionsBuilder.newOptions().addExecutorLzReceiveOption({_gas: GAS_LIMIT + dstGasBuffer[dstEid], _value: 0});
+        
+        // check gas needed
+        return (payload, options);
     }
 
     /**
@@ -147,7 +162,6 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
      * @custom:anon-param options: Any extra data or options to trigger on receipt.
      */
     function _lzReceive(Origin calldata origin, bytes32 /*guid*/, bytes calldata payload, address /*executor*/, bytes calldata /*options*/) internal virtual override {}
-
 
 //------------------------------- OWNABLE2STEP ---------------------------------
 

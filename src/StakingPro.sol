@@ -752,6 +752,11 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
         // cannot exceed max
         if(activeDistributions.length >= maxActiveAllowed) revert Errors.MaxActiveDistributions();
+
+        // d0 must be first
+        if(activeDistributions.length == 0) {
+            if(distributionId != 0) revert Errors.InvalidDistributionId();
+        }
             
         if(tokenPrecision == 0) revert Errors.ZeroTokenPrecision();
         if(emissionPerSecond == 0) revert Errors.ZeroEmissionRate();
@@ -838,7 +843,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(newStartTime == 0 && newEndTime == 0 && newEmissionPerSecond == 0) revert Errors.InvalidDistributionParameters(); 
 
         uint256 newTotalRequired = PoolLogic.executeUpdateDistributionParams(activeDistributions, distributions, distributionId, newStartTime, newEndTime, newEmissionPerSecond, 
-            totalBoostedRealmPoints, totalBoostedStakedTokens, paused());
+            totalBoostedRealmPoints, totalBoostedStakedTokens);
 
         // transfer rewards to user, from rewardsVault
         if(distributionId > 0) REWARDS_VAULT.updateDistribution(distributionId, newTotalRequired);
@@ -858,7 +863,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(distribution.manuallyEnded == 1) revert Errors.DistributionManuallyEnded();
    
         // update distribution index
-        distribution = PoolLogic.executeUpdateDistributionIndex(activeDistributions, distribution, totalBoostedRealmPoints, totalBoostedStakedTokens, paused());
+        distribution = PoolLogic.executeUpdateDistributionIndex(activeDistributions, distribution, totalBoostedRealmPoints, totalBoostedStakedTokens);
 
         // end distribution
         distribution.manuallyEnded = 1;
@@ -938,7 +943,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             distributionsToProcess[i] = activeDistributions[i];
         }
         
-        bool isPaused = paused();
         if(numOfDistributions > 0){           
             
             for(uint256 i; i < numOfDistributions; ++i) {
@@ -947,7 +951,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
                 // update distribution index
                 distributions[distributionId] 
-                        = PoolLogic.executeUpdateDistributionIndex(activeDistributions, distributions[distributionId], totalBoostedRealmPoints, totalBoostedStakedTokens, isPaused);
+                        = PoolLogic.executeUpdateDistributionIndex(activeDistributions, distributions[distributionId], totalBoostedRealmPoints, totalBoostedStakedTokens);
             }
 
             emit DistributionsUpdated(activeDistributions);
