@@ -76,7 +76,8 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
             MessagingFee memory fee = _quote(distribution.dstEid, payload, options, false);
             if(msg.value < fee.nativeFee) revert Errors.InsufficientGas();
             
-            // send
+            // MessagingFee: Fee struct containing native gas and ZRO token
+            // returns MessagingReceipt struct
             _lzSend(distribution.dstEid, payload, options, fee, payable(staker));
         }
     }

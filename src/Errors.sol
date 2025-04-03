@@ -13,6 +13,7 @@ library Errors {
     error InvalidAddress();
     error InvalidStartTime();
     error UserIsNotCreator();
+    error InvalidDistributionId();
     error VaultEndTimeSet(bytes32 vaultId);
     error NonExistentVault(bytes32 vaultId);
 
@@ -88,7 +89,6 @@ library Errors {
 
 // -------------------------------------- RewardsVault + EvmVault ------------------------------------------------------
     
-    error InvalidDistributionId();
     error InsufficientDeposit();
     error DistributionNotSetup();
     error ExcessiveDeposit();
