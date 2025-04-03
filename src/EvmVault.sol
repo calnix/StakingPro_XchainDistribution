@@ -141,16 +141,11 @@ contract EVMVault is OApp, Pausable, Ownable2Step, AccessControl {
     function withdraw(address token, uint256 amount, address to, uint256 distributionId) external whenNotPaused onlyRole(MONEY_MANAGER_ROLE) {
         if(token == address(0)) revert Errors.InvalidTokenAddress();
 
-        TokenInfo memory tokenInfo = tokens[token];
-        
         // check balance
-        if(tokenInfo.totalDeposited < amount) revert Errors.InsufficientBalance();
+        if(tokens[token].totalDeposited < amount) revert Errors.InsufficientBalance();
 
         // update
-        tokenInfo.totalDeposited -= amount;
-        
-        // storage
-        tokens[token] = tokenInfo;
+        tokens[token].totalDeposited -= amount;
 
         emit Withdraw(token, to, amount, distributionId);  
 
