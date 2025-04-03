@@ -83,7 +83,7 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
             
             // MessagingFee: Fee struct containing native gas and ZRO token
             // returns MessagingReceipt struct
-            _lzSend(distribution.dstEid, payload, options, fee, payable(msg.sender));
+            _lzSend(distribution.dstEid, payload, options, fee, payable(staker));
         }
     }
 
