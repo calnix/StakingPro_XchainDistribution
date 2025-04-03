@@ -46,7 +46,7 @@ abstract contract StateT1_User1StakeAssetsToVault1 is StateT1_CreateVault1 {
             uint256 expiry = block.timestamp + 1 days;
             uint256 nonce = 0;
             bytes memory signature = generateSignature(user1, vaultId1, user1Rp/2, expiry, nonce);
-            pool.stakeRP(vaultId1, user1Rp/2, expiry, signature);
+            pool.stakeRealmPoints(vaultId1, user1Rp/2, expiry, signature);
 
         vm.stopPrank();
     }

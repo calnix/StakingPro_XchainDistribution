@@ -85,7 +85,7 @@ Contract states:
 
 RP validation states:
 (-) expiry < block.timestamp revert Errors.SignatureExpired() | testCannotStakeRpExpiredSignature
-(-) amount < MINIMUM_REALMPOINTS_REQUIRED revert Errors.MinimumRpRequired() | testCannotStakeRpLessThanMinimumRealmPoints
+(-) amount < MINIMUM_REALMPOINTS_REQUIRED revert Errors.MinimumRealmPointsRequired() | testCannotStakeRpLessThanMinimumRealmPoints
 (-) signer != STORED_SIGNER revert Errors.InvalidSignature() | testCannotStakeRpInvalidSignature
 
 Vault states:

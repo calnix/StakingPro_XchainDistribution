@@ -65,7 +65,7 @@ contract StateT56p_PausedTest is StateT56p_Paused {
     function testCannotStakeRPWhenPaused() public {
         vm.prank(user1);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        pool.stakeRP(vaultId1, 1000, block.timestamp + 1, bytes(""));
+        pool.stakeRealmPoints(vaultId1, 1000, block.timestamp + 1, bytes(""));
     }
 
     function testCannotMigrateRpWhenPaused() public {

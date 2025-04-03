@@ -157,14 +157,14 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
     function testCannotStakeRpExpiredSignature() public {
         vm.startPrank(user1);
             vm.expectRevert(Errors.SignatureExpired.selector);
-            pool.stakeRP(vaultId1, 1000, block.timestamp - 1, bytes(""));
+            pool.stakeRealmPoints(vaultId1, 1000, block.timestamp - 1, bytes(""));
         vm.stopPrank();
     }
 
     function testCannotStakeRpLessThanMinimumRealmPoints() public {
         vm.startPrank(user1);
-            vm.expectRevert(Errors.MinimumRpRequired.selector);
-            pool.stakeRP(vaultId1, 1000, block.timestamp + 1, bytes(""));
+            vm.expectRevert(Errors.MinimumRealmPointsRequired.selector);
+            pool.stakeRealmPoints(vaultId1, 1000, block.timestamp + 1, bytes(""));
         vm.stopPrank();
     }
 
@@ -190,7 +190,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
 
         vm.startPrank(user1);
             vm.expectRevert(Errors.InvalidSignature.selector);
-            pool.stakeRP(vaultId1, 1000 ether, block.timestamp + 1, invalidSignature);
+            pool.stakeRealmPoints(vaultId1, 1000 ether, block.timestamp + 1, invalidSignature);
         vm.stopPrank();
     }
 
@@ -297,7 +297,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
 
         // Stake realm points
         vm.prank(user2);
-        pool.stakeRP(vaultId1, realmPointsAmount, expiry, signature);
+        pool.stakeRealmPoints(vaultId1, realmPointsAmount, expiry, signature);
 
         // Verify state changes
         DataTypes.Vault memory vaultAfter = pool.getVault(vaultId1);
@@ -322,7 +322,7 @@ abstract contract StateT1_User1StakeAssetsToVault1 is StateT1_CreateVault1 {
         uint256 expiry = block.timestamp + 1 days;
         uint256 nonce = 0;
         bytes memory signature = generateSignature(user1, vaultId1, user1Rp/2, expiry, nonce);
-        pool.stakeRP(vaultId1, user1Rp/2, expiry, signature);
+        pool.stakeRealmPoints(vaultId1, user1Rp/2, expiry, signature);
 
         vm.stopPrank();
     }

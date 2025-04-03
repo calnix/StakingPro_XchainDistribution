@@ -67,7 +67,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
         vm.prank(user1);
 
         vm.expectRevert(Errors.NotStarted.selector);
-        pool.stakeRP(bytes32(uint256(1)), 1000, block.timestamp + 1, bytes(""));
+        pool.stakeRealmPoints(bytes32(uint256(1)), 1000, block.timestamp + 1, bytes(""));
     }
 
     function testCannotMigrateRpWhenNotStarted() public {

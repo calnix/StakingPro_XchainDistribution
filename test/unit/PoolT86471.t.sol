@@ -138,7 +138,7 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
     function testCannotStakeRpAfterContractEnded() public {
         vm.startPrank(user1);
             vm.expectRevert(Errors.StakingEnded.selector);
-            pool.stakeRP(vaultId1, 1000, block.timestamp + 1, bytes(""));
+            pool.stakeRealmPoints(vaultId1, 1000, block.timestamp + 1, bytes(""));
         vm.stopPrank();
     }
 

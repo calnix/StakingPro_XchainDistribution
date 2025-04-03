@@ -25,7 +25,7 @@ library Errors {
 
     // stakeRealmPoints
     error SignatureExpired();
-    error MinimumRpRequired();
+    error MinimumRealmPointsRequired();
     error InvalidSignature();
     error UserHasNothingStaked(bytes32 vaultId, address user);
     // migrateRealmPoints

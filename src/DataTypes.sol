@@ -108,7 +108,7 @@ contract DataTypes {
                                 STAKE RP
     //////////////////////////////////////////////////////////////*/
 
-    struct StakeRp {
+    struct StakeRealmPoints {
         address user;
         bytes32 vaultId;
         uint256 amount;
