@@ -83,7 +83,7 @@ contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
     function testOperatorCannotUpdateActiveDistributionsToZero() public {
         vm.startPrank(operator);
             vm.expectRevert(abi.encodeWithSelector(Errors.InvalidMaxActiveAllowed.selector));
-            pool.updateActiveDistributions(0);
+            pool.updateMaxActiveDistributions(0);
         vm.stopPrank();
     }
 
@@ -91,21 +91,69 @@ contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
         vm.startPrank(operator);
             uint256 activeDistributionsLength = pool.getActiveDistributionsLength();
             vm.expectRevert(abi.encodeWithSelector(Errors.MaxActiveDistributions.selector));
-            pool.updateActiveDistributions(activeDistributionsLength - 1);
+            pool.updateMaxActiveDistributions(activeDistributionsLength - 1);
         vm.stopPrank();
     }
 
-    // state transition
+// state transition: Pool16.t.sol
     function testOperatorCanUpdateActiveDistributions() public {
         // operator updates active distribution
         vm.startPrank(operator);
             vm.expectEmit(true, false, false, false);
             emit MaximumActiveDistributionsUpdated(pool.getActiveDistributionsLength() + 1);
-            pool.updateActiveDistributions(pool.getActiveDistributionsLength() + 1);
+            pool.updateMaxActiveDistributions(pool.getActiveDistributionsLength() + 1);
         vm.stopPrank();
 
         assertEq(pool.getActiveDistributionsLength(), 2);
         assertEq(pool.maxActiveAllowed(), 3);
     }
 
+// state transition: Pool16p_UpdateActiveDistributions.t.sol
+
+    function testUserCannotUpdateActiveDistributions_T11() public {
+        uint256 currentActive = pool.getActiveDistributionsLength();
+        
+        vm.startPrank(user1);
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            pool.updateMaxActiveDistributions(currentActive + 1);
+        vm.stopPrank();
+    }
+
+    function testCannotSetMaxActiveDistributionsToZero_T11() public {
+        vm.startPrank(operator);
+            vm.expectRevert(abi.encodeWithSelector(Errors.InvalidMaxActiveAllowed.selector));
+            pool.updateMaxActiveDistributions(0);
+        vm.stopPrank();
+    }
+
+    function testCannotUpdateActiveDistributionsToLessThanCurrent_T11() public {
+        // Get current
+        uint256 currentActive = pool.getActiveDistributionsLength();
+        
+        uint256 newMaxActive = 1;
+        assert(currentActive > newMaxActive);
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.MaxActiveDistributions.selector);
+            pool.updateMaxActiveDistributions(newMaxActive);
+        vm.stopPrank();
+    }
+
+
+    function testCanUpdateActiveDistributionsToBeGreaterThanCurrent_T11() public {
+        // Check initial value
+        uint256 initialMaxActive = pool.maxActiveAllowed();
+        uint256 newMaxActive = initialMaxActive + 1;
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, false, false, false);
+            emit MaximumActiveDistributionsUpdated(newMaxActive);
+            
+            pool.updateMaxActiveDistributions(newMaxActive);
+        vm.stopPrank();
+        
+        // Check value was updated
+        uint256 updatedMaxActive = pool.maxActiveAllowed();
+        assertEq(updatedMaxActive, newMaxActive);
+    }
 }

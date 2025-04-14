@@ -16,9 +16,6 @@ import { OptionsBuilder } from "@layerzerolabs/oapp-evm/contracts/oapp/libs/Opti
 
 contract EVMVault is OApp, Pausable, Ownable2Step, AccessControl {
     using SafeERC20 for IERC20;
-
-    // the eid of the destination chain
-    uint32 public immutable dstEid;
     
     // roles
     bytes32 public constant MONITOR_ROLE = keccak256("MONITOR_ROLE");                // only pause  
@@ -38,8 +35,12 @@ contract EVMVault is OApp, Pausable, Ownable2Step, AccessControl {
     // Track rewards unclaimable due to insufficient balance
     mapping(address user => mapping(address token => uint256 amount)) public unclaimable;
     
-    constructor(uint32 dstEid_, address endpoint, address owner, address monitor, address moneyManager) OApp(endpoint, owner) Ownable(owner) {
-        dstEid = dstEid_;
+    constructor(address endpoint, address owner, address monitor, address moneyManager) OApp(endpoint, owner) Ownable(owner) {
+
+        // sanity checks
+        if(owner == address(0)) revert Errors.InvalidAddress();
+        if(monitor == address(0)) revert Errors.InvalidAddress();
+        if(moneyManager == address(0)) revert Errors.InvalidAddress();
 
         // access control
         _grantRole(DEFAULT_ADMIN_ROLE, owner);              // default admin role for all roles

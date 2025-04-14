@@ -676,7 +676,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @dev Cannot reduce below current number of active distributions
      * @param newMaxActiveAllowed The new maximum number of active distributions to allow
      */
-    function updateActiveDistributions(uint256 newMaxActiveAllowed) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+    function updateMaxActiveDistributions(uint256 newMaxActiveAllowed) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
         if(newMaxActiveAllowed == 0) revert Errors.InvalidMaxActiveAllowed();
         if(newMaxActiveAllowed < activeDistributions.length) revert Errors.MaxActiveDistributions();
 
@@ -1121,7 +1121,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             if(stakedNfts > 0){
 
                 // track total
-                userTotalTokenIds = _concatArrays(userTotalTokenIds, userVaultAssets.tokenIds);
+                userTotalTokenIds = PoolLogic.concatArrays(userTotalTokenIds, userVaultAssets.tokenIds);
                 userTotalStakedNfts += stakedNfts;
 
                 // decrement
@@ -1132,7 +1132,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             // creation nfts
             if(vault.creator == onBehalfOf){
 
-                userTotalTokenIds = _concatArrays(userTotalTokenIds, vault.creationTokenIds);
+                userTotalTokenIds = PoolLogic.concatArrays(userTotalTokenIds, vault.creationTokenIds);
                 userTotalCreationNfts += vault.creationTokenIds.length;
 
                 delete vault.creationTokenIds;
@@ -1167,27 +1167,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     }
 
 //-------------------------------internal-----------------------------------------------------
-
-    ///@dev concat two uint256 arrays: [1,2,3],[4,5] -> [1,2,3,4,5]
-    function _concatArrays(uint256[] memory arr1, uint256[] memory arr2) internal pure returns(uint256[] memory) {
-        
-        // create resulting arr
-        uint256 len1 = arr1.length;
-        uint256 len2 = arr2.length;
-        uint256[] memory resArr = new uint256[](len1 + len2);
-        
-        uint256 i;
-        for (; i < len1; i++) {
-            resArr[i] = arr1[i];
-        }
-        
-        uint256 j;
-        while (j < len2) {
-            resArr[i++] = arr2[j++];
-        }
-
-        return resArr;
-    }
 
     ///@dev Generate a vaultId. keccak256 is cheaper than using a counter with a SSTORE, even accounting for eventual collision retries.
     function _generateVaultId(uint256 salt, address user) internal view returns (bytes32) {
@@ -1309,59 +1288,5 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // latest value, storage not updated
         return totalUnclaimedRewards;
     }
-/*
-    //note: remove after testing
-    function getViewVaultAccount(bytes32 vaultId, uint256 distributionId) external view returns (DataTypes.VaultAccount memory, DataTypes.Distribution memory)  {
-        DataTypes.UpdateAccountsIndexesParams memory params;
-            //params.user = msg.sender;   
-            params.vaultId = vaultId;
-            params.PRECISION_BASE = PRECISION_BASE;
-            params.totalBoostedRealmPoints = totalBoostedRealmPoints;
-            params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
-        DataTypes.Vault memory vault = vaults[vaultId];
-        DataTypes.VaultAccount memory vaultAccount = vaultAccounts[vaultId][distributionId];
-        DataTypes.Distribution memory distribution = distributions[distributionId];
-        return PoolLogic.viewVaultAccount(vault, vaultAccount, distribution, params);
-    }
-
-    //note: remove after testing
-    function getViewUserAccount(address user, bytes32 vaultId, uint256 distributionId) external view returns (DataTypes.UserAccount memory, DataTypes.VaultAccount memory, DataTypes.Distribution memory) {
-        DataTypes.UpdateAccountsIndexesParams memory params;
-            params.user = user;   
-            params.vaultId = vaultId;
-            params.PRECISION_BASE = PRECISION_BASE;
-            params.totalBoostedRealmPoints = totalBoostedRealmPoints;
-            params.totalBoostedStakedTokens = totalBoostedStakedTokens;
-
-        DataTypes.User memory user_ = users[user][vaultId];
-        DataTypes.UserAccount memory userAccount = userAccounts[user][vaultId][distributionId];
-        DataTypes.Vault memory vault = vaults[vaultId];
-        DataTypes.VaultAccount memory vaultAccount = vaultAccounts[vaultId][distributionId];
-        DataTypes.Distribution memory distribution = distributions[distributionId];
-
-        return PoolLogic.viewUserAccount(user_, userAccount, vault, vaultAccount, distribution, params);
-    }
-
-/** 
-    // Function to get creation token IDs for a vault
-    function getVaultCreationTokenIds(bytes32 vaultId) external view returns (uint256[] memory) {
-        return vaults[vaultId].creationTokenIds;
-    }
-
-    // Function to get full array of staked token IDs for a user
-    function getUserTokenIds(address user, bytes32 vaultId) external view returns (uint256[] memory) {
-        return users[user][vaultId].tokenIds;
-    }
-
-    function getVaultCreationTokenIdAt(bytes32 vaultId, uint256 index) external view returns (uint256) {
-        require(index < vaults[vaultId].creationTokenIds.length, "Index out of bounds");
-        return vaults[vaultId].creationTokenIds[index];
-    }
-
-    // Get the length of the array
-    function getVaultCreationTokenIdsLength(bytes32 vaultId) external view returns (uint256) {
-        return vaults[vaultId].creationTokenIds.length;
-    }
-*/
 }

@@ -114,12 +114,13 @@ event EvmReceiverSet(address indexed setter, address indexed evmAddress);
 event DistributionCreated(uint256 indexed distributionId, uint32 dstEid, bytes32 tokenAddress);
 event DistributionUpdated(uint256 indexed distributionId, uint256 newTotalRequired);
 event DistributionEnded(uint256 indexed distributionId, uint256 finalTotalRequired);
-event PayRewards(uint256 indexed distributionId, address indexed to, bytes32 indexed receiver, uint256 amount);
+event PayRewards(uint256 indexed distributionId, address indexed to, address indexed receiver, uint256 amount);
 event Deposit(uint256 indexed distributionId, uint32 dstEid, address indexed from, uint256 amount);
 event Withdraw(uint256 indexed distributionId, uint32 dstEid, address indexed to, uint256 amount);
 
 // -------------------------------------- RewardsVaultV2 --------------------------------------------------------------------
 event RemoteBalanceUpdated(uint256 indexed distributionId, uint256 amount, uint256 isDeposit);
+event GasBufferUpdated(uint32 indexed dstEid, uint128 gasBuffer);
 
 // -------------------------------------- EvmVault --------------------------------------------------------------------
 event Deposit(address token, address from, uint256 amount, uint256 distributionId);

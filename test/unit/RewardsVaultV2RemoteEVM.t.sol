@@ -136,7 +136,7 @@ contract StateT11_Distribution1DepositedOnEvmVaultTest is StateT11_Distribution1
         vm.startPrank(user2);
             // expect emit
             vm.expectEmit(true, true, true, true);
-            emit PayRewards(1, user2, bytes32(uint256(uint160(user2))), 3166666666666666294);
+            emit PayRewards(1, user2, user2, 3166666666666666294);
             pool.claimRewards{value: 0.1 ether}(vaultId1, 1);
         vm.stopPrank();
 

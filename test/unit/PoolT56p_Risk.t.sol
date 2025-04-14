@@ -127,7 +127,11 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         pool.setRewardsVault(address(123));
     }
     
-    
+    function testCannotUpdateActiveDistributionsWhenPaused() public {
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.updateMaxActiveDistributions(1);
+    }
 }
 
 abstract contract StateT56p_Frozen is StateT56p_Paused {

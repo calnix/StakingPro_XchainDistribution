@@ -77,7 +77,7 @@ abstract contract GasProfilingForEVMVault is TestingHarness {
         
         // setup evmVault
         vm.startPrank(address(owner));
-            evmVault = new EVMVault(dstEid, address(lzMock), owner, monitor, depositor);
+            evmVault = new EVMVault(address(lzMock), owner, monitor, depositor);
         vm.stopPrank();
         
         // mint directly to evmVault

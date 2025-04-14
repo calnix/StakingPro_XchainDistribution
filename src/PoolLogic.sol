@@ -8,8 +8,6 @@ import {INftRegistry} from "./interfaces/INftRegistry.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {console} from "forge-std/console.sol";
-
 library PoolLogic {
     using SafeERC20 for IERC20;
 
@@ -813,6 +811,10 @@ library PoolLogic {
         }
 
         return totalUnclaimedRewardsInNative;
+    }
+
+    function concatArrays(uint256[] memory arr1, uint256[] memory arr2) external pure returns (uint256[] memory) {
+        return _concatArrays(arr1, arr2);
     }
 
 //-----------------------------------internal-------------------------------------------  
