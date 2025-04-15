@@ -218,7 +218,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // update storage
         vaults[vaultId] = vault;
 
-        emit VaultCreated(vaultId, msg.sender, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
+        emit VaultCreated(vaultId, msg.sender, creatorFeeFactor,  nftFeeFactor, realmPointsFeeFactor);
     }  
 
     /**
