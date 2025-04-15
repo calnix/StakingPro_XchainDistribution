@@ -399,9 +399,8 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
         (
             uint256 isRemoved,
-            uint256 amountBoosted, 
-            uint256 deltaVaultBoostedRealmPoints,
-            uint256 deltaVaultBoostedStakedTokens
+            uint256 totalBoostedTokensDelta,
+            uint256 totalBoostedRealmPointsDelta
         ) 
             = PoolLogic.executeUnstake(activeDistributions, vaults, distributions, users, vaultAccounts, userAccounts, params, 
                 NFT_MULTIPLIER, amount, tokenIds);
@@ -410,9 +409,10 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(isRemoved == 0){
 
             if(amount > 0){
+
                 // update global
                 totalStakedTokens -= amount;
-                totalBoostedStakedTokens -= amountBoosted;
+                totalBoostedStakedTokens -= totalBoostedTokensDelta;
 
                 // return MOCA
                 STAKED_TOKEN.safeTransfer(msg.sender, amount);
@@ -424,9 +424,11 @@ contract StakingPro is EIP712, Pausable, AccessControl {
                 
                 // update global
                 totalStakedNfts -= numOfNftsToUnstake;
-                totalBoostedRealmPoints -= deltaVaultBoostedRealmPoints;
-                totalBoostedStakedTokens -= deltaVaultBoostedStakedTokens;
-
+                totalBoostedRealmPoints -= totalBoostedRealmPointsDelta;
+                
+                // decrement totalBoostedStakedTokens when only nfts are unstaked
+                if(amount == 0) totalBoostedStakedTokens -= totalBoostedTokensDelta;
+                
                 // record unstake with registry
                 NFT_REGISTRY.recordUnstake(msg.sender, tokenIds, vaultId);
             }

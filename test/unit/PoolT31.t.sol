@@ -792,23 +792,33 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
 
         // user2 unstakes first 2 NFTs and half tokens from vault1
         uint256 tokenAmount = user2Moca/2;
-        uint256 tokenAmountBoosted = (tokenAmount * vaultBefore.totalBoostFactor) / pool.PRECISION_BASE();
+        
+        // Calculate the boosted tokens from token unstaking
+        uint256 tokenBoostedDelta = (tokenAmount * vaultBefore.totalBoostFactor) / pool.PRECISION_BASE();
 
         uint256[] memory nftsToUnstake = new uint256[](2);
             nftsToUnstake[0] = user2NftsArray[0];
             nftsToUnstake[1] = user2NftsArray[1];
         
-        // need to negate the tokens being unstaked
-        uint256 deltaBoostFactor = 2 * pool.NFT_MULTIPLIER();
-        uint256 deltaVaultBoostedStakedTokens = ((vaultBefore.stakedTokens - tokenAmount) * deltaBoostFactor) / pool.PRECISION_BASE();
-        uint256 deltaVaultBoostedRealmPoints = (vaultBefore.stakedRealmPoints * deltaBoostFactor) / pool.PRECISION_BASE();
+        // Calculate boost factor reduction
+        uint256 boostFactorReduction = 2 * pool.NFT_MULTIPLIER();
+        
+        // Calculate NFT effect on remaining tokens
+        // Note: We use (vaultBefore.stakedTokens - tokenAmount) since the NFT boost affects tokens AFTER tokens are unstaked
+        uint256 nftBoostedTokensDelta = ((vaultBefore.stakedTokens - tokenAmount) * boostFactorReduction) / pool.PRECISION_BASE();
+
+        // Calculate the total boosted tokens delta for global state
+        uint256 totalBoostedTokensDelta = tokenBoostedDelta + nftBoostedTokensDelta;
+
+        // Calculate realm points effect
+        uint256 totalBoostedRealmPointsDelta = (vaultBefore.stakedRealmPoints * boostFactorReduction) / pool.PRECISION_BASE();
 
         vm.startPrank(user2);
             vm.expectEmit(true, true, true, true);
-            emit UnstakedTokens(user2, vaultId1, tokenAmount, tokenAmountBoosted);
+            emit UnstakedTokens(user2, vaultId1, tokenAmount, tokenBoostedDelta);
 
             vm.expectEmit(true, true, true, true);
-            emit UnstakedNfts(user2, vaultId1, nftsToUnstake, deltaVaultBoostedStakedTokens, deltaVaultBoostedRealmPoints);
+            emit UnstakedNfts(user2, vaultId1, nftsToUnstake, nftBoostedTokensDelta, totalBoostedRealmPointsDelta);
 
             pool.unstake(vaultId1, tokenAmount, nftsToUnstake);
         vm.stopPrank();
@@ -837,7 +847,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         assertEq(vaultAfter.boostedRealmPoints, expectedVaultBoostedRp, "Vault boosted RP not updated correctly");
         
         // pool
-        assertEq(pool.totalBoostedStakedTokens(), poolBoostedTokensBefore - tokenAmountBoosted - deltaVaultBoostedStakedTokens, "Pool boosted tokens not updated correctly");
-        assertEq(pool.totalBoostedRealmPoints(), poolBoostedRpBefore - deltaVaultBoostedRealmPoints, "Pool boosted RP not updated correctly");
+        assertEq(pool.totalBoostedStakedTokens(), poolBoostedTokensBefore - totalBoostedTokensDelta, "Pool boosted tokens not updated correctly");
+        assertEq(pool.totalBoostedRealmPoints(), poolBoostedRpBefore - totalBoostedRealmPointsDelta, "Pool boosted RP not updated correctly");
     }
 }
