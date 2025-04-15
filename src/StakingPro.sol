@@ -5,7 +5,7 @@ pragma solidity 0.8.26;
  * @title StakingPro
  * @custom:version 1.0
  * @custom:author Calnix(@cal_nix)
- * @notice Multi-asset staking contract with X-chain distriubtion capabilities
+ * @notice Multi-asset staking contract with X-chain distribution capabilities
  */
 
 import './Events.sol';
@@ -1235,22 +1235,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     /*//////////////////////////////////////////////////////////////
                                 HELPERS
     //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @dev Returns the hash of the fully encoded EIP712 message for this domain
-     *      See EIP712.sol
-     */
-    function hashTypedDataV4(bytes32 structHash) external view returns (bytes32) {
-        return _hashTypedDataV4(structHash);
-    }
-
-    /**
-     * @dev Returns the domain separator for the current chain
-     *      See EIP712.sol
-     */
-    function domainSeparatorV4() external view returns (bytes32) {
-        return _domainSeparatorV4();
-    }
 
     /**
      * @notice Returns the number of active distributions
