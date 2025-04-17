@@ -315,6 +315,10 @@ library PoolLogic {
         DataTypes.VaultAccount memory vaultAccount = vaultAccounts[params.vaultId][distributionId];
         DataTypes.UserAccount memory userAccount = userAccounts[params.user][params.vaultId][distributionId];
 
+        // only update specified distribution, and its accounts
+        (userAccount, vaultAccount, distribution) 
+            = _updateUserAccount(activeDistributions, userVaultAssets, userAccount, vault, vaultAccount, distribution, params);
+      
         //----------------------- calc. and update vault and user accounts ------------------------
 
         // expressed in 1E18 precision

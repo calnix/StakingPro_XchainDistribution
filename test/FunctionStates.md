@@ -156,7 +156,7 @@ Distribution states:
 (+) Distribution active | testClaimRewards_T51
 
 Vault states:
-(-) User has nothing staked in vault (revert: `UserHasNothingStaked`) | testCannotClaimWhenNothingStaked_T51
+(+) User has nothing staked in vault | testNothingToClaimWhenNothingStaked_T51
 (-) Vault does not exist (revert: `NonExistentVault`) | testCannotClaimFromNonExistentVault_T51
 (+) User has assets staked in vault | testClaimRewards_T51
 
