@@ -1000,7 +1000,16 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @dev distribution.lastUpdateTimeStamp is not checked, we expect distributions to be updated in updateDistributions()
      * @param vaultIds Array of vault IDs to update
      */
-    function updateAllVaultAccounts(bytes32[] calldata vaultIds, uint256 distributionId) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+    function updateAllVaultAccounts(bytes32[] calldata vaultIds, uint256 distributionId) external whenNotEnded whenNotPaused {
+        
+        if(isUnderMaintenance == 1){
+            // caller must have OPERATOR role
+            if(!hasRole(OPERATOR_ROLE, msg.sender)) revert Errors.InvalidCaller();
+        } else {
+            // caller must have CRON_JOB role
+            if(!hasRole(CRON_JOB_ROLE, msg.sender)) revert Errors.InvalidCaller();
+        }
+
         uint256 numOfVaults = vaultIds.length;
         if(numOfVaults == 0) revert Errors.InvalidArray();
 

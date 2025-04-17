@@ -1013,13 +1013,21 @@ updateActiveDistributions() external whenNotEnded whenNotPaused whenUnderMainten
 ## updateAllVaultAccounts
 
 ```solidity
-updateAllVaultAccounts(bytes32[] calldata vaultIds, uint256 distributionId) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(OPERATOR_ROLE)
+    function updateAllVaultAccounts(bytes32[] calldata vaultIds, uint256 distributionId) external whenNotEnded whenNotPaused {
+        
+        if(isUnderMaintenance == 1){
+            // caller must have OPERATOR role
+            if(!hasRole(OPERATOR_ROLE, msg.sender)) revert Errors.InvalidCaller();
+        } else {
+            // caller must have CRON_JOB role
+            if(!hasRole(CRON_JOB_ROLE, msg.sender)) revert Errors.InvalidCaller();
+        }
+        ...
 ```
 
 - Updates all vault accounts for a specified distribution
 - Operator must be careful to ensure that distributionIds are specified comprehensively, covering both active and recently popped distributions.
 - This ensures all rewards are properly calculated and booked
-- Only callable when contract is under maintenance.
 
 ## updateNftMultiplier
 
