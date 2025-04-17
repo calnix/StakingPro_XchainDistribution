@@ -1102,7 +1102,11 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             // check user has non-zero holdings
             uint256 stakedNfts = userVaultAssets.tokenIds.length;
             uint256 stakedTokens = userVaultAssets.stakedTokens;       
-            if(stakedNfts == 0 && stakedTokens == 0) revert Errors.UserHasNothingStaked(vaultId, onBehalfOf);
+            if (
+                !(vault.creator == onBehalfOf && vault.creationTokenIds.length > 0)     // if creator, check if there are creator nfts to retrieve 
+                && stakedNfts == 0                                                       // user has no staked nfts
+                && stakedTokens == 0                                                     // user has no staked tokens 
+                ) revert Errors.UserHasNothingStaked(vaultId, onBehalfOf);
 
             // update balances: user + vault
             if(stakedTokens > 0){
