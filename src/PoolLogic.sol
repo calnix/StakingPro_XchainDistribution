@@ -244,7 +244,6 @@ library PoolLogic {
         // also serves to check that the user owns the inputted nfts
         userVaultAssets.tokenIds = _removeFromArray(userVaultAssets.tokenIds, tokenIds);
 
-        uint256 amountBoosted; 
         uint256 totalBoostedTokensDelta;
         uint256 totalBoostedRealmPointsDelta;
 
