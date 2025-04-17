@@ -42,6 +42,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     // roles
     bytes32 public constant MONITOR_ROLE = keccak256("MONITOR_ROLE");
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    bytes32 public constant CRON_JOB_ROLE = keccak256("CRON_JOB_ROLE");
 
     // duration
     uint256 public immutable startTime; 
@@ -885,9 +886,10 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         this is done via the popEndedDistribution function.
 
         Process:
-        1. Operator calls updateAllVaultAccounts(vaultIds[], distributionId)
+        1. CRON_JOB calls updateAllVaultAccounts(vaultIds[], distributionId)
         2. Ensure all vaults are updated against the recently ended distribution
-        3. Once confirmed, call popEndedDistribution(distributionId)
+        3. Once confirmed, OPERATOR call popEndedDistribution(distributionId)
+            - OPERATOR could be owner multisig
      */
 
     /**

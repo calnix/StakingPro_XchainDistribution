@@ -77,9 +77,10 @@ library Errors {
     error DistributionNotEnded();
     error DistributionNotUpdated();
     error DistributionNotFound();
-    
+
     // updateAllVaultAccounts
     error DistributionNotStarted();
+    error InvalidCaller();
     // updateNftMultiplier
     error InvalidMultiplier();
 
