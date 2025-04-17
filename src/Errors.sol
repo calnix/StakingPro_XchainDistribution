@@ -73,7 +73,11 @@ library Errors {
     error InvalidNewTotalRequired();
     // endDistributionImmediately
     error DistributionManuallyEnded();
-
+    // popEndedDistribution
+    error DistributionNotEnded();
+    error DistributionNotUpdated();
+    error DistributionNotFound();
+    
     // updateAllVaultAccounts
     error DistributionNotStarted();
     // updateNftMultiplier

@@ -88,7 +88,7 @@ abstract contract StateT46_BothVaultsFeesUpdated is StateT41_User2StakesToVault2
 
 contract StateT46_BothVaultsFeesUpdatedTest is StateT46_BothVaultsFeesUpdated {
 
-    // ---------------- base assets ----------------
+// ---------------- base assets ----------------
 
     function testPool_T46() public {
         DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
@@ -169,7 +169,7 @@ contract StateT46_BothVaultsFeesUpdatedTest is StateT46_BothVaultsFeesUpdated {
         assertEq(vault2.realmPointsFeeFactor, 625);  // 5%
     }
 
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
 
     function testDistribution0_T46() public {
 
@@ -536,7 +536,7 @@ contract StateT46_BothVaultsFeesUpdatedTest is StateT46_BothVaultsFeesUpdated {
         }
 
 
-    // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
   
     function testDistribution1_T46() public {
         DataTypes.Distribution memory distribution = getDistribution(1);
@@ -883,7 +883,7 @@ contract StateT46_BothVaultsFeesUpdatedTest is StateT46_BothVaultsFeesUpdated {
             assertEq(claimableRewards, expectedClaimableRewards, "claimableRewards mismatch"); 
         }
 
-    // ---- state transition tests: PoolT46p_MaintenanceMode.t.sol ----
+// ---- state transition tests: PoolT46p_MaintenanceMode.t.sol ----
 
     function testUserCannotUpdateMaximumFeeFactor() public {
         vm.startPrank(user1);

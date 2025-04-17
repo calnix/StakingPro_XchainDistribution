@@ -128,6 +128,7 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         // assume stakingPro only has 1 active distribution: D0
         vm.startPrank(operator);
             pool.endDistribution(1);
+            pool.popEndedDistribution(1);
         vm.stopPrank();
 
         assertEq(pool.getActiveDistributionsLength(), 1);

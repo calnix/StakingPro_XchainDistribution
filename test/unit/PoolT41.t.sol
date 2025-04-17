@@ -810,8 +810,8 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
             pool.endDistribution(1);
         vm.stopPrank();
 
-        // check pool
-        assertEq(pool.getActiveDistributionsLength(), 1);
+        // check pool: distribution does not get removed from activeDistributions array
+        assertEq(pool.getActiveDistributionsLength(), 2);
 
         // Check distribution was updated correctly on pool
         DataTypes.Distribution memory distribution = getDistribution(1);

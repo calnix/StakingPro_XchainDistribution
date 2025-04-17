@@ -842,7 +842,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
         if(newStartTime == 0 && newEndTime == 0 && newEmissionPerSecond == 0) revert Errors.InvalidDistributionParameters(); 
 
-        uint256 newTotalRequired = PoolLogic.executeUpdateDistributionParams(activeDistributions, distributions, distributionId, newStartTime, newEndTime, newEmissionPerSecond, 
+        uint256 newTotalRequired = PoolLogic.executeUpdateDistributionParams(distributions, distributionId, newStartTime, newEndTime, newEmissionPerSecond, 
             totalBoostedRealmPoints, totalBoostedStakedTokens);
 
         // transfer rewards to user, from rewardsVault
@@ -863,7 +863,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(distribution.manuallyEnded == 1) revert Errors.DistributionManuallyEnded();
    
         // update distribution index
-        distribution = PoolLogic.executeUpdateDistributionIndex(activeDistributions, distribution, totalBoostedRealmPoints, totalBoostedStakedTokens);
+        distribution = PoolLogic.executeUpdateDistributionIndex(distribution, totalBoostedRealmPoints, totalBoostedStakedTokens);
 
         // end distribution
         distribution.manuallyEnded = 1;
@@ -872,22 +872,59 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // update storage   
         distributions[distributionId] = distribution;
 
-        // pop from active distributions
-        for (uint256 i; i < activeDistributions.length; ++i) {
-            if (activeDistributions[i] == distribution.distributionId) {
-                // Move last element to current position and pop
-                activeDistributions[i] = activeDistributions[activeDistributions.length - 1];
-                activeDistributions.pop();
-                break;
-            }
-        }
-
         emit DistributionEnded(distributionId, distribution.endTime, distribution.totalEmitted);
 
         // only for token distributions
         REWARDS_VAULT.endDistribution(distributionId, distribution.totalEmitted);
     }
-    
+
+    /**
+        ended distributions are not removed automatically from activeDistributions array. 
+        this is intentional.
+        it is the responsibility of the operator to remove ended distributions from the activeDistributions array.
+        this is done via the popEndedDistribution function.
+
+        Process:
+        1. Operator calls updateAllVaultAccounts(vaultIds[], distributionId)
+        2. Ensure all vaults are updated against the recently ended distribution
+        3. Once confirmed, call popEndedDistribution(distributionId)
+     */
+
+    /**
+     * @notice Removes an ended distribution from the active distributions list
+     * @dev Can only be called by the operator
+     * @param distributionId The ID of the distribution to remove
+     */
+    function popEndedDistribution(uint256 distributionId) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+        if(distributionId == 0) revert Errors.InvalidDistributionId();
+        
+        // get distribution
+        DataTypes.Distribution storage distribution = distributions[distributionId];
+
+        // sanity checks
+        if(distribution.startTime == 0) revert Errors.NonExistentDistribution();
+        if(block.timestamp < distribution.endTime) revert Errors.DistributionNotEnded();
+        if(distribution.lastUpdateTimeStamp != distribution.endTime) revert Errors.DistributionNotUpdated();
+
+        uint256 numOfActiveDistributions = activeDistributions.length;
+        
+        // Remove from active distributions and mark as completed
+        bool found = false;
+        for (uint256 i; i < numOfActiveDistributions; ++i) {
+            if (activeDistributions[i] == distributionId) {
+                // Move last element to current position and pop
+                activeDistributions[i] = activeDistributions[numOfActiveDistributions - 1];
+                activeDistributions.pop();
+                found = true;
+                break;
+            }
+        }
+
+        if(!found) revert Errors.DistributionNotFound();
+        
+        emit DistributionPopped(distributionId);
+    }
+
 
 //-----------------------------  NFT MULTIPLIER  ---------------------------------------------
     
@@ -951,7 +988,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
                 // update distribution index
                 distributions[distributionId] 
-                        = PoolLogic.executeUpdateDistributionIndex(activeDistributions, distributions[distributionId], totalBoostedRealmPoints, totalBoostedStakedTokens);
+                        = PoolLogic.executeUpdateDistributionIndex(distributions[distributionId], totalBoostedRealmPoints, totalBoostedStakedTokens);
             }
 
             emit DistributionsUpdated(activeDistributions);
@@ -963,7 +1000,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @dev distribution.lastUpdateTimeStamp is not checked, we expect distributions to be updated in updateDistributions()
      * @param vaultIds Array of vault IDs to update
      */
-    function updateAllVaultAccounts(bytes32[] calldata vaultIds, uint256 distributionId) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(OPERATOR_ROLE) {
+    function updateAllVaultAccounts(bytes32[] calldata vaultIds, uint256 distributionId) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
         uint256 numOfVaults = vaultIds.length;
         if(numOfVaults == 0) revert Errors.InvalidArray();
 
