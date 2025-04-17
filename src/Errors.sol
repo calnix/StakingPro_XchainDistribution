@@ -33,6 +33,7 @@ library Errors {
 
     // claimRewards
     error NoStakedAssets();
+    error NotEligibleForRewards();
     error StakingPowerDistribution();
     error DistributionDoesNotExist();
 

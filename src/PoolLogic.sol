@@ -304,16 +304,13 @@ library PoolLogic {
         // cache vault and user data, reverts if vault does not exist
         (DataTypes.User memory userVaultAssets, DataTypes.Vault memory vault) = _cache(params.vaultId, params.user, vaults, users);
         
-        // revert if user has no staked assets
-        if (userVaultAssets.stakedTokens == 0 && userVaultAssets.stakedRealmPoints == 0 && userVaultAssets.tokenIds.length == 0) {
-            revert Errors.NoStakedAssets();
-        }
-
         // get + check distribution exists + started
         DataTypes.Distribution memory distribution = distributions[distributionId];
         if(distribution.startTime == 0) revert Errors.DistributionDoesNotExist();
         if(block.timestamp < distribution.startTime) revert Errors.DistributionNotStarted();
-        
+
+        // vault not eligible for rewards
+        if(vault.startTime >= distribution.endTime) revert Errors.NotEligibleForRewards();        
         
         // get corresponding user+vault account for distribution         
         DataTypes.VaultAccount memory vaultAccount = vaultAccounts[params.vaultId][distributionId];
@@ -919,6 +916,11 @@ library PoolLogic {
         // vault has been removed from circulation: final update done by endVaults()
         if(vault.removed == 1) return (vaultAccount, distribution);
 
+        // distribution ended before vault began: skip updating
+        if(distribution.endTime > 0) {
+            if(vault.startTime >= distribution.endTime) return (vaultAccount, distribution);
+        }
+
         // If vault has ended, vaultIndex should not be updated, beyond the final update.
         /** note:
             - vaults are removed from circulation via endVaults()
@@ -1092,7 +1094,6 @@ library PoolLogic {
 
         uint256 numOfDistributions = activeDistributions.length;
 
-        // process each distribution from our cached array
         for (uint256 i; i < numOfDistributions; ++i) {
             uint256 distributionId = activeDistributions[i];   
 

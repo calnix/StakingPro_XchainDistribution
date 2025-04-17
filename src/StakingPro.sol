@@ -975,18 +975,13 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      */
     function updateActiveDistributions() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(OPERATOR_ROLE) {
 
-        // cache active distributions to avoid incorrect processing of distributions due to .pop() [in _updateDistributionIndex]
         uint256 numOfDistributions = activeDistributions.length;
-        uint256[] memory distributionsToProcess = new uint256[](numOfDistributions);
-        for(uint256 i; i < numOfDistributions; ++i) {
-            distributionsToProcess[i] = activeDistributions[i];
-        }
         
         if(numOfDistributions > 0){           
             
             for(uint256 i; i < numOfDistributions; ++i) {
                 
-                uint256 distributionId = distributionsToProcess[i];
+                uint256 distributionId = activeDistributions[i];
 
                 // update distribution index
                 distributions[distributionId] 
