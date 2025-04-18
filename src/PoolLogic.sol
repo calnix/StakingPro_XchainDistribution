@@ -225,7 +225,7 @@ library PoolLogic {
         uint256 NFT_MULTIPLIER,
         uint256 amount,
         uint256[] calldata tokenIds
-    ) external returns (uint256, uint256, uint256, uint256) {
+    ) external returns (uint256, uint256, uint256) {
         
         // cache vault and user data, reverts if vault does not exist
         (DataTypes.User memory userVaultAssets, DataTypes.Vault memory vault) = _cache(params.vaultId, params.user, vaults, users);
@@ -242,43 +242,47 @@ library PoolLogic {
         // also serves to check that the user owns the inputted nfts
         userVaultAssets.tokenIds = _removeFromArray(userVaultAssets.tokenIds, tokenIds);
 
-        uint256 amountBoosted; 
-        uint256 deltaVaultBoostedRealmPoints;
-        uint256 deltaVaultBoostedStakedTokens;
+        uint256 totalBoostedTokensDelta;
+        uint256 totalBoostedRealmPointsDelta;
 
-        // update tokens
+        // unstaking tokens
         if(amount > 0){
 
-            // calc. boosted values
-            amountBoosted = (amount * vault.totalBoostFactor) / params.PRECISION_BASE;
+            // calc. boosted tokens from unstaking tokens
+            totalBoostedTokensDelta = (amount * vault.totalBoostFactor) / params.PRECISION_BASE;
 
             // update vault
             vault.stakedTokens -= amount;
-            vault.boostedStakedTokens -= amountBoosted;
+            vault.boostedStakedTokens -= totalBoostedTokensDelta;
 
             // update user
             userVaultAssets.stakedTokens -= amount;
         
-            emit UnstakedTokens(params.user, params.vaultId, amount, amountBoosted);             
+            emit UnstakedTokens(params.user, params.vaultId, amount, totalBoostedTokensDelta);             
         }
 
-        // update nfts
+        // unstaking nfts
         if(numOfNftsToUnstake > 0){
             
-            // calc. deltas for vault
-            uint256 deltaBoostFactor = numOfNftsToUnstake * NFT_MULTIPLIER;
-            deltaVaultBoostedRealmPoints = (deltaBoostFactor * vault.stakedRealmPoints) / params.PRECISION_BASE;
-            deltaVaultBoostedStakedTokens += (deltaBoostFactor * vault.stakedTokens) / params.PRECISION_BASE;
-            
+            // calc. boost factor reduction
+            uint256 boostFactorReduction = numOfNftsToUnstake * NFT_MULTIPLIER;
+
+            // calc. effect on realm points boosting
+            totalBoostedRealmPointsDelta = (boostFactorReduction * vault.stakedRealmPoints) / params.PRECISION_BASE;
+
+            // calc. effect on boosted staked tokens [based off remaining staked tokens]
+            uint256 nftBoostedTokensDelta = (boostFactorReduction * vault.stakedTokens) / params.PRECISION_BASE;            
+            totalBoostedTokensDelta += nftBoostedTokensDelta;
+
             // update vault
             vault.stakedNfts -= numOfNftsToUnstake;            
-            vault.totalBoostFactor -= deltaBoostFactor;
+            vault.totalBoostFactor -= boostFactorReduction;
 
             // recalc vault's boosted balances, based on remaining staked assets
-            if (vault.stakedTokens > 0) vault.boostedStakedTokens -= deltaVaultBoostedStakedTokens;            
-            if (vault.stakedRealmPoints > 0) vault.boostedRealmPoints -= deltaVaultBoostedRealmPoints;
+            if (vault.stakedTokens > 0) vault.boostedStakedTokens -= nftBoostedTokensDelta;            
+            if (vault.stakedRealmPoints > 0) vault.boostedRealmPoints -= totalBoostedRealmPointsDelta;
 
-            emit UnstakedNfts(params.user, params.vaultId, tokenIds, deltaVaultBoostedStakedTokens, deltaVaultBoostedRealmPoints);             
+            emit UnstakedNfts(params.user, params.vaultId, tokenIds, nftBoostedTokensDelta, totalBoostedRealmPointsDelta);             
         }
 
         // update storage: mappings 
@@ -286,7 +290,7 @@ library PoolLogic {
         users[params.user][params.vaultId] = userVaultAssets;
 
         // removed: {0,1}
-        return (vault.removed, amountBoosted, deltaVaultBoostedRealmPoints, deltaVaultBoostedStakedTokens);
+        return (vault.removed, totalBoostedTokensDelta, totalBoostedRealmPointsDelta);
     } 
 
     function executeClaimRewards(        
@@ -723,7 +727,7 @@ library PoolLogic {
 
             // update vaultIndex
             vaultAccount.index = distribution.index;
-            emit VaultAccountUpdated(params.vaultId, distribution.distributionId, totalAccRewards, accCreatorFee, accTotalNftFee, accRealmPointsFee);
+            emit VaultAccountUpdated(vaultId, distribution.distributionId, totalAccRewards, accCreatorFee, accTotalNftFee, accRealmPointsFee);
 
             // update storage
             vaultAccounts[vaultId][distribution.distributionId] = vaultAccount;
