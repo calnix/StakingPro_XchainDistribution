@@ -892,10 +892,21 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
         pool.claimRewards(vaultId1, 0);
     }
 
-    function testCannotClaimWhenNothingStaked_T51() public {
+    function testNothingToClaimWhenNothingStaked_T51() public {
+        // Get user3's account state before claim
+        DataTypes.UserAccount memory userAccountBefore = getUserAccount(user3, vaultId1, 1);
+        
         vm.prank(user3);
-        vm.expectRevert(abi.encodeWithSelector(Errors.NoStakedAssets.selector));
         pool.claimRewards(vaultId1, 1);
+        
+        // Get user3's account state after claim
+        DataTypes.UserAccount memory userAccountAfter = getUserAccount(user3, vaultId1, 1);
+        
+        // Verify claimed rewards did not change
+        assertEq(userAccountAfter.claimedStakingRewards, userAccountBefore.claimedStakingRewards, "claimed staking rewards changed");
+        assertEq(userAccountAfter.claimedNftRewards, userAccountBefore.claimedNftRewards, "claimed nft rewards changed");
+        assertEq(userAccountAfter.claimedRealmPointsRewards, userAccountBefore.claimedRealmPointsRewards, "claimed rp rewards changed");
+        assertEq(userAccountAfter.claimedCreatorRewards, userAccountBefore.claimedCreatorRewards, "claimed creator rewards changed");
     }
 
     function testCannotClaimFromNonExistentDistribution_T51() public {

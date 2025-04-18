@@ -32,7 +32,6 @@ library Errors {
     error InsufficientRealmPoints(uint256 userStakedRealmPoints);
 
     // claimRewards
-    error NoStakedAssets();
     error NotEligibleForRewards();
     error StakingPowerDistribution();
     error DistributionDoesNotExist();
