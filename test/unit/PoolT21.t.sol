@@ -71,6 +71,7 @@ contract StateT21_CreationNftsUpdatedTest is StateT21_CreationNftsUpdated {
             
             vm.expectEmit(true, true, true, true);
             emit VaultCreated(vaultId2, user2, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
+
             pool.createVault(tokenIds, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
         vm.stopPrank();
         // check vault

@@ -168,7 +168,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * - Total fee factors must not exceed 50% (5000 basis points)
      * - Contract must not be paused and staking must have started
      */
-    function createVault(uint256[] calldata tokenIds, uint256 nftFeeFactor, uint256 creatorFeeFactor, uint256 realmPointsFeeFactor) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance {
+    function createVault(uint256[] calldata tokenIds, uint256 creatorFeeFactor, uint256 nftFeeFactor, uint256 realmPointsFeeFactor) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance {
         if(activeDistributions.length == 0) revert Errors.NoActiveDistributions();
 
         // must commit unstaked NFTs to create vaults: these do not count towards stakedNFTs

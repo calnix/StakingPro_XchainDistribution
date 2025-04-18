@@ -45,9 +45,9 @@ contract StateT1_StartedTest is StateT1_Started {
         bytes32 expectedVaultId = generateVaultId(block.number - 1, user1);
         
         vm.expectEmit(true, true, true, true);
-        emit VaultCreated(expectedVaultId, user1, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
+        emit VaultCreated(expectedVaultId, user1, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
         
-        pool.createVault(user1NftsArray, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
+        pool.createVault(user1NftsArray, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
         
         // Verify vault was created correctly
         DataTypes.Vault memory vault = pool.getVault(expectedVaultId);
@@ -101,7 +101,7 @@ abstract contract StateT1_CreateVault1 is StateT1_Started {
         uint256 creatorFeeFactor = 1000; 
         uint256 realmPointsFeeFactor = 1000;
 
-        pool.createVault(user1NftsArray, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
+        pool.createVault(user1NftsArray, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
         vm.stopPrank();
     }
 }

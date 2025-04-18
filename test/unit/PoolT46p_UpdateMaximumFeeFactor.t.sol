@@ -31,7 +31,7 @@ contract StateT46p_UpdateMaximumFeeFactorTest is StateT46p_UpdateMaximumFeeFacto
             uint256 nftFeeFactor = 500;
             uint256 creatorFeeFactor = 300;
             uint256 realmPointsFeeFactor = 200;
-            pool.createVault(creationNfts, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
+            pool.createVault(creationNfts, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
         vm.stopPrank();
 
         uint256 totalFeeFactor = nftFeeFactor + creatorFeeFactor + realmPointsFeeFactor;

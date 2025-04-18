@@ -46,7 +46,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
         uint256 nftFeeFactor = 1000;
         uint256 creatorFeeFactor = 1000;
         uint256 realmPointsFeeFactor = 1000;
-        pool.createVault(user1NftsArray, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
+        pool.createVault(user1NftsArray, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
     }
 
     function testCannotStakeTokensWhenNotStarted() public {

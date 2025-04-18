@@ -21,7 +21,7 @@ abstract contract StateT26_User2CreatesVault2 is StateT21_CreationNftsUpdated {
             uint256 creatorFeeFactor = 500;
             uint256 realmPointsFeeFactor = 500;
 
-            pool.createVault(tokenIds, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
+            pool.createVault(tokenIds, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
         vm.stopPrank();       
 
         vaultId2 = generateVaultId(block.number - 1, user2);
