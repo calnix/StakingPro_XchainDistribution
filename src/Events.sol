@@ -48,6 +48,9 @@ event VaultsEnded(bytes32[] vaultIds, uint256 vaultsNotEnded);
 // stakeOnBehalfOf
 event StakedOnBehalfOf(address[] users, bytes32[] vaultIds, uint256[] amounts);
 
+// popEndedDistribution
+event DistributionPopped(uint256 indexed distributionId);
+
 // setEndTime
 event StakingEndTimeSet(uint256 endTime);
 

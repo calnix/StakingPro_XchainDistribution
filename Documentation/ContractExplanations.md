@@ -856,12 +856,101 @@ endDistributionImmediately(uint256 distributionId) external whenNotEnded whenNot
 Allows owner to immediately terminate an active distribution:
 
 - distributionId: ID of the distribution to end
-- Enables emergency termination of a distribution by setting its end time to the current block timestamp. 
+- Enables emergency termination of a distribution by setting its end time to the current block timestamp.
 - Effectively stops any further rewards from being distributed while preserving all rewards earned up to that point.
 - Distribution must exist and be active (not ended).
 - Calls RewardsVault to set the flag `manuallyEnded=1`
 
 This provides an emergency mechanism to halt reward distributions if needed, while ensuring already-earned rewards remain claimable.
+
+## popEndedDistribution
+
+```solidity
+popEndedDistribution(uint256 distributionId) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE)
+```
+
+- executes some sanity checks before popping the distributionId from `activeDistributions`
+- expects that distribution should have ended [manually or otherwise], and the final update to the distribution should have occurred
+- This fn call should always follow `endDistributionImmediately`
+- This fn should be called via script every time a distribution comes to an end.
+
+# Ending Distributions
+
+- Ended distributions are not removed automatically from activeDistributions array.
+- This is intentional.
+- It is the responsibility of the operator to remove ended distributions from the activeDistributions array.
+- This is done via the popEndedDistribution function.
+
+**Process:**
+    1. Operator calls updateAllVaultAccounts(vaultIds[], distributionId)
+    2. Ensure all vaults are updated against the recently ended distribution
+    3. Once confirmed, call popEndedDistribution(distributionId)
+
+## Why?
+
+In a prior design, distributions would execute a final update check after ending and would be automatically popped from activeDistributions array.
+
+However, this lead to the issue where if a vault hibernates [no state updates for extended period], and the distribution ends, the vault would not receive rewards as expected.
+Since no txns updated the vault's accounts while the distribution was active, nothing would be accrued; and once the distribution ends, vaultAccounts cannot be updated against it.
+
+### Scenario 1: Partially unbooked rewards
+
+![hibernation_scenario1](hibernation_scenario1.png)
+
+1. Vault is active and distribution is active.
+2. Vault has staking activity that makes it eligible for rewards from distribution.
+3. Vault hibernates. No txns occur for a time.
+4. Distribution ends; popped from array.
+5. Some time after, Vault is ended and removed
+6. Delta btw vault hibernating and distribution ending is valid period for rewards
+7. Since no state updating txn hit the vault in that period, the vaults indexes are stale.
+8. Vault indexes remain stale till it's removed.
+9. Once removed, no further updates are allowed. So users lose out on rewards for the duration of hibernation till the end.
+
+In short, if there exists such a hibernation period for vault before it ends. It's a problem.
+
+### Scenario 2: Completely unbooked rewards
+
+Also, if the vault’s last staking activity was before the start of distribution - problem.
+
+![hibernation_scenario2](hibernation_scenario2.png)
+
+In this instance, the vault is oblivious that a new distribution occurred, since the distribution started and ended during its time of hibernation.
+
+## Initial Solution
+
+The crux of the problem is that a distribution ends during a vault’s hibernation phase.
+This results in the inability to update the vault to match the distribution’s final index - and therefore lesser rewards.
+Whether a distribution begins within a vault’s hibernation phase only determines if rewards are partially or completely unbooked.
+
+Put differently, as long as a distribution ends before the vault, there are no issues. The vault would have come out of hibernation, and updated itself wrt to that distribution.
+
+The initial solution was a final update check in `_updateVaultAccount`; when users claim rewards for a specified distribution, it would check if the vault had a hibernation period.
+
+- Hibernation checks done on comparing start and end times
+- If there was a hibernation period, update the vault index to match the distribution’s final index.
+- However, there remains an issue with updating vault fees. See below.
+
+![hibernation_initialSolution](hibernation_initialSolution.png)
+
+Given that vault fees can only be lowered by the creator to benefit other participants of a vault, perhaps this is acceptable?
+- This means for an affected distribution, rewards and fees are calculated once on the final update, based on the fee structure at that time.
+- Assuming no one called claimRewards, the fee structure could change multiple times till the first call. 
+- Changes to the vault fee structure after the first claimRewards, will have no impact. All fees and rewards have been calculated, and the book is closed.
+
+## Alternative Solution
+
+We opt for the alternative solution: Off-chain cron job
+
+- When distribution ends, keep it in the activeDistributions array; do not pop.
+- Operator calls `updateAllVaultAccounts` for the distribution that ended and all vaults; brings all vaults up to date.
+- Operator pops the distribution, but can only be done for distributions where `block.timestamp > distribution.endTime`.
+
+**This approach has 2 minor failings in that:**
+1. This would require continued maintenance.
+2. Execution gas.
+
+We find these to be acceptable.
 
 # Maintenance Mode functions [To update: NFT_Multiplier]
 
@@ -924,13 +1013,21 @@ updateActiveDistributions() external whenNotEnded whenNotPaused whenUnderMainten
 ## updateAllVaultAccounts
 
 ```solidity
-updateAllVaultAccounts(bytes32[] calldata vaultIds, uint256 distributionId) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(OPERATOR_ROLE)
+    function updateAllVaultAccounts(bytes32[] calldata vaultIds, uint256 distributionId) external whenNotEnded whenNotPaused {
+        
+        if(isUnderMaintenance == 1){
+            // caller must have OPERATOR role
+            if(!hasRole(OPERATOR_ROLE, msg.sender)) revert Errors.InvalidCaller();
+        } else {
+            // caller must have CRON_JOB role
+            if(!hasRole(CRON_JOB_ROLE, msg.sender)) revert Errors.InvalidCaller();
+        }
+        ...
 ```
 
 - Updates all vault accounts for a specified distribution
 - Operator must be careful to ensure that distributionIds are specified comprehensively, covering both active and recently popped distributions.
 - This ensures all rewards are properly calculated and booked
-- Only callable when contract is under maintenance.
 
 ## updateNftMultiplier
 
@@ -1149,7 +1246,7 @@ This serves as a sanity check to ensure that the multiplier is updated correctly
 
 ## 8. Ending a distribution
 
-- `endDistributionImmediately(uint256 distributionId)`
+- `endDistributionImmediately(uint256 distributionId)` followed by `popEndedDistribution(uint256 distributionId)`
 - This function enables immediate termination of a distribution by setting its end time to the current block timestamp.
 - Effectively stops any further rewards from being distributed while preserving all rewards earned up to that point.
 - Distribution must exist and be active (not ended).

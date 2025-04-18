@@ -32,6 +32,7 @@ library Errors {
     error InsufficientRealmPoints(uint256 userStakedRealmPoints);
 
     // claimRewards
+    error NotEligibleForRewards();
     error StakingPowerDistribution();
     error DistributionDoesNotExist();
 
@@ -72,9 +73,14 @@ library Errors {
     error InvalidNewTotalRequired();
     // endDistributionImmediately
     error DistributionManuallyEnded();
+    // popEndedDistribution
+    error DistributionNotEnded();
+    error DistributionNotUpdated();
+    error DistributionNotFound();
 
     // updateAllVaultAccounts
     error DistributionNotStarted();
+    error InvalidCaller();
     // updateNftMultiplier
     error InvalidMultiplier();
 

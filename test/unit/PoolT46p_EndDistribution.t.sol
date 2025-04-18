@@ -187,7 +187,8 @@ contract StateT46_EndDistributionTest is StateT46_EndDistribution {
         assertEq(pool.totalBoostedRealmPoints(), expectedTotalBoostedRp);       
         assertEq(pool.totalBoostedStakedTokens(), expectedTotalBoostedTokens);    
 
-        assertTrue(pool.getActiveDistributionsLength() == 1, "active distributions mismatch");
+        // distributions: 2 in array | 1 active
+        assertTrue(pool.getActiveDistributionsLength() == 2, "active distributions mismatch");
     }
 
     function testVault1_T46() public {
@@ -564,9 +565,53 @@ contract StateT46_EndDistributionTest is StateT46_EndDistribution {
         assertEq(pool.getClaimableRewards(user2, vaultId2, 1), 0, "view fn mismatch: T46");
     }
 
-// ---- state transition: test changing rewardsVault ----
+// ---- state transition: pop distribution ----
 
-    function testCanSetRewardsVaultIfNoActiveDistribution() public {
+    function testCanPopEndedDistribution() public {
+        // Check before popping
+        uint256 beforePopping = pool.getActiveDistributionsLength();
+        assertEq(beforePopping, 2);
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit DistributionPopped(1);
+            pool.popEndedDistribution(1);
+        vm.stopPrank();
+
+        // Check after popping
+        uint256 afterPopping = pool.getActiveDistributionsLength();
+        assertEq(afterPopping, 1);
+        assertEq(beforePopping - afterPopping, 1);
+        
+        // Verify the remaining distribution is distribution 0
+        uint256 remainingDistribution = pool.activeDistributions(0);
+        DataTypes.Distribution memory distribution = getDistribution(remainingDistribution);
+        assertEq(distribution.distributionId, 0);
+    }
+}
+
+abstract contract PoolT46p_PopDistribution is StateT46_EndDistribution {
+
+    function setUp() public virtual override {
+        super.setUp();
+
+        vm.startPrank(operator);
+            pool.popEndedDistribution(1);
+        vm.stopPrank();
+    }
+}
+
+contract PoolT46p_PopDistributionTest is PoolT46p_PopDistribution {
+
+    function testCannotPopPoppedDistribution() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.DistributionNotFound.selector);
+            pool.popEndedDistribution(1);
+        vm.stopPrank();
+    }
+
+    // ---- state transition: test changing rewardsVault ----
+    function testCanSetRewardsVaultIfNoActiveTokenDistribution() public {
 
         // deploy new rewardsVault
         RewardsVaultV1 rewardsVault2 = new RewardsVaultV1(owner, monitor, owner, address(pool));

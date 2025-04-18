@@ -8,8 +8,6 @@ import {INftRegistry} from "./interfaces/INftRegistry.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {console} from "forge-std/console.sol";
-
 library PoolLogic {
     using SafeERC20 for IERC20;
 
@@ -310,14 +308,17 @@ library PoolLogic {
         DataTypes.Distribution memory distribution = distributions[distributionId];
         if(distribution.startTime == 0) revert Errors.DistributionDoesNotExist();
         if(block.timestamp < distribution.startTime) revert Errors.DistributionNotStarted();
-               
+
+        // vault not eligible for rewards
+        if(vault.startTime >= distribution.endTime) revert Errors.NotEligibleForRewards();        
+        
         // get corresponding user+vault account for distribution         
         DataTypes.VaultAccount memory vaultAccount = vaultAccounts[params.vaultId][distributionId];
         DataTypes.UserAccount memory userAccount = userAccounts[params.user][params.vaultId][distributionId];
 
         // only update specified distribution, and its accounts
         (userAccount, vaultAccount, distribution) 
-            = _updateUserAccount(activeDistributions, userVaultAssets, userAccount, vault, vaultAccount, distribution, params);
+            = _updateUserAccount(userVaultAssets, userAccount, vault, vaultAccount, distribution, params);
       
         //----------------------- calc. and update vault and user accounts ------------------------
 
@@ -489,22 +490,16 @@ library PoolLogic {
             
         uint256 vaultsEnded;
 
-        // cache active distributions to avoid incorrect processing of distributions due to .pop() [in _updateDistributionIndex]
-        uint256 numOfDistributions = activeDistributions.length;
-        uint256[] memory distributionsToProcess = new uint256[](numOfDistributions);
-        for(uint256 i; i < numOfDistributions; ++i) {
-            distributionsToProcess[i] = activeDistributions[i];
-        }
-        
+        uint256 numOfDistributions = activeDistributions.length;       
         // For each distribution [always > 0 due to staking power]
         for(uint256 i; i < numOfDistributions; ++i) {
             
-            uint256 distributionId = distributionsToProcess[i];
+            uint256 distributionId = activeDistributions[i];
             DataTypes.Distribution memory distribution = distributions[distributionId];
             uint256 previousLastUpdateTimeStamp = distribution.lastUpdateTimeStamp;
 
             // Update distribution first
-            distribution = _updateDistributionIndex(distribution, activeDistributions, params.totalBoostedRealmPoints, params.totalBoostedStakedTokens);
+            distribution = _updateDistributionIndex(distribution, params.totalBoostedRealmPoints, params.totalBoostedStakedTokens);
             // only push to storage if distribution was updated
             if(distribution.lastUpdateTimeStamp > previousLastUpdateTimeStamp) distributions[distributionId] = distribution; 
             
@@ -526,7 +521,7 @@ library PoolLogic {
 
                 // vault account: get and update 
                 DataTypes.VaultAccount memory vaultAccount = vaultAccounts[vaultId][distributionId];
-                (vaultAccount, ) = _updateVaultAccount(vault, vaultAccount, distribution, activeDistributions, params);
+                (vaultAccount, ) = _updateVaultAccount(vault, vaultAccount, distribution, params);
                 vaultAccounts[vaultId][distributionId] = vaultAccount;
                 
                 // Track assets to remove on last distribution (only need to do this once per vault)
@@ -619,7 +614,6 @@ library PoolLogic {
     }    
 
     function executeUpdateDistributionParams(
-        uint256[] storage activeDistributions,
         mapping(uint256 distributionId => DataTypes.Distribution distribution) storage distributions,
         uint256 distributionId, 
         uint256 newStartTime, 
@@ -636,7 +630,7 @@ library PoolLogic {
         if(block.timestamp >= distribution.endTime) revert Errors.DistributionEnded();
 
         // update distribution index
-        distribution = _updateDistributionIndex(distribution, activeDistributions, totalBoostedRealmPoints, totalBoostedStakedTokens);
+        distribution = _updateDistributionIndex(distribution, totalBoostedRealmPoints, totalBoostedStakedTokens);
 
         // startTime modification
         if(newStartTime > 0) {
@@ -737,14 +731,13 @@ library PoolLogic {
     }
 
     function executeUpdateDistributionIndex(
-        uint256[] storage activeDistributions,
         DataTypes.Distribution memory distribution,
         uint256 totalBoostedRealmPoints,
         uint256 totalBoostedStakedTokens
     ) external returns(DataTypes.Distribution memory) {
 
         // update distribution index
-        distribution = _updateDistributionIndex(distribution, activeDistributions, totalBoostedRealmPoints, totalBoostedStakedTokens);
+        distribution = _updateDistributionIndex(distribution, totalBoostedRealmPoints, totalBoostedStakedTokens);
 
         return distribution;
     }
@@ -813,7 +806,6 @@ library PoolLogic {
 
     function _updateDistributionIndex(
         DataTypes.Distribution memory distribution, 
-        uint256[] storage activeDistributions, 
         uint256 totalBoostedRealmPoints, 
         uint256 totalBoostedStakedTokens
     ) internal returns (DataTypes.Distribution memory) {
@@ -837,16 +829,6 @@ library PoolLogic {
                 distribution.index = finalIndex;
                 distribution.totalEmitted += finalEmitted;
                 distribution.lastUpdateTimeStamp = distribution.endTime;               
-                
-                // Remove from active distributions and mark as completed
-                for (uint256 i; i < activeDistributions.length; ++i) {
-                    if (activeDistributions[i] == distribution.distributionId) {
-                        // Move last element to current position and pop
-                        activeDistributions[i] = activeDistributions[activeDistributions.length - 1];
-                        activeDistributions.pop();
-                        break;
-                    }
-                }
 
                 emit DistributionCompleted(distribution.distributionId, distribution.endTime, distribution.totalEmitted);
             }
@@ -918,14 +900,12 @@ library PoolLogic {
         DataTypes.Vault memory vault, 
         DataTypes.VaultAccount memory vaultAccount, 
         DataTypes.Distribution memory distribution,
-        uint256[] storage activeDistributions,
         DataTypes.UpdateAccountsIndexesParams memory params
     ) internal returns (DataTypes.VaultAccount memory, DataTypes.Distribution memory) {
 
         // get latest distributionIndex, if not already updated
         distribution = _updateDistributionIndex(
             distribution, 
-            activeDistributions, 
             params.totalBoostedRealmPoints, 
             params.totalBoostedStakedTokens
         );
@@ -935,6 +915,11 @@ library PoolLogic {
 
         // vault has been removed from circulation: final update done by endVaults()
         if(vault.removed == 1) return (vaultAccount, distribution);
+
+        // distribution ended before vault began: skip updating
+        if(distribution.endTime > 0) {
+            if(vault.startTime >= distribution.endTime) return (vaultAccount, distribution);
+        }
 
         // If vault has ended, vaultIndex should not be updated, beyond the final update.
         /** note:
@@ -1028,7 +1013,6 @@ library PoolLogic {
     }
 
     function _updateUserAccount(
-        uint256[] storage activeDistributions,
         DataTypes.User memory user, 
         DataTypes.UserAccount memory userAccount,
         DataTypes.Vault memory vault, 
@@ -1038,7 +1022,7 @@ library PoolLogic {
     ) internal returns (DataTypes.UserAccount memory, DataTypes.VaultAccount memory, DataTypes.Distribution memory) {
         
         // get updated vaultAccount and distribution
-        (vaultAccount, distribution) = _updateVaultAccount(vault, vaultAccount, distribution, activeDistributions, params);
+        (vaultAccount, distribution) = _updateVaultAccount(vault, vaultAccount, distribution, params);
         
         // index in 1E18 precision
         uint256 newUserIndex = vaultAccount.rewardsAccPerUnitStaked;
@@ -1108,16 +1092,10 @@ library PoolLogic {
             loop thru userAccounts -> vaultAccounts -> distri
         */
 
-        // cache active distributions to avoid incorrect processing of distributions due to .pop() [in _updateDistributionIndex]
         uint256 numOfDistributions = activeDistributions.length;
-        uint256[] memory distributionsToProcess = new uint256[](numOfDistributions);
-        for(uint256 i; i < numOfDistributions; ++i) {
-            distributionsToProcess[i] = activeDistributions[i];
-        }
 
-        // process each distribution from our cached array
         for (uint256 i; i < numOfDistributions; ++i) {
-            uint256 distributionId = distributionsToProcess[i];   
+            uint256 distributionId = activeDistributions[i];   
 
             // get corresponding user+vault account for this active distribution 
             DataTypes.Distribution memory distribution = distributions[distributionId];
@@ -1128,7 +1106,7 @@ library PoolLogic {
                 userAccount, 
                 vaultAccount, 
                 distribution
-            ) = _updateUserAccount(activeDistributions, userVaultAssets, userAccount, vault, vaultAccount, distribution, params);
+            ) = _updateUserAccount(userVaultAssets, userAccount, vault, vaultAccount, distribution, params);
 
             //update storage: accounts and distributions
             distributions[distributionId] = distribution;     
