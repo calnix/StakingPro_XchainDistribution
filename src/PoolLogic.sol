@@ -306,17 +306,11 @@ library PoolLogic {
         // cache vault and user data, reverts if vault does not exist
         (DataTypes.User memory userVaultAssets, DataTypes.Vault memory vault) = _cache(params.vaultId, params.user, vaults, users);
         
-        // revert if user has no staked assets
-        if (userVaultAssets.stakedTokens == 0 && userVaultAssets.stakedRealmPoints == 0 && userVaultAssets.tokenIds.length == 0) {
-            revert Errors.NoStakedAssets();
-        }
-
         // get + check distribution exists + started
         DataTypes.Distribution memory distribution = distributions[distributionId];
         if(distribution.startTime == 0) revert Errors.DistributionDoesNotExist();
         if(block.timestamp < distribution.startTime) revert Errors.DistributionNotStarted();
-        
-        
+               
         // get corresponding user+vault account for distribution         
         DataTypes.VaultAccount memory vaultAccount = vaultAccounts[params.vaultId][distributionId];
         DataTypes.UserAccount memory userAccount = userAccounts[params.user][params.vaultId][distributionId];
