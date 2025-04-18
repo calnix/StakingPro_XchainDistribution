@@ -70,8 +70,8 @@ contract StateT21_CreationNftsUpdatedTest is StateT21_CreationNftsUpdated {
             uint256 realmPointsFeeFactor = 500;
             
             vm.expectEmit(true, true, true, true);
-            emit VaultCreated(vaultId2, user2, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
-            pool.createVault(tokenIds, nftFeeFactor, creatorFeeFactor, realmPointsFeeFactor);
+            emit VaultCreated(vaultId2, user2, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
+            pool.createVault(tokenIds, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
         vm.stopPrank();
         // check vault
         DataTypes.Vault memory vault = pool.getVault(vaultId2);
