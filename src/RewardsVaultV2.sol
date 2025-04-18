@@ -15,9 +15,7 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
     using OptionsBuilder for bytes;
     
     // LZ
-    uint256 public constant SOLANA_EID = 30168;
     uint128 public constant GAS_LIMIT = 90_000;
-    uint128 public gasBuffer;
 
     mapping(uint32 dstEid => uint128 gasBuffer) public dstGasBuffer;
 
@@ -58,7 +56,7 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
         distributions[distributionId] = distribution;
         paidOut[staker][addressToBytes32(receiver)][distributionId] += amount;
 
-        emit PayRewards(distributionId, staker, addressToBytes32(receiver), amount);
+        emit PayRewards(distributionId, staker, receiver, amount);
 
         // local: transfer to receiver
         if(distribution.dstEid == LOCAL_EID){
@@ -107,10 +105,13 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
     /**
      * @notice Future-proofing, in-case there are LZ changes that result in differing gas usage 
      * @dev Should be left untouched, unless there is an unexpected breaking LZ change
-     * @param gasBuffer_ Amount of additional gas for execution on dstChain
+     * @param dstEid LZ endpoint ID
+     * @param gasBuffer Amount of additional gas for execution on dstChain
      */
-    function setGasBuffer(uint32 dstEid, uint128 gasBuffer_) external onlyOwner {
-        dstGasBuffer[dstEid] = gasBuffer_;
+    function setGasBuffer(uint32 dstEid, uint128 gasBuffer) external onlyOwner {
+        dstGasBuffer[dstEid] = gasBuffer;
+
+        emit GasBufferUpdated(dstEid, gasBuffer);
     } 
 
     /** 

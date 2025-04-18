@@ -147,6 +147,18 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         assertNotEq(initialRewardsVault, newRewardsVault);
     }
 
+    function testCanUpdateActiveDistributionsWhenInMaintenanceMode() public {
+        // Get current
+        uint256 currentActive = pool.getActiveDistributionsLength();
+        uint256 newMaxActive = currentActive + 1;
+        
+        vm.startPrank(operator);
+            pool.updateMaxActiveDistributions(newMaxActive);
+        vm.stopPrank();
+
+        assertEq(pool.maxActiveAllowed(), newMaxActive);
+    }
+
 
 // ---- state transition ----
     function testOperatorCanUpdateDistributions() public {

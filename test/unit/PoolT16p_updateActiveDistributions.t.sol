@@ -11,7 +11,7 @@ abstract contract StateT16p_UpdateActiveDistributions is StateT11_Distribution1C
         vm.warp(16);
    
         vm.startPrank(operator);
-            pool.updateActiveDistributions(pool.getActiveDistributionsLength() + 1);
+            pool.updateMaxActiveDistributions(pool.getActiveDistributionsLength() + 1);
         vm.stopPrank();
     }
 }
@@ -41,6 +41,7 @@ contract StateT16p_UpdateActiveDistributions_Test is StateT16p_UpdateActiveDistr
             // attempt to create distribution 3 - should revert
             distributionId = 3;
             tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken3));
+
             vm.expectRevert(abi.encodeWithSelector(Errors.MaxActiveDistributions.selector));
             pool.setupDistribution(
                 distributionId, 
@@ -50,10 +51,11 @@ contract StateT16p_UpdateActiveDistributions_Test is StateT16p_UpdateActiveDistr
                 tokenPrecision,
                 dstEid, tokenAddress
             );
+
         vm.stopPrank();
     }
 
-    function testCanSetupDistributionBeyondMaxAllowed() public {
+    function testCanSetupDistributionWithinNewMax() public {
         vm.startPrank(operator);
             // distribution params
             uint256 distributionId = 2;

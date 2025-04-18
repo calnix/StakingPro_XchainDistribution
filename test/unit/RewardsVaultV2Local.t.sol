@@ -133,7 +133,7 @@ contract StateT11_Distribution1DepositedOnLocalVaultTest is StateT11_Distributio
 
         vm.startPrank(user2);
             vm.expectEmit(true, true, true, true);
-            emit PayRewards(1, user2, bytes32(uint256(uint160(user2))), 3166666666666666294);
+            emit PayRewards(1, user2, user2, 3166666666666666294);
             vm.expectCall(
                 address(rewardsToken1),
                 abi.encodeCall(IERC20.transfer, (user2, 3166666666666666294))

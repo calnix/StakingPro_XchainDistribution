@@ -15,7 +15,7 @@ abstract contract State_DeployEVMVault is Test, TestingHarness {
 
         // evmVault
         vm.startPrank(owner);
-            evmVault = new EVMVault(dstEid, address(lzMock), owner, monitor, depositor);
+            evmVault = new EVMVault(address(lzMock), owner, monitor, depositor);
             evmVault.setPeer(dstEid, bytes32(uint256(uint160(address(rewardsVault)))));
         vm.stopPrank();
     }
@@ -23,10 +23,14 @@ abstract contract State_DeployEVMVault is Test, TestingHarness {
 
 contract State_DeployEVMVault_Test is State_DeployEVMVault {
 
+    function test_ZeroAddressEndpoint() public {
+        vm.expectRevert();
+        new EVMVault(address(0), owner, monitor, depositor);
+    }
+
     function test_deploy() public {
 
         // Check constructor assignments
-        assertEq(evmVault.dstEid(), dstEid);
         assertEq(address(evmVault.endpoint()), address(lzMock));
         assertEq(evmVault.owner(), owner);
         

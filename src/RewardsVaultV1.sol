@@ -45,6 +45,12 @@ contract RewardsVaultV1 is Pausable, AccessControl {
 //------- constructor ----------------------------------------------------------
     constructor(address moneyManager, address monitor, address owner, address pool) {
 
+        // sanity checks
+        if(moneyManager == address(0)) revert Errors.InvalidAddress();
+        if(monitor == address(0)) revert Errors.InvalidAddress();
+        if(owner == address(0)) revert Errors.InvalidAddress();
+        if(pool == address(0)) revert Errors.InvalidAddress();
+
         // access control
         _grantRole(DEFAULT_ADMIN_ROLE, owner);              // default admin role for all roles
         
@@ -151,7 +157,7 @@ contract RewardsVaultV1 is Pausable, AccessControl {
         distributions[distributionId] = distribution;
         paidOut[staker][addressToBytes32(receiver)][distributionId] += amount;
     
-        emit PayRewards(distributionId, staker, addressToBytes32(receiver), amount);
+        emit PayRewards(distributionId, staker, receiver, amount);
  
         // transfer
         IERC20(token).safeTransfer(receiver, amount); 
@@ -179,8 +185,13 @@ contract RewardsVaultV1 is Pausable, AccessControl {
         if(distribution.dstEid != LOCAL_EID) revert Errors.CallDepositOnRemote();
         // distribution must be setup
         if(distribution.tokenAddress == bytes32(0)) revert Errors.DistributionNotSetup();
+        
+        // revert if token address is 0
+        address token = bytes32ToAddress(distribution.tokenAddress);
+        if(token == address(0)) revert Errors.InvalidTokenAddress();
+
         // sanity check: will revert if address is not a token contract on local
-        IERC20(bytes32ToAddress(distribution.tokenAddress)).balanceOf(address(this));
+        IERC20(token).balanceOf(address(this));
         
         // check if excess: allow for partial deposits
         if(distribution.totalRequired < distribution.totalDeposited + amount) revert Errors.ExcessiveDeposit();
@@ -190,7 +201,6 @@ contract RewardsVaultV1 is Pausable, AccessControl {
         distributions[distributionId] = distribution;
 
         // local: transfer from sender
-        address token = bytes32ToAddress(distribution.tokenAddress);
         IERC20(token).safeTransferFrom(from, address(this), amount);
 
         emit Deposit(distributionId, distribution.dstEid, from, amount);
@@ -264,8 +274,21 @@ contract RewardsVaultV1 is Pausable, AccessControl {
         return bytes32(uint256(uint160(addr)));
     }
 
+    /**
+     * @notice Converts a bytes32 value to an Ethereum address
+     * @dev Used for cross-chain messaging where addresses are encoded as bytes32
+     * @param bytes32_ The bytes32 value to convert to an address
+     * @return The Ethereum address decoded from the bytes32 value
+     */
     function bytes32ToAddress(bytes32 bytes32_) public pure returns(address) {
-        return address(uint160(uint256(bytes32_)));
+        uint256 value = uint256(bytes32_);
+
+        // copied from OZ's SafeCast library
+        if (value > type(uint160).max) {
+            revert Errors.SafeCastOverflowedUintDowncast();
+        }
+        
+        return address(uint160(value));
     }
 
 

@@ -165,6 +165,24 @@ contract StateT0_DeployTest is StateT0_Deploy {
         assertNotEq(initialRewardsVault, updatedRewardsVault);
     }
 
+    function testCanUpdateActiveDistributionsWhenNotStarted() public {
+        // Check initial value
+        uint256 initialMaxActive = pool.maxActiveAllowed();
+        uint256 newMaxActive = 1;
+        assertNotEq(initialMaxActive, newMaxActive);
+
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit MaximumActiveDistributionsUpdated(newMaxActive);
+            
+            pool.updateMaxActiveDistributions(newMaxActive);
+        vm.stopPrank();
+        
+        // Check value was updated
+        uint256 updatedMaxActive = pool.maxActiveAllowed();
+        assertEq(updatedMaxActive, newMaxActive);
+    }
+
 // ------ state transition ------
     function testOperatorCanSetupDistribution() public {
         vm.prank(operator);

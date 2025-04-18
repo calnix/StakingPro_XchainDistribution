@@ -3,7 +3,8 @@ pragma solidity ^0.8.13;
 
 import {Test, console2, stdStorage, StdStorage} from "forge-std/Test.sol";
 
-import "./../../src/StakingPro.sol";
+//import "./../../src/StakingPro.sol";
+import "./StakingProMock.sol";
 import {RewardsVaultV1} from "./../../src/RewardsVaultV1.sol";
 import {RewardsVaultV2} from "./../../src/RewardsVaultV2.sol";
 
@@ -25,7 +26,7 @@ abstract contract TestingHarness is Test {
     using stdStorage for StdStorage;
 
     // contracts
-    StakingPro public pool;
+    StakingProMock public pool;
     RewardsVaultV1 public rewardsVault;
     RewardsVaultV2 public rewardsVaultV2;
     EndpointV2Mock public lzMock;
@@ -98,7 +99,7 @@ abstract contract TestingHarness is Test {
         // signer
         (storedSigner, storedSignerPrivateKey) = makeAddrAndKey("storedSigner");
 
-        pool = new StakingPro(
+        pool = new StakingProMock(
             address(nftRegistry),
             address(mocaToken), 
             startTime,

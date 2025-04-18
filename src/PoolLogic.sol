@@ -806,6 +806,10 @@ library PoolLogic {
         return totalUnclaimedRewardsInNative;
     }
 
+    function concatArrays(uint256[] memory arr1, uint256[] memory arr2) external pure returns (uint256[] memory) {
+        return _concatArrays(arr1, arr2);
+    }
+
 //-----------------------------------internal-------------------------------------------  
 
     function _updateDistributionIndex(

@@ -107,5 +107,7 @@ library Errors {
     error NoUnclaimedRewards();
     // updateRemoteBalance
     error InvalidOrigin();
-
+    // bytes32ToAddress
+    error SafeCastOverflowedUintDowncast();
+    error InvalidReceiverAddress();
 }
