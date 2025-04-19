@@ -183,8 +183,8 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
         uint256 numOfNftsStaked = 2;                            // both vaults have 2 NFTs staked
         uint256 vault1RP = user1Rp + user2Rp/2;                 
         uint256 vault2RP = user2Rp/2;                           
-        uint256 boostFactor = pool.PRECISION_BASE() + (numOfNftsStaked * pool.NFT_MULTIPLIER());
-        uint256 totalBoostedRp = (vault1RP * boostFactor / pool.PRECISION_BASE()) + (vault2RP * boostFactor / pool.PRECISION_BASE());
+        uint256 boostFactor = Constants.PRECISION_BASE + (numOfNftsStaked * pool.NFT_MULTIPLIER());
+        uint256 totalBoostedRp = (vault1RP * boostFactor / Constants.PRECISION_BASE) + (vault2RP * boostFactor / Constants.PRECISION_BASE);
 
         uint256 indexDelta = 86400 ether * 1E18 / totalBoostedRp;
         uint256 expectedIndex = distribution0_T61.index + indexDelta;
@@ -738,7 +738,7 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 1000;
 
-        vm.startPrank(operator);
+        vm.startPrank(cronJob);
             vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
             pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
         vm.stopPrank();
@@ -772,9 +772,9 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
         assertEq(initialVault.stakedTokens, user2Moca/2, "Vault staked tokens mismatch");
         assertEq(initialVault.stakedRealmPoints, user2Rp/2, "Vault staked RP mismatch");
         // Calculate boost factor: 10% boost per NFT
-        uint256 boostFactor = pool.PRECISION_BASE() + (initialVault.stakedNfts * pool.NFT_MULTIPLIER());
-        assertEq(initialVault.boostedStakedTokens, user2Moca/2 * boostFactor / pool.PRECISION_BASE(), "Vault boosted staked mismatch");
-        assertEq(initialVault.boostedRealmPoints, user2Rp/2 * boostFactor / pool.PRECISION_BASE(), "Vault boosted RP mismatch");
+        uint256 boostFactor = Constants.PRECISION_BASE + (initialVault.stakedNfts * pool.NFT_MULTIPLIER());
+        assertEq(initialVault.boostedStakedTokens, user2Moca/2 * boostFactor / Constants.PRECISION_BASE, "Vault boosted staked mismatch");
+        assertEq(initialVault.boostedRealmPoints, user2Rp/2 * boostFactor / Constants.PRECISION_BASE, "Vault boosted RP mismatch");
 
         // User2 unstakes from vault2
         vm.startPrank(user2);

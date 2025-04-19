@@ -463,7 +463,7 @@ contract StateT46p_MaintenanceMode_VaultAccountsUpdatedTest is StateT46p_Mainten
 
     function testUserCannotUpdateNftMultiplier() public {
         vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.updateNftMultiplier(100);
         vm.stopPrank();
     }
@@ -510,7 +510,7 @@ contract StateT46p_MaintenanceMode_NftMultiplierUpdatedTest is StateT46p_Mainten
         vaultIds[1] = vaultId2;
 
         vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.updateBoostedBalances(vaultIds);
         vm.stopPrank();
     }
@@ -581,7 +581,7 @@ contract StateT46p_MaintenanceMode_UpdateBoostedBalancesTest is StateT46p_Mainte
 
     function testUserCannotDisableMaintenance() public {
         vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.disableMaintenance();
         vm.stopPrank();
     }

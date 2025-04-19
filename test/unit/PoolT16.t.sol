@@ -158,7 +158,7 @@ contract StateT16_BothUsersStakeAgainTest is StateT16_BothUsersStakeAgain {
 
         uint256 totalRpStaked = user1Rp/2 + user2Rp/2;
         uint256 numOfNftsStaked = 2;                            // user2: 2nfts staked for t6-t16
-        uint256 boostedAmount = (totalRpStaked * (numOfNftsStaked * pool.NFT_MULTIPLIER()) / pool.PRECISION_BASE());
+        uint256 boostedAmount = (totalRpStaked * (numOfNftsStaked * pool.NFT_MULTIPLIER()) / Constants.PRECISION_BASE);
         uint256 totalBoostedRp = totalRpStaked + boostedAmount;
 
         uint256 indexDelta = 10 ether * 1E18 / totalBoostedRp;
@@ -408,7 +408,7 @@ contract StateT16_BothUsersStakeAgainTest is StateT16_BothUsersStakeAgain {
 
     function testNonOperatorCannotUpdateCreationNfts(uint256 newAmount) public {
         vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.updateCreationNfts(newAmount);
         vm.stopPrank();
     }

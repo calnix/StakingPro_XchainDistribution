@@ -187,8 +187,8 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         uint256 numOfNftsStaked = 2;                            // vault1: 2nfts staked for t36-41
         uint256 vault1RP = user1Rp + user2Rp/2;                 // vault1 RP
         uint256 vault2RP = user2Rp/2;                           // vault2 RP (no boost)
-        uint256 boostFactor = pool.PRECISION_BASE() + (numOfNftsStaked * pool.NFT_MULTIPLIER());
-        uint256 totalBoostedRp = (vault1RP * boostFactor / pool.PRECISION_BASE()) + vault2RP;
+        uint256 boostFactor = Constants.PRECISION_BASE + (numOfNftsStaked * pool.NFT_MULTIPLIER());
+        uint256 totalBoostedRp = (vault1RP * boostFactor / Constants.PRECISION_BASE) + vault2RP;
 
         uint256 indexDelta = 5 ether * 1E18 / totalBoostedRp;
         uint256 expectedIndex = distribution0_T36.index + indexDelta;
@@ -753,7 +753,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
 
     function testUserCannotEndDistribution() public {
         vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.endDistribution(1);
         vm.stopPrank();
     }
@@ -829,7 +829,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
 
     function testUserCannotEnableMaintenanceMode() public {
         vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.enableMaintenance();
         vm.stopPrank();
     }

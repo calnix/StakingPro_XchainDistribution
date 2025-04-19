@@ -100,7 +100,7 @@ contract StateT21_CreationNftsUpdatedTest is StateT21_CreationNftsUpdated {
         assertEq(vault.stakedRealmPoints, 0);
         
         // boost factors (should start at base precision)
-        assertEq(vault.totalBoostFactor, pool.PRECISION_BASE());
+        assertEq(vault.totalBoostFactor, Constants.PRECISION_BASE);
         assertEq(vault.boostedRealmPoints, 0);
         assertEq(vault.boostedStakedTokens, 0);
     }

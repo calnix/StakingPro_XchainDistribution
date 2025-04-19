@@ -23,9 +23,9 @@ contract StateDeployTest is StateDeploy {
         
         // check roles
         assertEq(rewardsVault.hasRole(rewardsVault.DEFAULT_ADMIN_ROLE(), owner), true);
-        assertEq(rewardsVault.hasRole(rewardsVault.POOL_ROLE(), address(pool)), true);
-        assertEq(rewardsVault.hasRole(rewardsVault.MONITOR_ROLE(), monitor), true);
-        assertEq(rewardsVault.hasRole(rewardsVault.MONEY_MANAGER_ROLE(), depositor), true);
+        assertEq(rewardsVault.hasRole(Constants.POOL_ROLE, address(pool)), true);
+        assertEq(rewardsVault.hasRole(Constants.MONITOR_ROLE, monitor), true);
+        assertEq(rewardsVault.hasRole(Constants.MONEY_MANAGER_ROLE, depositor), true);
     }
 
     function testCannotSetupDistributionAsUser() public {
@@ -34,7 +34,7 @@ contract StateDeployTest is StateDeploy {
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
                 user1, 
-                rewardsVault.POOL_ROLE()
+                Constants.POOL_ROLE
             )
         );
         rewardsVault.setupDistribution(1, 30184, bytes32(uint256(uint160(address(rewardsToken1)))), 100 ether);
@@ -47,7 +47,7 @@ contract StateDeployTest is StateDeploy {
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
                 user1, 
-                rewardsVault.POOL_ROLE()
+                Constants.POOL_ROLE
             )
         );
         rewardsVault.updateDistribution(1, 100 ether);
@@ -60,7 +60,7 @@ contract StateDeployTest is StateDeploy {
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
                 user1, 
-                rewardsVault.POOL_ROLE()
+                Constants.POOL_ROLE
             )
         );
         rewardsVault.endDistribution(1, 100 ether);
@@ -73,7 +73,7 @@ contract StateDeployTest is StateDeploy {
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
                 user1, 
-                rewardsVault.POOL_ROLE()
+                Constants.POOL_ROLE
             )
         );
         rewardsVault.payRewards(1, 100 ether, user2);
@@ -86,7 +86,7 @@ contract StateDeployTest is StateDeploy {
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
                 user1, 
-                rewardsVault.MONEY_MANAGER_ROLE()
+                Constants.MONEY_MANAGER_ROLE
             )
         );
         rewardsVault.deposit(1, 100 ether, user2);
@@ -99,7 +99,7 @@ contract StateDeployTest is StateDeploy {
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
                 user1, 
-                rewardsVault.MONEY_MANAGER_ROLE()
+                Constants.MONEY_MANAGER_ROLE
             )
         );
         rewardsVault.withdraw(1, 100 ether, user2);
@@ -112,7 +112,7 @@ contract StateDeployTest is StateDeploy {
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
                 user1, 
-                rewardsVault.MONITOR_ROLE()
+                Constants.MONITOR_ROLE
             )
         );
         rewardsVault.pause();

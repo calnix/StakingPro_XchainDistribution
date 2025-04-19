@@ -96,7 +96,7 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
 
             uint256 totalRpStaked = user1Rp/2 + user2Rp/2;
             uint256 numOfNftsStaked = 2;                            // user2: 2nfts staked for t6-t16
-            uint256 boostedAmount = (totalRpStaked * (numOfNftsStaked * pool.NFT_MULTIPLIER()) / pool.PRECISION_BASE());
+            uint256 boostedAmount = (totalRpStaked * (numOfNftsStaked * pool.NFT_MULTIPLIER()) / Constants.PRECISION_BASE);
             uint256 totalBoostedRp = totalRpStaked + boostedAmount;
 
             uint256 indexDelta = 10 ether * 1E18 / totalBoostedRp;
@@ -394,7 +394,7 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
         assertEq(vault.stakedRealmPoints, 0);
 
         // Verify boosted balances
-        assertEq(vault.totalBoostFactor, pool.PRECISION_BASE());
+        assertEq(vault.totalBoostFactor, Constants.PRECISION_BASE);
         assertEq(vault.boostedRealmPoints, 0);
         assertEq(vault.boostedStakedTokens, 0);
     }
@@ -508,8 +508,8 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
         // Base RP checks for vault1
         assertEq(vault1After.stakedRealmPoints, vault1Before.stakedRealmPoints - amount, "Vault1 base RP not reduced correctly");
         // Boosted RP checks for vault1
-        uint256 expectedVault1BoostFactor = pool.PRECISION_BASE() + (vault1After.stakedNfts * pool.NFT_MULTIPLIER());
-        uint256 expectedVault1BoostedRp = (vault1After.stakedRealmPoints * expectedVault1BoostFactor) / pool.PRECISION_BASE();
+        uint256 expectedVault1BoostFactor = Constants.PRECISION_BASE + (vault1After.stakedNfts * pool.NFT_MULTIPLIER());
+        uint256 expectedVault1BoostedRp = (vault1After.stakedRealmPoints * expectedVault1BoostFactor) / Constants.PRECISION_BASE;
         assertEq(vault1After.boostedRealmPoints, expectedVault1BoostedRp, "Vault1 boosted RP not reduced correctly");
 
         // --------- VAULT2 CHECKS: before & after migration ---------
@@ -520,8 +520,8 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
         // Base RP checks for vault2
         assertEq(vault2After.stakedRealmPoints, vault2Before.stakedRealmPoints + amount, "Vault2 base RP not increased correctly");
         // Boosted RP checks for vault2
-        uint256 expectedVault2BoostFactor = pool.PRECISION_BASE() + (vault2After.stakedNfts * pool.NFT_MULTIPLIER());
-        uint256 expectedVault2BoostedRp = (vault2After.stakedRealmPoints * expectedVault2BoostFactor) / pool.PRECISION_BASE();
+        uint256 expectedVault2BoostFactor = Constants.PRECISION_BASE + (vault2After.stakedNfts * pool.NFT_MULTIPLIER());
+        uint256 expectedVault2BoostedRp = (vault2After.stakedRealmPoints * expectedVault2BoostFactor) / Constants.PRECISION_BASE;
         assertEq(vault2After.boostedRealmPoints, expectedVault2BoostedRp, "Vault2 boosted RP not increased correctly");
 
         // --------- POOL CHECKS: before & after migration ---------
@@ -547,13 +547,13 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
         assertEq(vault1After.stakedNfts, vault1Before.stakedNfts, "Vault1 NFTs should not change");
         assertEq(vault1After.stakedTokens, vault1Before.stakedTokens, "Vault1 tokens should not change");
         assertEq(vault1After.totalBoostFactor, expectedVault1BoostFactor, "Vault1 boost factor incorrect");
-        assertEq(vault1After.boostedStakedTokens, (vault1After.stakedTokens * expectedVault1BoostFactor) / pool.PRECISION_BASE(), "Vault1 boosted tokens incorrect");
+        assertEq(vault1After.boostedStakedTokens, (vault1After.stakedTokens * expectedVault1BoostFactor) / Constants.PRECISION_BASE, "Vault1 boosted tokens incorrect");
 
         // Other vault2 checks
         assertEq(vault2After.stakedNfts, vault2Before.stakedNfts, "Vault2 NFTs should not change");
         assertEq(vault2After.stakedTokens, vault2Before.stakedTokens, "Vault2 tokens should not change");
         assertEq(vault2After.totalBoostFactor, expectedVault2BoostFactor, "Vault2 boost factor incorrect");
-        assertEq(vault2After.boostedStakedTokens, (vault2After.stakedTokens * expectedVault2BoostFactor) / pool.PRECISION_BASE(), "Vault2 boosted tokens incorrect");
+        assertEq(vault2After.boostedStakedTokens, (vault2After.stakedTokens * expectedVault2BoostFactor) / Constants.PRECISION_BASE, "Vault2 boosted tokens incorrect");
     }
 
 }

@@ -14,8 +14,6 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
     using SafeERC20 for IERC20;
     using OptionsBuilder for bytes;
     
-    // LZ
-    uint128 public constant GAS_LIMIT = 90_000;
 
     mapping(uint32 dstEid => uint128 gasBuffer) public dstGasBuffer;
 
@@ -34,7 +32,7 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
      * @param staker Address of staker
      * @param amount Reward amount (expressed in the token's precision)
      */
-    function payRewards(uint256 distributionId, uint256 amount, address staker) external payable override whenNotPaused onlyRole(POOL_ROLE) {
+    function payRewards(uint256 distributionId, uint256 amount, address staker) external payable override whenNotPaused onlyRole(Constants.POOL_ROLE) {
         // no need for input checks, as this is called by pool
 
         // get distribution + user
@@ -59,7 +57,7 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
         emit PayRewards(distributionId, staker, receiver, amount);
 
         // local: transfer to receiver
-        if(distribution.dstEid == LOCAL_EID){
+        if(distribution.dstEid == Constants.LOCAL_EID){
             // reject eth transfers for local
             if(msg.value > 0) revert Errors.PayableBlocked();
  
@@ -80,12 +78,12 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
         }
     }
 
-    function updateRemoteBalance(uint256 distributionId, uint256 amount, uint256 isDeposit) external onlyRole(MONEY_MANAGER_ROLE) {
+    function updateRemoteBalance(uint256 distributionId, uint256 amount, uint256 isDeposit) external onlyRole(Constants.MONEY_MANAGER_ROLE) {
         if(amount == 0) revert Errors.InvalidAmount();
         if(distributionId == 0) revert Errors.InvalidDistributionId();
 
         Distribution memory distribution = distributions[distributionId];
-        if(distribution.dstEid == LOCAL_EID) revert Errors.InvalidOrigin();
+        if(distribution.dstEid == Constants.LOCAL_EID) revert Errors.InvalidOrigin();
 
         // deposits made on remote vaults
         if(isDeposit == 1){
@@ -148,7 +146,7 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
 
         // create options
         bytes memory options;
-        options = OptionsBuilder.newOptions().addExecutorLzReceiveOption({_gas: GAS_LIMIT + dstGasBuffer[dstEid], _value: 0});
+        options = OptionsBuilder.newOptions().addExecutorLzReceiveOption({_gas: Constants.GAS_LIMIT + dstGasBuffer[dstEid], _value: 0});
         
         // check gas needed
         return (payload, options);

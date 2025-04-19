@@ -172,7 +172,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         // Pack the struct data
         bytes32 structHash = keccak256(
             abi.encode(
-                pool.TYPEHASH(),
+                Constants.TYPEHASH,
                 user1,
                 vaultId1,
                 1000 ether,

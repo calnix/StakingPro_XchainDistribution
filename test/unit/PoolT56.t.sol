@@ -1008,7 +1008,7 @@ contract StateT56_UsersClaimRewardsFromBothVaultsTest is StateT56_UsersClaimRewa
 // state transition: for parallel tests - `PoolT61p_UpdateVaultCooldown`
     function testUserCannotUpdateVaultCooldown() public {
         vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.updateVaultCooldown(5);
         vm.stopPrank();
     }

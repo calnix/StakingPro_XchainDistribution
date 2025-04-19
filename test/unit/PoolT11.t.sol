@@ -114,7 +114,7 @@ contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
         uint256 currentActive = pool.getActiveDistributionsLength();
         
         vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.updateMaxActiveDistributions(currentActive + 1);
         vm.stopPrank();
     }

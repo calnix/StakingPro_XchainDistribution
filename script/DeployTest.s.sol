@@ -31,8 +31,8 @@ contract DeployTest is Script {
         vm.startBroadcast(deployerPrivateKey);
         
         // constructor params
-        address registry = 0x284C14ba977714f4d1904f6C65e4e5a4c27696C2;
-        address stakedToken = 0x03946287b52B88C8357E813fbA3F472c60FaE727;
+        address registry = 0xCd76E8D37b5C7258197581d15dBf7D80e6106c69;
+        address stakedToken = 0x012fA6C1295278F922D8ca0C5c770cf32dDDbF26;
         
         // Set start time to 24 hours in the future
         uint256 startTime_ = block.timestamp + 10;
@@ -100,8 +100,8 @@ abstract contract ContractAddresses {
 
     address public owner = 0x8C9C001F821c04513616fd7962B2D8c62f925fD2;
 
-    StakingPro public pool = StakingPro(0xfF86dFC230ef543B8828296ABa943C130cf81842);
-    RewardsVaultV1 public rewardsVault = RewardsVaultV1(0xec8708459FCC22F40B4F74Ee5fb37B4F423A5d00);
+    StakingPro public pool = StakingPro(0x2531f0C4A7161C0203C21BEc446757fA4D509Fb0);
+    RewardsVaultV1 public rewardsVault = RewardsVaultV1(0xa8dC9344DfAbbb8d831426108da937F60514fCd8);
 }
 
 /*

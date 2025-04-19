@@ -12,6 +12,7 @@ import './Events.sol';
 import {Errors} from './Errors.sol';
 import {DataTypes} from './DataTypes.sol';
 import {PoolLogic} from "./PoolLogic.sol";
+import {Constants} from "./Constants.sol";
 
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20, IERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -38,11 +39,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     // pool states
     uint256 public isFrozen;
     uint256 public isUnderMaintenance;
-    
-    // roles
-    bytes32 public constant MONITOR_ROLE = keccak256("MONITOR_ROLE");
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant CRON_JOB_ROLE = keccak256("CRON_JOB_ROLE");
 
     // duration
     uint256 public immutable startTime; 
@@ -60,7 +56,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
     // nft multiplier
     uint256 public NFT_MULTIPLIER;                     // 10% = 1000/10_000 = 1000/PRECISION_BASE 
-    uint256 public constant PRECISION_BASE = 10_000;   // feeFactors & nft multiplier expressed in 2dp precision (XX.yy)
 
     // vault params
     uint256 public MAXIMUM_FEE_FACTOR;
@@ -70,7 +65,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     // signature params
     address public immutable STORED_SIGNER;                 
     uint256 public MINIMUM_REALMPOINTS_REQUIRED;
-    bytes32 public constant TYPEHASH = keccak256("StakeRealmPoints(address user,bytes32 vaultId,uint256 amount,uint256 expiry,uint256 nonce)");
 
     // distributions
     uint256[] public activeDistributions;    // array stores key values for distributions mapping; includes not yet started distributions  
@@ -141,14 +135,14 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
         // access control
         _grantRole(DEFAULT_ADMIN_ROLE, owner);  // default admin role for all roles
-        _grantRole(OPERATOR_ROLE, owner);
-        _grantRole(MONITOR_ROLE, owner);
+        _grantRole(Constants.OPERATOR_ROLE, owner);
+        _grantRole(Constants.MONITOR_ROLE, owner);
 
         // monitor script: only calls pause
-        _grantRole(MONITOR_ROLE, monitor);
+        _grantRole(Constants.MONITOR_ROLE, monitor);
 
         // operator
-        _grantRole(OPERATOR_ROLE, operator);
+        _grantRole(Constants.OPERATOR_ROLE, operator);
     }
 
 
@@ -198,7 +192,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             vault.realmPointsFeeFactor = realmPointsFeeFactor;
             
             // boost factor: Initialize to 100%, "1"
-            vault.totalBoostFactor = PRECISION_BASE; 
+            vault.totalBoostFactor = Constants.PRECISION_BASE; 
 
         // If nfts are required
         if(incomingNfts > 0){
@@ -234,7 +228,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         DataTypes.UpdateAccountsIndexesParams memory params;
             params.user = msg.sender;
             params.vaultId = vaultId;
-            params.PRECISION_BASE = PRECISION_BASE;
             params.totalBoostedRealmPoints = totalBoostedRealmPoints;
             params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
@@ -269,7 +262,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         DataTypes.UpdateAccountsIndexesParams memory params;
             params.user = msg.sender;
             params.vaultId = vaultId;
-            params.PRECISION_BASE = PRECISION_BASE;
             params.totalBoostedRealmPoints = totalBoostedRealmPoints;
             params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
@@ -309,7 +301,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(amount < MINIMUM_REALMPOINTS_REQUIRED) revert Errors.MinimumRealmPointsRequired();
 
         // verify signature
-        bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(TYPEHASH, msg.sender, vaultId, amount, expiry, userNonces[msg.sender])));
+        bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(Constants.TYPEHASH, msg.sender, vaultId, amount, expiry, userNonces[msg.sender])));
         
         address signer = ECDSA.recover(digest, signature);
         if(signer != STORED_SIGNER) revert Errors.InvalidSignature(); 
@@ -320,7 +312,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         DataTypes.UpdateAccountsIndexesParams memory params;
             params.user = msg.sender;
             params.vaultId = vaultId;
-            params.PRECISION_BASE = PRECISION_BASE;
             params.totalBoostedRealmPoints = totalBoostedRealmPoints;
             params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
@@ -349,14 +340,12 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         DataTypes.UpdateAccountsIndexesParams memory oldVaultParams;
             oldVaultParams.user = msg.sender;
             oldVaultParams.vaultId = oldVaultId;
-            oldVaultParams.PRECISION_BASE = PRECISION_BASE;
             oldVaultParams.totalBoostedRealmPoints = totalBoostedRealmPoints;
             oldVaultParams.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
         DataTypes.UpdateAccountsIndexesParams memory newVaultParams;
             newVaultParams.user = msg.sender;
             newVaultParams.vaultId = newVaultId;
-            newVaultParams.PRECISION_BASE = oldVaultParams.PRECISION_BASE;
             newVaultParams.totalBoostedRealmPoints = oldVaultParams.totalBoostedRealmPoints;
             newVaultParams.totalBoostedStakedTokens = oldVaultParams.totalBoostedStakedTokens;
 
@@ -394,7 +383,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         DataTypes.UpdateAccountsIndexesParams memory params;
             params.user = msg.sender;
             params.vaultId = vaultId;
-            params.PRECISION_BASE = PRECISION_BASE;
             params.totalBoostedRealmPoints = totalBoostedRealmPoints;
             params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
@@ -462,7 +450,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         DataTypes.UpdateAccountsIndexesParams memory params;
             params.user = msg.sender;   
             params.vaultId = vaultId;
-            params.PRECISION_BASE = PRECISION_BASE;
             params.totalBoostedRealmPoints = totalBoostedRealmPoints;
             params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
@@ -494,7 +481,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         DataTypes.UpdateAccountsIndexesParams memory params;
             params.user = msg.sender; 
             params.vaultId = vaultId;
-            params.PRECISION_BASE = PRECISION_BASE;
             params.totalBoostedRealmPoints = totalBoostedRealmPoints;
             params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
@@ -513,7 +499,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         DataTypes.UpdateAccountsIndexesParams memory params;
             params.user = msg.sender; 
             params.vaultId = vaultId;
-            params.PRECISION_BASE = PRECISION_BASE;
             params.totalBoostedRealmPoints = totalBoostedRealmPoints;
             params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
@@ -570,7 +555,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(numOfVaults == 0) revert Errors.InvalidArray();
         
         DataTypes.UpdateAccountsIndexesParams memory params;
-            params.PRECISION_BASE = PRECISION_BASE;
             params.totalBoostedRealmPoints = totalBoostedRealmPoints;
             params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
@@ -603,10 +587,11 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param onBehalfOfs Array of addresses to stake on behalf of
      * @param amounts Array of token amounts to stake for each user
      */
-    function stakeOnBehalfOf(bytes32[] calldata vaultIds, address[] calldata onBehalfOfs, uint256[] calldata amounts) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance onlyRole(OPERATOR_ROLE) {
+    function stakeOnBehalfOf(bytes32[] calldata vaultIds, address[] calldata onBehalfOfs, uint256[] calldata amounts) external virtual 
+        whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance onlyRole(Constants.CRON_JOB_ROLE) 
+    {
 
         DataTypes.UpdateAccountsIndexesParams memory params;
-            params.PRECISION_BASE = PRECISION_BASE;
             params.totalBoostedRealmPoints = totalBoostedRealmPoints;
             params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
@@ -632,7 +617,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @notice Sets the end time for the staking pool
      * @param endTime_ The new end time for the staking pool
      */
-    function setEndTime(uint256 endTime_) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+    function setEndTime(uint256 endTime_) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
         if(endTime_ == 0) revert Errors.InvalidEndTime();
         if(endTime_ <= block.timestamp) revert Errors.InvalidEndTime();
 
@@ -664,7 +649,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param newRewardsVault The address of the new rewards vault contract
      * @dev reverts if there are active token distributions - D0 is allowed
      */
-    function setRewardsVault(address newRewardsVault) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+    function setRewardsVault(address newRewardsVault) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
         if(newRewardsVault == address(0)) revert Errors.InvalidAddress();   
 
         // other than D0, there should not be any other active distributions
@@ -679,7 +664,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @dev Cannot reduce below current number of active distributions
      * @param newMaxActiveAllowed The new maximum number of active distributions to allow
      */
-    function updateMaxActiveDistributions(uint256 newMaxActiveAllowed) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+    function updateMaxActiveDistributions(uint256 newMaxActiveAllowed) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
         if(newMaxActiveAllowed == 0) revert Errors.InvalidMaxActiveAllowed();
         if(newMaxActiveAllowed < activeDistributions.length) revert Errors.MaxActiveDistributions();
 
@@ -694,8 +679,8 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @dev Fee factor cannot exceed PRECISION_BASE; else fees would exceed 100%
      * @param newFactor The new maximum fee factor to set
      */
-    function updateMaximumFeeFactor(uint256 newFactor) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
-        if(newFactor > PRECISION_BASE) revert Errors.InvalidMaxFeeFactor();
+    function updateMaximumFeeFactor(uint256 newFactor) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
+        if(newFactor > Constants.PRECISION_BASE) revert Errors.InvalidMaxFeeFactor();
 
         uint256 oldFactor = MAXIMUM_FEE_FACTOR;
         MAXIMUM_FEE_FACTOR = newFactor;
@@ -707,7 +692,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @notice Updates the minimum realm points required for staking
      * @param newAmount The new minimum realm points required
     */
-    function updateMinimumRealmPoints(uint256 newAmount) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+    function updateMinimumRealmPoints(uint256 newAmount) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
         if(newAmount == 0) revert Errors.InvalidAmount();
         
         uint256 oldAmount = MINIMUM_REALMPOINTS_REQUIRED;
@@ -721,7 +706,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @dev Zero values are accepted, allowing vault creation without NFT requirements
      * @param newAmount The new number of NFTs required for vault creation
      */
-    function updateCreationNfts(uint256 newAmount) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+    function updateCreationNfts(uint256 newAmount) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
         uint256 oldAmount = CREATION_NFTS_REQUIRED;
         CREATION_NFTS_REQUIRED = newAmount; 
 
@@ -734,7 +719,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @dev Zero values are accepted. New duration can be less or more than current value
      * @param newDuration The new cooldown duration to set
      */
-    function updateVaultCooldown(uint256 newDuration) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+    function updateVaultCooldown(uint256 newDuration) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
         emit VaultCooldownDurationUpdated(VAULT_COOLDOWN_DURATION, newDuration);     
         VAULT_COOLDOWN_DURATION = newDuration;
     }
@@ -751,7 +736,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      */
     function setupDistribution(uint256 distributionId, uint256 distributionStartTime, uint256 distributionEndTime, uint256 emissionPerSecond, uint256 tokenPrecision,
         uint32 dstEid, bytes32 tokenAddress
-    ) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+    ) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
 
         // cannot exceed max
         if(activeDistributions.length >= maxActiveAllowed) revert Errors.MaxActiveDistributions();
@@ -833,7 +818,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param newEndTime New end time for the distribution. Must be > block.timestamp if modified
      * @param newEmissionPerSecond New emission rate per second. Must be > 0 if modified
      */
-    function updateDistribution(uint256 distributionId, uint256 newStartTime, uint256 newEndTime, uint256 newEmissionPerSecond) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+    function updateDistribution(uint256 distributionId, uint256 newStartTime, uint256 newEndTime, uint256 newEmissionPerSecond) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
 
         // contract endTime set
         if(endTime > 0){
@@ -856,7 +841,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @notice Immediately ends a distribution
      * @param distributionId ID of the distribution to end
      */
-    function endDistribution(uint256 distributionId) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+    function endDistribution(uint256 distributionId) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
         if(distributionId == 0) revert Errors.InvalidDistributionId();
         DataTypes.Distribution memory distribution = distributions[distributionId];
         
@@ -899,7 +884,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @dev Can only be called by the operator
      * @param distributionId The ID of the distribution to remove
      */
-    function popEndedDistribution(uint256 distributionId) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE) {
+    function popEndedDistribution(uint256 distributionId) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
         if(distributionId == 0) revert Errors.InvalidDistributionId();
         
         // get distribution
@@ -948,7 +933,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     /**
      * @notice Sets contract to maintenance mode for operational updates
      */
-    function enableMaintenance() external whenNotEnded whenNotPaused whenNotUnderMaintenance onlyRole(OPERATOR_ROLE) {
+    function enableMaintenance() external whenNotEnded whenNotPaused whenNotUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
         if(isUnderMaintenance == 1) revert Errors.InMaintenance();
         
         isUnderMaintenance = 1;
@@ -958,7 +943,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     /**
      * @notice Disables maintenance mode
      */
-    function disableMaintenance() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(OPERATOR_ROLE) {
+    function disableMaintenance() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
         if(isUnderMaintenance == 0) revert Errors.NotInMaintenance();
         
         isUnderMaintenance = 0;
@@ -975,7 +960,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @dev Updates all active distribution indexes to current timestamp 
      * @dev This ensures all rewards are properly calculated and booked
      */
-    function updateActiveDistributions() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(OPERATOR_ROLE) {
+    function updateActiveDistributions() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
 
         uint256 numOfDistributions = activeDistributions.length;
         
@@ -1003,10 +988,10 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         
         if(isUnderMaintenance == 1){
             // caller must have OPERATOR role
-            if(!hasRole(OPERATOR_ROLE, msg.sender)) revert Errors.InvalidCaller();
+            if(!hasRole(Constants.OPERATOR_ROLE, msg.sender)) revert Errors.InvalidCaller();
         } else {
             // caller must have CRON_JOB role
-            if(!hasRole(CRON_JOB_ROLE, msg.sender)) revert Errors.InvalidCaller();
+            if(!hasRole(Constants.CRON_JOB_ROLE, msg.sender)) revert Errors.InvalidCaller();
         }
 
         uint256 numOfVaults = vaultIds.length;
@@ -1020,7 +1005,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
         DataTypes.UpdateAccountsIndexesParams memory params;
             //params.user = msg.sender; -> NOT USED
-            params.PRECISION_BASE = PRECISION_BASE;
             params.totalBoostedRealmPoints = totalBoostedRealmPoints;
             params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 
@@ -1033,7 +1017,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @notice Updates the NFT multiplier used to calculate boost factors
      * @param newMultiplier The new multiplier value to set
      */
-    function updateNftMultiplier(uint256 newMultiplier) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(OPERATOR_ROLE) {
+    function updateNftMultiplier(uint256 newMultiplier) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
         if(newMultiplier == 0) revert Errors.InvalidMultiplier();
         
         uint256 oldMultiplier = NFT_MULTIPLIER;
@@ -1047,7 +1031,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @dev Should only be called after NFT_MULTIPLIER has been updated. Recalculates boost factors and updates global totals.
      * @param vaultIds Array of vault IDs to update boosted balances 
      */
-    function updateBoostedBalances(bytes32[] calldata vaultIds) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(OPERATOR_ROLE) {
+    function updateBoostedBalances(bytes32[] calldata vaultIds) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
         uint256 numOfVaults = vaultIds.length;
         if(numOfVaults == 0) revert Errors.InvalidArray();
 
@@ -1065,9 +1049,9 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             totalBoostedStakedTokens -= vault.boostedStakedTokens;
 
             // update vault with new multiplier
-            vault.totalBoostFactor = (vault.stakedNfts * NFT_MULTIPLIER) + PRECISION_BASE;  // expressed as 1.XXX
-            vault.boostedRealmPoints = (vault.stakedRealmPoints * vault.totalBoostFactor) / PRECISION_BASE;    
-            vault.boostedStakedTokens = (vault.stakedTokens * vault.totalBoostFactor) / PRECISION_BASE;
+            vault.totalBoostFactor = (vault.stakedNfts * NFT_MULTIPLIER) + Constants.PRECISION_BASE;  // expressed as 1.XXX
+            vault.boostedRealmPoints = (vault.stakedRealmPoints * vault.totalBoostFactor) / Constants.PRECISION_BASE;    
+            vault.boostedStakedTokens = (vault.stakedTokens * vault.totalBoostFactor) / Constants.PRECISION_BASE;
 
             // Write back vault changes to storage
             vaults[vaultId] = vault;
@@ -1085,7 +1069,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     /**
      * @notice Pause pool. Cannot pause once frozen
      */
-    function pause() external whenNotPaused onlyRole(MONITOR_ROLE) {
+    function pause() external whenNotPaused onlyRole(Constants.MONITOR_ROLE) {
         if(isFrozen == 1) revert Errors.IsFrozen(); 
         _pause();
     }
@@ -1126,7 +1110,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(vaultIds.length == 0) revert Errors.InvalidArray();
 
         // if caller is not OPERATOR, can only call for self
-        if(!hasRole(OPERATOR_ROLE, msg.sender)){
+        if(!hasRole(Constants.OPERATOR_ROLE, msg.sender)){
             onBehalfOf = msg.sender;
         }
 
@@ -1309,7 +1293,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         DataTypes.UpdateAccountsIndexesParams memory params;
             params.user = user;   
             params.vaultId = vaultId;
-            params.PRECISION_BASE = PRECISION_BASE;
             params.totalBoostedRealmPoints = totalBoostedRealmPoints;
             params.totalBoostedStakedTokens = totalBoostedStakedTokens;
 

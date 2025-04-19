@@ -49,6 +49,7 @@ abstract contract TestingHarness is Test {
     address public operator = makeAddr("operator");
     address public depositor = makeAddr("depositor");
     address public deployer = makeAddr("deployer");
+    address public cronJob = makeAddr("cronJob");
 
     // ------ staking assets ------
     // user moca
@@ -129,7 +130,7 @@ abstract contract TestingHarness is Test {
         mocaToken.mint(user2, user2Moca);
         mocaToken.mint(user3, user3Moca);
         // parallel testing
-        mocaToken.mint(operator, user2Moca/2);
+        mocaToken.mint(cronJob, user2Moca/2);
 
         // register nfts
         for (uint256 i = 0; i < user1Nfts; ++i) {
@@ -160,13 +161,18 @@ abstract contract TestingHarness is Test {
         vm.startPrank(operator);
             pool.setRewardsVault(address(rewardsVault));
         vm.stopPrank();
+
+        // grant cron job role
+        vm.startPrank(owner);
+            pool.grantRole(Constants.CRON_JOB_ROLE, cronJob);
+        vm.stopPrank();
     }
 
     function generateSignature(address user, bytes32 vaultId, uint256 amount, uint256 expiry, uint256 nonce) public returns (bytes memory) {
         // Pack the struct data
         bytes32 structHash = keccak256(
             abi.encode(
-                pool.TYPEHASH(),
+                Constants.TYPEHASH,
                 user,
                 vaultId,
                 amount,

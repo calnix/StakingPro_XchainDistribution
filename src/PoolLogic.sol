@@ -4,6 +4,8 @@ pragma solidity ^0.8.26;
 import './Events.sol';
 import {Errors} from './Errors.sol';
 import {DataTypes} from './DataTypes.sol';
+import {Constants} from './Constants.sol';
+
 import {INftRegistry} from "./interfaces/INftRegistry.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -33,7 +35,7 @@ library PoolLogic {
         _updateUserAccounts(activeDistributions, distributions, vaultAccounts, userAccounts, vault, userVaultAssets, params);
 
         // calc. boostedStakedTokens
-        uint256 incomingBoostedTokens = (amount * vault.totalBoostFactor) / params.PRECISION_BASE;
+        uint256 incomingBoostedTokens = (amount * vault.totalBoostFactor) / Constants.PRECISION_BASE;
         
         // increment: vault
         vault.stakedTokens += amount;
@@ -85,8 +87,8 @@ library PoolLogic {
         emit VaultBoostFactorUpdated(params.vaultId, oldBoostFactor, vault.totalBoostFactor);
 
         // recalc. boosted balances with new boost factor 
-        if (vault.stakedTokens > 0) vault.boostedStakedTokens = (vault.stakedTokens * vault.totalBoostFactor) / params.PRECISION_BASE;            
-        if (vault.stakedRealmPoints > 0) vault.boostedRealmPoints = (vault.stakedRealmPoints * vault.totalBoostFactor) / params.PRECISION_BASE;
+        if (vault.stakedTokens > 0) vault.boostedStakedTokens = (vault.stakedTokens * vault.totalBoostFactor) / Constants.PRECISION_BASE;            
+        if (vault.stakedRealmPoints > 0) vault.boostedRealmPoints = (vault.stakedRealmPoints * vault.totalBoostFactor) / Constants.PRECISION_BASE;
 
         // update: user's tokenIds + boostedBalances
         userVaultAssets.tokenIds = _concatArrays(userVaultAssets.tokenIds, tokenIds);
@@ -120,7 +122,7 @@ library PoolLogic {
         _updateUserAccounts(activeDistributions, distributions, vaultAccounts, userAccounts, vault, userVaultAssets, params);
 
         // calc. boostedStakedRealmPoints
-        uint256 incomingBoostedRealmPoints = (amount * vault.totalBoostFactor) / params.PRECISION_BASE;
+        uint256 incomingBoostedRealmPoints = (amount * vault.totalBoostFactor) / Constants.PRECISION_BASE;
 
         // increment: vault
         vault.stakedRealmPoints += amount;
@@ -167,14 +169,14 @@ library PoolLogic {
         // ---------------------------- update vaults ----------------------------------------------
 
         // decrement oldVault
-        uint256 oldBoostedRealmPoints = (amount * oldVault.totalBoostFactor) / oldVaultParams.PRECISION_BASE; 
+        uint256 oldBoostedRealmPoints = (amount * oldVault.totalBoostFactor) / Constants.PRECISION_BASE; 
         oldVault.stakedRealmPoints -= amount;
         oldVault.boostedRealmPoints -= oldBoostedRealmPoints;
         // decrement oldUserVaultAssets
         userOldVaultAssets.stakedRealmPoints -= amount;
         
         // increment new vault
-        uint256 newBoostedRealmPoints = (amount * newVault.totalBoostFactor) / newVaultParams.PRECISION_BASE; 
+        uint256 newBoostedRealmPoints = (amount * newVault.totalBoostFactor) / Constants.PRECISION_BASE; 
         newVault.stakedRealmPoints += amount;
         newVault.boostedRealmPoints += newBoostedRealmPoints;
         // increment newUserVaultAssets
@@ -249,7 +251,7 @@ library PoolLogic {
         if(amount > 0){
 
             // calc. boosted tokens from unstaking tokens
-            totalBoostedTokensDelta = (amount * vault.totalBoostFactor) / params.PRECISION_BASE;
+            totalBoostedTokensDelta = (amount * vault.totalBoostFactor) / Constants.PRECISION_BASE;
 
             // update vault
             vault.stakedTokens -= amount;
@@ -268,10 +270,10 @@ library PoolLogic {
             uint256 boostFactorReduction = numOfNftsToUnstake * NFT_MULTIPLIER;
 
             // calc. effect on realm points boosting
-            totalBoostedRealmPointsDelta = (boostFactorReduction * vault.stakedRealmPoints) / params.PRECISION_BASE;
+            totalBoostedRealmPointsDelta = (boostFactorReduction * vault.stakedRealmPoints) / Constants.PRECISION_BASE;
 
             // calc. effect on boosted staked tokens [based off remaining staked tokens]
-            uint256 nftBoostedTokensDelta = (boostFactorReduction * vault.stakedTokens) / params.PRECISION_BASE;            
+            uint256 nftBoostedTokensDelta = (boostFactorReduction * vault.stakedTokens) / Constants.PRECISION_BASE;            
             totalBoostedTokensDelta += nftBoostedTokensDelta;
 
             // update vault
@@ -594,7 +596,7 @@ library PoolLogic {
             _updateUserAccounts(activeDistributions, distributions, vaultAccounts, userAccounts, vault, userVaultAssets, params);
 
             // calc. boostedStakedTokens
-            uint256 boostedStakedTokens = (stakedTokens * vault.totalBoostFactor) / params.PRECISION_BASE;
+            uint256 boostedStakedTokens = (stakedTokens * vault.totalBoostFactor) / Constants.PRECISION_BASE;
             
             // increment: vault
             vault.stakedTokens += stakedTokens;
@@ -723,7 +725,7 @@ library PoolLogic {
                 uint256 accCreatorFee, 
                 uint256 accTotalNftFee,
                 uint256 accRealmPointsFee
-            ) = _calculateVaultAccountAccruals(params.PRECISION_BASE, totalAccRewards, vault, vaultAccount_, distribution);
+            ) = _calculateVaultAccountAccruals(totalAccRewards, vault, vaultAccount_, distribution);
 
             // update vaultIndex
             vaultAccount.index = distribution.index;
@@ -958,7 +960,7 @@ library PoolLogic {
             uint256 accCreatorFee, 
             uint256 accTotalNftFee,
             uint256 accRealmPointsFee
-        ) = _calculateVaultAccountAccruals(params.PRECISION_BASE, totalAccRewards, vault, vaultAccount, distribution);
+        ) = _calculateVaultAccountAccruals(totalAccRewards, vault, vaultAccount, distribution);
 
         // update vaultIndex
         vaultAccount.index = distribution.index;
@@ -968,7 +970,6 @@ library PoolLogic {
     }
 
     function _calculateVaultAccountAccruals(
-        uint256 PRECISION_BASE,
         uint256 totalAccRewards,
         DataTypes.Vault memory vault, 
         DataTypes.VaultAccount memory vaultAccount, 
@@ -983,7 +984,7 @@ library PoolLogic {
         // calc. creator fees
         if(vault.creatorFeeFactor > 0) {
             // fees are kept in 1E18 during intermediate calculations
-            accCreatorFee = (totalAccRewards * vault.creatorFeeFactor) / PRECISION_BASE;
+            accCreatorFee = (totalAccRewards * vault.creatorFeeFactor) / Constants.PRECISION_BASE;
         }
 
         // nft fees accrued only if there were staked NFTs
@@ -991,7 +992,7 @@ library PoolLogic {
             if(vault.nftFeeFactor > 0) {
 
                 // indexes are denominated in 1E18 | fees are kept in 1E18 during intermediate calculations
-                accTotalNftFee = (totalAccRewards * vault.nftFeeFactor) / PRECISION_BASE;
+                accTotalNftFee = (totalAccRewards * vault.nftFeeFactor) / Constants.PRECISION_BASE;
                 vaultAccount.nftIndex += (accTotalNftFee / vault.stakedNfts);      // nftIndex: rewardsAccPerNFT            
             }
         }
@@ -1001,7 +1002,7 @@ library PoolLogic {
             if(vault.realmPointsFeeFactor > 0) {
 
                 // indexes are denominated in 1E18 | fees are kept in 1E18 during intermediate calculations | realmPoints are denominated in 1E18
-                accRealmPointsFee = (totalAccRewards * vault.realmPointsFeeFactor) / PRECISION_BASE;
+                accRealmPointsFee = (totalAccRewards * vault.realmPointsFeeFactor) / Constants.PRECISION_BASE;
                 vaultAccount.rpIndex += (accRealmPointsFee * 1E18) / vault.stakedRealmPoints;      // rpIndex: rewardsAccPerRP
             }
         } 
@@ -1311,14 +1312,14 @@ library PoolLogic {
         // calc. creator fees
         if(vault.creatorFeeFactor > 0) {
             // fees are kept in 1E18 during intermediate calculations
-            accCreatorFee = (totalAccRewards * vault.creatorFeeFactor) / params.PRECISION_BASE;
+            accCreatorFee = (totalAccRewards * vault.creatorFeeFactor) / Constants.PRECISION_BASE;
         }
 
         // nft fees accrued only if there were staked NFTs
         if(vault.stakedNfts > 0) {
             if(vault.nftFeeFactor > 0) {
                 // indexes are denominated in 1E18 | fees are kept in 1E18 during intermediate calculations
-                accTotalNftFee = (totalAccRewards * vault.nftFeeFactor) / params.PRECISION_BASE;
+                accTotalNftFee = (totalAccRewards * vault.nftFeeFactor) / Constants.PRECISION_BASE;
                 vaultAccount.nftIndex += (accTotalNftFee / vault.stakedNfts);   // nftIndex: rewardsAccPerNFT    
             }
         }
@@ -1327,7 +1328,7 @@ library PoolLogic {
         if(vault.stakedRealmPoints > 0) {
             if(vault.realmPointsFeeFactor > 0) {
                 // indexes are denominated in 1E18 | fees are kept in 1E18 during intermediate calculations | realmPoints are denominated in 1E18
-                accRealmPointsFee = (totalAccRewards * vault.realmPointsFeeFactor) / params.PRECISION_BASE;
+                accRealmPointsFee = (totalAccRewards * vault.realmPointsFeeFactor) / Constants.PRECISION_BASE;
                 vaultAccount.rpIndex += (accRealmPointsFee * 1E18) / vault.stakedRealmPoints;              // rpIndex: rewardsAccPerRP
             }
         } 

@@ -182,7 +182,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
 
         uint256 totalRpStaked = user1Rp + user2Rp;
         uint256 numOfNftsStaked = 4;                            // user2: 4nfts staked for t16-t30
-        uint256 boostedAmount = (totalRpStaked * (numOfNftsStaked * pool.NFT_MULTIPLIER()) / pool.PRECISION_BASE());
+        uint256 boostedAmount = (totalRpStaked * (numOfNftsStaked * pool.NFT_MULTIPLIER()) / Constants.PRECISION_BASE);
         uint256 totalBoostedRp = totalRpStaked + boostedAmount;
 
         uint256 indexDelta = 15 ether * 1E18 / totalBoostedRp;
@@ -215,8 +215,8 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         uint256 prevVaultIndex = vault1Account0_T16.index;
 
         // calc. newly accrued rewards       
-        uint256 boostFactor = pool.PRECISION_BASE() + (stakedNfts * pool.NFT_MULTIPLIER());
-        uint256 boostedRpBalance = stakedRp * boostFactor / pool.PRECISION_BASE();
+        uint256 boostFactor = Constants.PRECISION_BASE + (stakedNfts * pool.NFT_MULTIPLIER());
+        uint256 boostedRpBalance = stakedRp * boostFactor / Constants.PRECISION_BASE;
         uint256 newlyAccRewards = calculateRewards(boostedRpBalance, distribution0_T31.index, prevVaultIndex, 1E18);
         // eval. rounding error
         uint256 newlyAccRewardsExpected = 15 ether;                   // ignores rounding 
@@ -476,8 +476,8 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
             uint256 prevVaultIndex = 0;     // first update
 
             // calc. newly accrued rewards       
-            uint256 boostFactor = pool.PRECISION_BASE() + (stakedNfts * pool.NFT_MULTIPLIER());
-            uint256 boostedTokenBalance = stakedTokens * boostFactor / pool.PRECISION_BASE();
+            uint256 boostFactor = Constants.PRECISION_BASE + (stakedNfts * pool.NFT_MULTIPLIER());
+            uint256 boostedTokenBalance = stakedTokens * boostFactor / Constants.PRECISION_BASE;
             uint256 newlyAccRewards = calculateRewards(boostedTokenBalance, distribution.index, prevVaultIndex, 1E18); 
             // eval. rounding error
             uint256 newlyAccRewardsExpected = 10 ether;                   // d1 started @t21
@@ -794,7 +794,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         uint256 tokenAmount = user2Moca/2;
         
         // Calculate the boosted tokens from token unstaking
-        uint256 tokenBoostedDelta = (tokenAmount * vaultBefore.totalBoostFactor) / pool.PRECISION_BASE();
+        uint256 tokenBoostedDelta = (tokenAmount * vaultBefore.totalBoostFactor) / Constants.PRECISION_BASE;
 
         uint256[] memory nftsToUnstake = new uint256[](2);
             nftsToUnstake[0] = user2NftsArray[0];
@@ -805,13 +805,13 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         
         // Calculate NFT effect on remaining tokens
         // Note: We use (vaultBefore.stakedTokens - tokenAmount) since the NFT boost affects tokens AFTER tokens are unstaked
-        uint256 nftBoostedTokensDelta = ((vaultBefore.stakedTokens - tokenAmount) * boostFactorReduction) / pool.PRECISION_BASE();
+        uint256 nftBoostedTokensDelta = ((vaultBefore.stakedTokens - tokenAmount) * boostFactorReduction) / Constants.PRECISION_BASE;
 
         // Calculate the total boosted tokens delta for global state
         uint256 totalBoostedTokensDelta = tokenBoostedDelta + nftBoostedTokensDelta;
 
         // Calculate realm points effect
-        uint256 totalBoostedRealmPointsDelta = (vaultBefore.stakedRealmPoints * boostFactorReduction) / pool.PRECISION_BASE();
+        uint256 totalBoostedRealmPointsDelta = (vaultBefore.stakedRealmPoints * boostFactorReduction) / Constants.PRECISION_BASE;
 
         vm.startPrank(user2);
             vm.expectEmit(true, true, true, true);
@@ -837,9 +837,9 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         assertEq(pool.totalStakedTokens(), poolTokensBefore - tokenAmount, "Pool tokens not reduced correctly");
 
         // Check boosted balances updated
-        uint256 expectedVaultBoostFactor = pool.PRECISION_BASE() + ((vaultAfter.stakedNfts) * pool.NFT_MULTIPLIER());
-        uint256 expectedVaultBoostedTokens = (vaultAfter.stakedTokens * expectedVaultBoostFactor) / pool.PRECISION_BASE();
-        uint256 expectedVaultBoostedRp = (vaultAfter.stakedRealmPoints * expectedVaultBoostFactor) / pool.PRECISION_BASE();
+        uint256 expectedVaultBoostFactor = Constants.PRECISION_BASE + ((vaultAfter.stakedNfts) * pool.NFT_MULTIPLIER());
+        uint256 expectedVaultBoostedTokens = (vaultAfter.stakedTokens * expectedVaultBoostFactor) / Constants.PRECISION_BASE;
+        uint256 expectedVaultBoostedRp = (vaultAfter.stakedRealmPoints * expectedVaultBoostFactor) / Constants.PRECISION_BASE;
 
         // vault
         assertEq(vaultAfter.totalBoostFactor, expectedVaultBoostFactor, "Vault boost factor not updated correctly");

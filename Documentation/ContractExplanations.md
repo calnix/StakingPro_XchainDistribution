@@ -441,12 +441,14 @@ Addresses:
 1. Owner multiSig
 2. Risk monitoring script [EOA]
 3. Operator [EOA]
+4. Cron job [EOA]
 
 Roles:
 
 1. `MONITOR_ROLE`: For risk monitoring scripts to call `pause()`
-2. `OPERATOR_ROLE`: For updating pool parameters and calling `stakeOnBehalfOf()`
+2. `OPERATOR_ROLE`: For updating pool parameters.
 3. `DEFAULT_ADMIN_ROLE`: Owner multiSig that can assign/revoke roles
+4. `CRON_JOB_ROLE`: For updating vaultAccounts when a distribution ends; and calling `stakeOnBehalfOf()`.
 
 > Roles are referred to by their bytes32 identifier
 

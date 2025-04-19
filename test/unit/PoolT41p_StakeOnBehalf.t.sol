@@ -64,8 +64,8 @@ abstract contract StateT41_User2StakesToVault2_OperatorStakesOnBehalf is StateT3
             pool.stakeNfts(vaultId2, nftsToStake); 
         vm.stopPrank();
 
-        // operator stakes on behalf of user2
-        vm.startPrank(operator);
+        // cronJob stakes on behalf of user2
+        vm.startPrank(cronJob);
             
             bytes32[] memory vaultIds = new bytes32[](1);
             vaultIds[0] = vaultId2;
@@ -208,8 +208,8 @@ contract StateT41_User2StakesToVault2_OperatorStakesOnBehalfTest is StateT41_Use
         uint256 numOfNftsStaked = 2;                            // vault1: 2nfts staked for t36-41
         uint256 vault1RP = user1Rp + user2Rp/2;                 // vault1 RP
         uint256 vault2RP = user2Rp/2;                           // vault2 RP (no boost)
-        uint256 boostFactor = pool.PRECISION_BASE() + (numOfNftsStaked * pool.NFT_MULTIPLIER());
-        uint256 totalBoostedRp = (vault1RP * boostFactor / pool.PRECISION_BASE()) + vault2RP;
+        uint256 boostFactor = Constants.PRECISION_BASE + (numOfNftsStaked * pool.NFT_MULTIPLIER());
+        uint256 totalBoostedRp = (vault1RP * boostFactor / Constants.PRECISION_BASE) + vault2RP;
 
         uint256 indexDelta = 5 ether * 1E18 / totalBoostedRp;
         uint256 expectedIndex = distribution0_T36.index + indexDelta;
@@ -801,8 +801,8 @@ contract StateT46_CheckRewardsAccrued_AfterStakeOnBehalfTest is StateT46_CheckRe
         uint256 numOfNftsStaked = 2;                            // both vaults have 2 NFTs staked
         uint256 vault1RP = user1Rp + user2Rp/2;                 
         uint256 vault2RP = user2Rp/2;                           
-        uint256 boostFactor = pool.PRECISION_BASE() + (numOfNftsStaked * pool.NFT_MULTIPLIER());
-        uint256 totalBoostedRp = (vault1RP * boostFactor / pool.PRECISION_BASE()) + (vault2RP * boostFactor / pool.PRECISION_BASE());
+        uint256 boostFactor = Constants.PRECISION_BASE + (numOfNftsStaked * pool.NFT_MULTIPLIER());
+        uint256 totalBoostedRp = (vault1RP * boostFactor / Constants.PRECISION_BASE) + (vault2RP * boostFactor / Constants.PRECISION_BASE);
 
         uint256 indexDelta = 5 ether * 1E18 / totalBoostedRp;
         uint256 expectedIndex = distribution0_T41.index + indexDelta;

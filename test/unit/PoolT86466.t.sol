@@ -59,7 +59,7 @@ contract StateT86466_User2UnstakedFromVault2Test is StateT86466_User2UnstakedFro
 
     function testUserCannotSetEndTime() public {
         vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.setEndTime(block.timestamp + 1);
         vm.stopPrank();
     }

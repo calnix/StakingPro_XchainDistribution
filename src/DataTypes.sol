@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-contract DataTypes {
+library DataTypes {
 
     /*//////////////////////////////////////////////////////////////
                                   POOL
@@ -124,7 +124,6 @@ contract DataTypes {
     struct UpdateAccountsIndexesParams {
         address user;
         bytes32 vaultId;       
-        uint256 PRECISION_BASE;
 
         // boosted balances
         uint256 totalBoostedRealmPoints;

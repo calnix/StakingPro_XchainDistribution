@@ -29,11 +29,11 @@ contract StateT0_DeployTest is StateT0_Deploy {
 
         // CHECK ROLES
         assertEq(pool.hasRole(pool.DEFAULT_ADMIN_ROLE(), owner), true);
-        assertEq(pool.hasRole(pool.OPERATOR_ROLE(), owner), true);
-        assertEq(pool.hasRole(pool.MONITOR_ROLE(), owner), true);
+        assertEq(pool.hasRole(Constants.OPERATOR_ROLE, owner), true);
+        assertEq(pool.hasRole(Constants.MONITOR_ROLE, owner), true);
 
-        assertEq(pool.hasRole(pool.MONITOR_ROLE(), monitor), true);
-        assertEq(pool.hasRole(pool.OPERATOR_ROLE(), operator), true);
+        assertEq(pool.hasRole(Constants.MONITOR_ROLE, monitor), true);
+        assertEq(pool.hasRole(Constants.OPERATOR_ROLE, operator), true);
     }
     
 // ------ user fns ------
@@ -114,7 +114,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
 
     function testUserCannotSetRewardsVault() public {
         vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.setRewardsVault(address(123));
         vm.stopPrank();
     }

@@ -196,8 +196,8 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
 
         uint256 numOfNftsStaked = 4;                            // user2: 4nfts staked for t31-36
         uint256 boostableRP = user1Rp + user2Rp/2;
-        uint256 boostFactor = pool.PRECISION_BASE() + (numOfNftsStaked * pool.NFT_MULTIPLIER());
-        uint256 totalBoostedRp = boostableRP * boostFactor / pool.PRECISION_BASE() + user2Rp/2;
+        uint256 boostFactor = Constants.PRECISION_BASE + (numOfNftsStaked * pool.NFT_MULTIPLIER());
+        uint256 totalBoostedRp = boostableRP * boostFactor / Constants.PRECISION_BASE + user2Rp/2;
 
         uint256 indexDelta = 5 ether * 1E18 / totalBoostedRp;
         uint256 expectedIndex = distribution0_T31.index + indexDelta;
@@ -418,7 +418,7 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
                 
                 uint256 vault2ShareOfEmissions = (5 ether * vault2_T31.boostedRealmPoints) / (vault1_T31.boostedRealmPoints + vault2_T31.boostedRealmPoints);
                 // vault2 has no staked tokens, only staked RP - receives only rp fee
-                uint256 user2vault2ReceivedRewards = (vault2ShareOfEmissions * (vault2_T31.realmPointsFeeFactor + vault2_T31.creatorFeeFactor)) / pool.PRECISION_BASE();
+                uint256 user2vault2ReceivedRewards = (vault2ShareOfEmissions * (vault2_T31.realmPointsFeeFactor + vault2_T31.creatorFeeFactor)) / Constants.PRECISION_BASE;
                 uint256 latestAccRealmPointsRewards = user2vault2ReceivedRewards;
 
             uint256 expectedClaimableRewards = latestAccStakingRewards + latestAccNftStakingRewards + latestAccRealmPointsRewards;
@@ -475,8 +475,8 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         // -------------- check indices --------------
 
             // calc. newly accrued rewards       
-            uint256 boostFactor = pool.PRECISION_BASE() + (stakedNfts * pool.NFT_MULTIPLIER());
-            uint256 boostedTokenBalance = stakedTokens * boostFactor / pool.PRECISION_BASE();
+            uint256 boostFactor = Constants.PRECISION_BASE + (stakedNfts * pool.NFT_MULTIPLIER());
+            uint256 boostedTokenBalance = stakedTokens * boostFactor / Constants.PRECISION_BASE;
             uint256 newlyAccRewards = calculateRewards(boostedTokenBalance, distribution.index, prevVaultIndex, 1E18); 
             // eval. rounding error
             uint256 newlyAccRewardsExpected = 5 ether;                   // d1 emitted 5 ether from t31-t36; only vault1 has stakedTokens
@@ -729,7 +729,7 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         onBehalfOfs[0] = user2;
         uint256[] memory amounts = new uint256[](0);
 
-        vm.startPrank(operator);
+        vm.startPrank(cronJob);
             vm.expectRevert(Errors.InvalidArray.selector);
             pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
         vm.stopPrank();
@@ -743,7 +743,7 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = user2Moca/2;
 
-        vm.startPrank(operator);
+        vm.startPrank(cronJob);
             vm.expectRevert(Errors.InvalidVaultId.selector);
             pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
         vm.stopPrank();
@@ -756,7 +756,7 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = user2Moca/2;
 
-        vm.startPrank(operator);
+        vm.startPrank(cronJob);
             vm.expectRevert(Errors.InvalidAddress.selector);
             pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
         vm.stopPrank();
@@ -773,22 +773,22 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         amounts[0] = user2Moca/2;
 
         vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.OPERATOR_ROLE()));
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.CRON_JOB_ROLE));
             pool.stakeOnBehalfOf(vaultIds, onBehalfOfs, amounts);
         vm.stopPrank();
     }
 
     function testOperatorCanStakeOnBehalfOfUser2_T36() public {
         // check initial token balances
-        uint256 operatorInitialBalance = mocaToken.balanceOf(operator);
+        uint256 cronJobInitialBalance = mocaToken.balanceOf(cronJob);
         uint256 poolInitialBalance = mocaToken.balanceOf(address(pool));
 
         // get vault2 assets before operator stakes
         DataTypes.Vault memory vault2Before = pool.getVault(vaultId2);
         assertEq(vault2Before.stakedTokens, 0);
         
-        // operator stakes on behalf of user2
-        vm.startPrank(operator);
+        // cronJob stakes on behalf of user2
+        vm.startPrank(cronJob);
             
             bytes32[] memory vaultIds = new bytes32[](1);
             vaultIds[0] = vaultId2;
@@ -808,7 +808,7 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         vm.stopPrank();
 
         // check token transfers
-        assertEq(mocaToken.balanceOf(operator), operatorInitialBalance - user2Moca/2, "Operator balance not reduced correctly");
+        assertEq(mocaToken.balanceOf(cronJob), cronJobInitialBalance - user2Moca/2, "CronJob balance not reduced correctly");
         assertEq(mocaToken.balanceOf(address(pool)), poolInitialBalance + user2Moca/2, "Pool balance not increased correctly");
 
         // check vault2 assets

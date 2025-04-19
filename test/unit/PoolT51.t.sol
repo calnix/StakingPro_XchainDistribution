@@ -199,8 +199,8 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
         uint256 numOfNftsStaked = 2;                            // both vaults have 2 NFTs staked
         uint256 vault1RP = user1Rp + user2Rp/2;                 
         uint256 vault2RP = user2Rp/2;                           
-        uint256 boostFactor = pool.PRECISION_BASE() + (numOfNftsStaked * pool.NFT_MULTIPLIER());
-        uint256 totalBoostedRp = (vault1RP * boostFactor / pool.PRECISION_BASE()) + (vault2RP * boostFactor / pool.PRECISION_BASE());
+        uint256 boostFactor = Constants.PRECISION_BASE + (numOfNftsStaked * pool.NFT_MULTIPLIER());
+        uint256 totalBoostedRp = (vault1RP * boostFactor / Constants.PRECISION_BASE) + (vault2RP * boostFactor / Constants.PRECISION_BASE);
 
         uint256 indexDelta = 5 ether * 1E18 / totalBoostedRp;
         uint256 expectedIndex = distribution0_T46.index + indexDelta;
@@ -960,7 +960,7 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
 // ---- state transition: PoolT56p_Risk.t.sol  ----
     function testUserCannotPausePool() public {
         vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.MONITOR_ROLE()));
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.MONITOR_ROLE));
             pool.pause();
         vm.stopPrank();
 
