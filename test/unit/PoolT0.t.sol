@@ -244,6 +244,20 @@ contract StateT0_DeployTest is StateT0_Deploy {
 
         assertEq(pool.CREATION_NFTS_REQUIRED(), newCreationNfts);
     }
+
+    function testCanUpdateVaultCooldownWhenNotStarted() public {
+        uint256 initialVaultCooldown = pool.VAULT_COOLDOWN_DURATION();
+        uint256 newVaultCooldown = initialVaultCooldown + 1;
+        assertNotEq(initialVaultCooldown, newVaultCooldown);
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit VaultCooldownDurationUpdated(initialVaultCooldown, newVaultCooldown);
+            pool.updateVaultCooldown(newVaultCooldown);
+        vm.stopPrank();
+
+        assertEq(pool.VAULT_COOLDOWN_DURATION(), newVaultCooldown);
+    }
     
 // ------ state transition ------
     function testOperatorCanSetupDistribution() public {

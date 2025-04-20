@@ -1005,17 +1005,18 @@ contract StateT56_UsersClaimRewardsFromBothVaultsTest is StateT56_UsersClaimRewa
         assertEq(vault.endTime, expectedEndTime, "Incorrect endTime");
     }
 
-// state transition: for parallel tests - `PoolT61p_UpdateVaultCooldown`
-    function testUserCannotUpdateVaultCooldown() public {
+// ----- state transition: PoolT61p_UpdateVaultCooldown.t.sol -----
+    function testUserCannotUpdateVaultCooldown_T56() public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.updateVaultCooldown(5);
         vm.stopPrank();
     }
     
-    function testOperatorCanUpdateVaultCooldown() public {
+    function testOperatorCanUpdateVaultCooldown_T56() public {
         uint256 oldCooldown = pool.VAULT_COOLDOWN_DURATION();
         uint256 newCooldown = 5;
+        assertNotEq(oldCooldown, newCooldown);
 
         vm.startPrank(operator);
             vm.expectEmit(true, true, true, true);

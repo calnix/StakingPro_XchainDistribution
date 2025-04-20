@@ -201,6 +201,16 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
             pool.updateCreationNfts(newCreationNfts);
     }
 
+    function testCanUpdateVaultCooldownWhenInMaintenanceMode() public {
+        uint256 initialVaultCooldown = pool.VAULT_COOLDOWN_DURATION();
+        uint256 newVaultCooldown = initialVaultCooldown + 1;
+
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit VaultCooldownDurationUpdated(initialVaultCooldown, newVaultCooldown);
+            pool.updateVaultCooldown(newVaultCooldown);
+    }
+
 // ---- state transition ----
     function testOperatorCanUpdateDistributions() public {
         

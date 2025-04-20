@@ -66,7 +66,7 @@ abstract contract StateT61_Vault2CooldownActivated_UpdatedCooldown is StateT56_U
 
 contract StateT61p_UpdateVaultCooldownTest is StateT61_Vault2CooldownActivated_UpdatedCooldown {
 
-    function testVault2EndedOnActivateCooldown() public {
+    function testVault2EndedOnActivateCooldown_T61p() public {
         // global state: before
         uint256 poolTotalNftsBefore = pool.totalStakedNfts();
         uint256 poolTotalCreationNftsBefore = pool.totalCreationNfts();

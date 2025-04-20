@@ -316,7 +316,21 @@ Contract states:
 - (+) Can set creation NFTs to zero                       | testOperatorSetCreationNftsToZero_T16 [tests zero nft vault creation]
 - (+) Operator can update creation NFTs                   | testOperatorCanUpdateCreationNfts_T16 [user 2 creates vault w/ 1 nft]
 
-## 
+## updateVaultCooldown
+
+Contract states:
+- (+) Contract not started                                | testCanUpdateVaultCooldownWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotUpdateVaultCooldownWhenPaused
+- (+) Contract under maintenance                          | testCanUpdateVaultCooldownWhenInMaintenanceMode
+- (-) Contract ended (should revert)                      | testCannotUpdateVaultCooldownAfterContractEnded
+
+- (-) Users cannot update vault cooldown (revert)         | testUserCannotUpdateVaultCooldown_T56
+- (+) Operator can update vault cooldown                  | PoolT61p_UpdateVaultCooldown.t.sol
+- (+) Operator can update vault cooldown to ZERO          | PoolT61p_UpdateVaultCooldownZero.t.sol
+
+## setupDistribution
+
+
 
 
 ## updateNftMultiplier

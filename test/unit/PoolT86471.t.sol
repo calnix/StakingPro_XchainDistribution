@@ -205,4 +205,10 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
         vm.stopPrank();
     }
     
+    function testCannotUpdateVaultCooldownAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.updateVaultCooldown(1000);
+        vm.stopPrank();
+    }
 }   

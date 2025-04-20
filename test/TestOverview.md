@@ -182,6 +182,13 @@ Others
 - transition fn: T56 - test `updateVaultCooldown`
 - split test on T61: activateCooldown w/ new cooldown period [copy T61 tests]
 
+### `updateVaultCooldown`
+
+- PoolT61p_UpdateVaultCooldown
+- PoolT61p_UpdateVaultCooldownZero.t.sol
+
+
+
 ### `updateDistribution`[!!!]
 
 - split sometime after distribution 1 is created
@@ -192,11 +199,13 @@ startTime, endTime, emissionPerSecond
 - test endDistribution error: `if(distribution.manuallyEnded == 1) revert Errors.DistributionManuallyEnded();`
 
 ### `endDistribution`
+
 - split at T46
 - end D1 then warp to T46: check that rewards are only accrued till T41, nothing further
 - check claimRewards
 
 ### `setRewardsVault`
+
 - continue on the same split as `endDistribution``
 
 ## Update NFT_MULTIPLIER process

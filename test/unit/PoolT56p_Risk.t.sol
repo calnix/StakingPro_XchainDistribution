@@ -157,7 +157,11 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         pool.updateCreationNfts(1000);
     }
     
-    
+    function testCannotUpdateVaultCooldownWhenPaused() public {
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.updateVaultCooldown(1000);
+    }
 }
 
 abstract contract StateT56p_Frozen is StateT56p_Paused {
