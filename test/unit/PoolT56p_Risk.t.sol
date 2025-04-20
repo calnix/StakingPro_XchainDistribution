@@ -144,6 +144,12 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         vm.expectRevert(Pausable.EnforcedPause.selector);
         pool.updateMinimumRealmPoints(1000);
     }
+
+    function testCannotUpdateNftMultiplierWhenPaused() public {
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.updateNftMultiplier(1000);
+    }
 }
 
 abstract contract StateT56p_Frozen is StateT56p_Paused {

@@ -321,7 +321,7 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
 
     function testCannotSetMinimumRealmPointsToZero_T6() public {
         vm.startPrank(operator);
-            vm.expectRevert(Errors.MinimumRealmPointsZero.selector);
+            vm.expectRevert(Errors.InvalidAmount.selector);
             pool.updateMinimumRealmPoints(0);
         vm.stopPrank();
     }

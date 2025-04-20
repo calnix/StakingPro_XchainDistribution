@@ -191,4 +191,10 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
             pool.updateMinimumRealmPoints(1000);
         vm.stopPrank();
     }
+
+    function testCannotUpdateNftMultiplierAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.updateNftMultiplier(1000);
+    }
 }   

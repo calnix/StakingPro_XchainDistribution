@@ -112,7 +112,7 @@ contract StateT46p_UpdateMaximumFeeFactorTest is StateT46p_UpdateMaximumFeeFacto
 
     function testCanDecreaseMaximumFeeFactor() public {
         uint256 initialMaxFeeFactor = pool.MAXIMUM_FEE_FACTOR();
-        uint256 newMaxFeeFactor = 1000;
+        uint256 newMaxFeeFactor = initialMaxFeeFactor - 1;
         
         assertGt(initialMaxFeeFactor, newMaxFeeFactor, "New max fee factor should be lower than initial");
         

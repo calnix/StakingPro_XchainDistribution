@@ -181,6 +181,17 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         assertEq(pool.MINIMUM_REALMPOINTS_REQUIRED(), newMinRealmPoints);
     }
 
+    function testCanUpdateNftMultiplierWhenInMaintenanceMode() public {
+        uint256 initialNftMultiplier = pool.NFT_MULTIPLIER();
+        uint256 newNftMultiplier = initialNftMultiplier + 1;
+        
+        vm.startPrank(operator);
+            pool.updateNftMultiplier(newNftMultiplier);
+        vm.stopPrank();
+
+        assertEq(pool.NFT_MULTIPLIER(), newNftMultiplier);
+    }
+
 // ---- state transition ----
     function testOperatorCanUpdateDistributions() public {
         

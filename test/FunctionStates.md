@@ -306,4 +306,15 @@ Contract states:
 
 ## updateNftMultiplier
 
+Contract states:
+- (+) Contract not started                                | testCanUpdateNftMultiplierWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotUpdateNftMultiplierWhenPaused
+- (+) Contract under maintenance                          | testCanUpdateNftMultiplierWhenInMaintenanceMode
+- (-) Contract ended (should revert)                      | testCannotUpdateNftMultiplierAfterContractEnded
+
+- (-) Users cannot update NFT multiplier (revert)         | testUserCannotUpdateNftMultiplier
+- (-) Cannot set NFT multiplier to zero (revert)          | testCannotSetNftMultiplierToZero
+- (+) Operator can update NFT multiplier                  | testOperatorCanUpdateNftMultiplier
+- (+) Operator can decrease NFT multiplier                | testCanDecreaseNftMultiplier
+- (+) Operator can increase NFT multiplier                | testCanIncreaseNftMultiplier
 
