@@ -304,6 +304,21 @@ Contract states:
 - (-) Cannot set minimum realm points to zero (revert)    | testCannotSetMinimumRealmPointsToZero_T6
 - (+) Operator can update minimum realm points            | testOperatorCanUpdateMinimumRealmPoints_T6
 
+## updateCreationNfts
+
+Contract states:
+- (+) Contract not started                                | testCanUpdateCreationNftsWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotUpdateCreationNftsWhenPaused
+- (+) Contract under maintenance                          | testCanUpdateCreationNftsWhenInMaintenanceMode
+- (-) Contract ended (should revert)                      | testCannotUpdateCreationNftsAfterContractEnded
+
+- (-) Users cannot update creation NFTs (revert)          | testUserCannotUpdateCreationNfts_T16
+- (+) Can set creation NFTs to zero                       | testOperatorSetCreationNftsToZero_T16 [tests zero nft vault creation]
+- (+) Operator can update creation NFTs                   | testOperatorCanUpdateCreationNfts_T16 [user 2 creates vault w/ 1 nft]
+
+## 
+
+
 ## updateNftMultiplier
 
 Contract states:
@@ -312,9 +327,6 @@ Contract states:
 - (+) Contract under maintenance                          | testCanUpdateNftMultiplierWhenInMaintenanceMode
 - (-) Contract ended (should revert)                      | testCannotUpdateNftMultiplierAfterContractEnded
 
-- (-) Users cannot update NFT multiplier (revert)         | testUserCannotUpdateNftMultiplier
-- (-) Cannot set NFT multiplier to zero (revert)          | testCannotSetNftMultiplierToZero
-- (+) Operator can update NFT multiplier                  | testOperatorCanUpdateNftMultiplier
-- (+) Operator can decrease NFT multiplier                | testCanDecreaseNftMultiplier
-- (+) Operator can increase NFT multiplier                | testCanIncreaseNftMultiplier
-
+- (-) Users cannot update NFT multiplier (revert)         | testUserCannotUpdateNftMultiplier_T46p
+- (-) Cannot set NFT multiplier to zero (revert)          | testCannotSetNftMultiplierToZero_T46p
+- (+) Operator can update NFT multiplier                  | testOperatorCanUpdateNftMultiplier_T46p

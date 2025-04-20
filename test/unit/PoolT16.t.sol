@@ -406,15 +406,36 @@ contract StateT16_BothUsersStakeAgainTest is StateT16_BothUsersStakeAgain {
         pool.claimRewards(vaultId1, 1);
     }
 
-    function testNonOperatorCannotUpdateCreationNfts(uint256 newAmount) public {
+// ---------------- state transition: PoolT21 [creationNfts] ----------------
+
+    function testUserCannotUpdateCreationNfts_T16(uint256 newAmount) public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.updateCreationNfts(newAmount);
         vm.stopPrank();
     }
 
+    // TEST ZERO CREATION NFTS VAULT 
+    function testOperatorSetCreationNftsToZero_T16() public {
+        vm.startPrank(operator);
+            pool.updateCreationNfts(0);
+        vm.stopPrank();
+
+        assertEq(pool.CREATION_NFTS_REQUIRED(), 0);
+
+        // create vault with 0 creation nfts
+        vm.startPrank(user1);
+            uint256[] memory tokenIds = new uint256[](0);
+            pool.createVault(tokenIds, 0, 0, 0);
+        vm.stopPrank();
+
+        bytes32 newVaultId = generateVaultId(block.number - 1, user1);
+
+        assertEq(pool.getVault(newVaultId).creationTokenIds.length, 0);
+    }
+
     // operator updates CREATION_NFTS_REQUIRED
-    function testUpdateCreationNfts(uint256 newAmount) public {
+    function testOperatorCanUpdateCreationNfts_T16(uint256 newAmount) public {
         vm.startPrank(operator);
             vm.expectEmit(true, true, false, false);
             emit CreationNftRequiredUpdated(pool.CREATION_NFTS_REQUIRED(), newAmount);

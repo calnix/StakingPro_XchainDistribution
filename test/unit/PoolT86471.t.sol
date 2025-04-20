@@ -197,4 +197,12 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
             vm.expectRevert(Errors.StakingEnded.selector);
             pool.updateNftMultiplier(1000);
     }
+
+    function testCannotUpdateCreationNftsAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.updateCreationNfts(1000);
+        vm.stopPrank();
+    }
+    
 }   

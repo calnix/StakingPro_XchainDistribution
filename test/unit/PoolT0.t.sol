@@ -230,6 +230,20 @@ contract StateT0_DeployTest is StateT0_Deploy {
         assertEq(pool.NFT_MULTIPLIER(), newNftMultiplier);
         assertNotEq(initialNftMultiplier, pool.NFT_MULTIPLIER());
     }
+
+    function testCanUpdateCreationNftsWhenNotStarted() public {
+        uint256 initialCreationNfts = pool.CREATION_NFTS_REQUIRED();
+        uint256 newCreationNfts = initialCreationNfts + 1;
+        assertNotEq(initialCreationNfts, newCreationNfts);
+
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit CreationNftRequiredUpdated(initialCreationNfts, newCreationNfts);
+            pool.updateCreationNfts(newCreationNfts);
+        vm.stopPrank();
+
+        assertEq(pool.CREATION_NFTS_REQUIRED(), newCreationNfts);
+    }
     
 // ------ state transition ------
     function testOperatorCanSetupDistribution() public {

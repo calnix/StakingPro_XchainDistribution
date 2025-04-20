@@ -883,25 +883,5 @@ contract StateT46_BothVaultsFeesUpdatedTest is StateT46_BothVaultsFeesUpdated {
             assertEq(claimableRewards, expectedClaimableRewards, "claimableRewards mismatch"); 
         }
 
-// ---- state transition tests: PoolT46p_MaintenanceMode.t.sol ----
-
-    function testUserCannotUpdateMaximumFeeFactor() public {
-        vm.startPrank(user1);
-            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
-            pool.updateMaximumFeeFactor(1000);
-        vm.stopPrank();
-    }
-
-    function testOperatorCanUpdateMaximumFeeFactor() public {
-        uint256 initialMaximumFeeFactor = pool.MAXIMUM_FEE_FACTOR();
-        assertEq(initialMaximumFeeFactor, 5000, "maximumFeeFactor is 50%");
-
-        vm.startPrank(operator);
-            vm.expectEmit(true, true, true, true);
-            emit MaximumFeeFactorUpdated(5000, 1000);
-            pool.updateMaximumFeeFactor(1000);
-        vm.stopPrank();
-
-        assertEq(pool.MAXIMUM_FEE_FACTOR(), 1000, "maximumFeeFactor is 10%");
-    }
+// ------ STATE TRANSITION TESTS  ------
 }

@@ -27,6 +27,7 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
     }
 
 // ---- users fns ---- 
+
     function testCannotCreateVaultWhenInMaintenanceMode() public {
         vm.startPrank(user1);
             vm.expectRevert(Errors.InMaintenance.selector);
@@ -190,6 +191,14 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         vm.stopPrank();
 
         assertEq(pool.NFT_MULTIPLIER(), newNftMultiplier);
+    }
+
+    function testCanUpdateCreationNftsWhenInMaintenanceMode() public {
+        uint256 initialCreationNfts = pool.CREATION_NFTS_REQUIRED();
+        uint256 newCreationNfts = initialCreationNfts + 1;
+
+        vm.startPrank(operator);
+            pool.updateCreationNfts(newCreationNfts);
     }
 
 // ---- state transition ----
@@ -493,14 +502,21 @@ contract StateT46p_MaintenanceMode_VaultAccountsUpdatedTest is StateT46p_Mainten
         assertEq(vault2Account1After.totalAccRewards, vault2Account1Before.totalAccRewards, "vault2Account1 totalAccRewards mismatch");
     }
 
-    function testUserCannotUpdateNftMultiplier() public {
+    function testUserCannotUpdateNftMultiplier_T46p() public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.updateNftMultiplier(100);
         vm.stopPrank();
     }
 
-    function testOperatorCanUpdateNftMultiplier() public {
+    function testCannotSetNftMultiplierToZero_T46p() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidMultiplier.selector);
+            pool.updateNftMultiplier(0);
+        vm.stopPrank();
+    }
+
+    function testOperatorCanUpdateNftMultiplier_T46p() public {
         uint256 oldNftMultiplier = pool.NFT_MULTIPLIER();
         uint256 newNftMultiplier = oldNftMultiplier * 2;
 
