@@ -402,8 +402,6 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
         // staking power
         uint256 distributionId = 0;
         uint256 distributionStartTime = 1;
-        uint256 distributionEndTime;
-        uint256 emissionPerSecond = 1 ether;
  
 
         // update distribution

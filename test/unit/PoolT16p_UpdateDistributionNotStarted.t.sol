@@ -64,17 +64,26 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     }
     
     // can update if not started
-    function testCanUpdateStartTimeIfNotStarted_T16p() public {
+    function test_StartTimeModification_CanUpdateStartTimeIfNotStarted_T16p() public {
         uint256 distributionId = 1;
         uint256 newStartTime = block.timestamp + 1;
         
         // Get distribution before update
         DataTypes.Distribution memory distributionBefore = getDistribution(distributionId);
         
+        // Calculate expected total required for the entire distribution period
+        uint256 expectedTotalRequired = (distributionBefore.endTime - newStartTime) * distributionBefore.emissionPerSecond;
+        
         vm.startPrank(operator);
             // Check for event emission
             vm.expectEmit(true, true, true, true);
             emit DistributionUpdated(distributionId, newStartTime, distributionBefore.endTime, distributionBefore.emissionPerSecond);
+            
+            // Expect call to rewards vault with the new total required
+            vm.expectCall(
+                address(rewardsVault),
+                abi.encodeCall(rewardsVault.updateDistribution, (distributionId, expectedTotalRequired))
+            );
             
             pool.updateDistribution(distributionId, newStartTime, 0, 0);
         vm.stopPrank();
@@ -93,7 +102,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
 
 // ---------------- updateDistribution: endTime modification ----------------
 
-    function testCannotUpdateEndTimeIfD0_T16p() public {
+    function test_EndTimeModification_CannotUpdateEndTimeIfD0_T16p() public {
         uint256 distributionId = 0;
         uint256 newEndTime = block.timestamp + 1;
 
@@ -104,7 +113,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     }
     
     // cannot be in the past
-    function testCannotUpdateEndTimeIfInPast_T16p() public {
+    function test_EndTimeModification_CannotUpdateEndTimeIfInPast_T16p() public {
         uint256 distributionId = 1;
         uint256 newEndTime = block.timestamp - 1;
 
@@ -115,7 +124,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     }
     
     // If only endTime is being updated, ensure it's after existing startTime
-    function testCannotUpdateEndTimeIfAfterStartTime_T16p() public {
+    function test_EndTimeModification_CannotUpdateEndTimeIfAfterStartTime_T16p() public {
         uint256 distributionId = 1;
         DataTypes.Distribution memory distribution = getDistribution(distributionId);
 
@@ -128,7 +137,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     }
     
     // If both times are being updated, ensure end is after start
-    function testCannotUpdateBothTimesIfEndBeforeStart_T16p() public {
+    function test_EndTimeModification_CannotUpdateBothTimesIfEndBeforeStart_T16p() public {
         uint256 distributionId = 1;
         DataTypes.Distribution memory distribution = getDistribution(distributionId);
 
@@ -142,7 +151,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     }
 
     // only endTime: can update if endTime is after startTime
-    function testCanUpdateEndTimeIfAfterStartTime_T16p() public {
+    function test_EndTimeModification_CanUpdateEndTimeIfAfterStartTime_T16p() public {
         uint256 distributionId = 1;
         DataTypes.Distribution memory distribution = getDistribution(distributionId);
 
@@ -159,7 +168,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     
     
     // update both start and end time: can update if endTime is after startTime
-    function testCanUpdateBothTimesIfEndAfterStart_T16p() public {
+    function test_EndTimeModification_CanUpdateBothTimesIfEndAfterStart_T16p() public {
         uint256 distributionId = 1;
         DataTypes.Distribution memory distribution = getDistribution(distributionId);
 
@@ -184,7 +193,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
 
 // ---------------- updateDistribution: emissionPerSecond modification ----------------
 
-    function testCannotUpdateEmissionPerSecondToBeZero_T16p() public {
+    function test_EmissionRateModification_CannotUpdateEmissionPerSecondToBeZero_T16p() public {
         uint256 distributionId = 0;
         
         // Get distribution before update
@@ -204,7 +213,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     }
     
     // lower emission rate
-    function testUpdateEmissionPerSecondD0_T16p() public {
+    function test_EmissionRateModification_LowerEmissionRate_T16p() public {
         uint256 distributionId = 0;
         
         // Get distribution before update
@@ -240,7 +249,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     }
 
     // higher emission rate
-    function testUpdateEmissionPerSecondD1_T16p() public {
+    function test_EmissionRateModification_HigherEmissionRate_T16p() public {
         uint256 distributionId = 1;
         
         // Get distribution before update

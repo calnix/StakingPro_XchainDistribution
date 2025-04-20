@@ -670,10 +670,20 @@ library PoolLogic {
         }
 
         // emissionPerSecond modification 
-        if(newEmissionPerSecond > 0) distribution.emissionPerSecond = newEmissionPerSecond;
+        if(newEmissionPerSecond > 0) {
+            
+            // rebase check: smallest tick rebased must be > 0. sanity checks _calculateDistributionIndex 
+            uint256 emissionPerSecondRebased = (newEmissionPerSecond * 1E18) / distribution.TOKEN_PRECISION;
+            if(emissionPerSecondRebased == 0) revert Errors.RebasedEmissionRateIsZero();
+
+            distribution.emissionPerSecond = newEmissionPerSecond;
+        }
             
         // recalc. new token requirements 
-        uint256 newFutureEmissions = distribution.emissionPerSecond * (distribution.endTime - distribution.lastUpdateTimeStamp);
+        uint256 newFutureEmissions = 0;
+        if (distribution.endTime > 0) {
+            newFutureEmissions = distribution.emissionPerSecond * (distribution.endTime - distribution.lastUpdateTimeStamp);
+        }
         uint256 newTotalRequired = newFutureEmissions + distribution.totalEmitted;
         
         // invariant: newTotalRequired must non-zero

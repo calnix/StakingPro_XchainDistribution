@@ -368,8 +368,43 @@ Contract states:
 
 - (-) Distribution does not exist (revert)                | testCannotUpdateNonExistentDistribution_T16p
 - (-) Distribution already ended (revert)                 | testCannotUpdateEndedDistribution_T16p
+
+### updateDistribution: startTime modification only
+
 - (-) Cannot update startTime if distribution started (revert) | test_StartTimeModification_CannotUpdateIfStarted_T16p
 - (-) New startTime must be greater than current time (revert) | test_StartTimeModification_NewStartTimeMustBeGreaterThanCurrent_T16p
+- (+) Can update startTime if distribution not started         | test_StartTimeModification_CanUpdateStartTimeIfNotStarted_T16p
+
+### updateDistribution: endTime modification only
+
+- (-) Cannot update endTime for distribution 0 (revert)      | test_EndTimeModification_CannotUpdateEndTimeIfD0_T16p
+- (-) New endTime must be greater than current time (revert) | test_EndTimeModification_CannotUpdateEndTimeIfInPast_T16p
+- (-) New endTime must be after startTime (revert)           | test_EndTimeModification_CannotUpdateEndTimeIfAfterStartTime_T16p
+- (-) Cannot update both times if end before start (revert)  | test_EndTimeModification_CannotUpdateBothTimesIfEndBeforeStart_T16p
+- (+) Can update endTime if after startTime                  | test_EndTimeModification_CanUpdateEndTimeIfAfterStartTime_T16p
+- (+) Can update both times if end after start               | test_EndTimeModification_CanUpdateBothTimesIfEndAfterStart_T16p
+
+### updateDistribution: emissionPerSecond modification only
+
+- (-) Cannot update emission rate to zero (revert)        | test_EmissionRateModification_CannotUpdateEmissionPerSecondToBeZero_T16p
+- (+) Can update to lower emission rate                   | test_EmissionRateModification_LowerEmissionRate_T16p
+- (+) Can update to higher emission rate                  | test_EmissionRateModification_HigherEmissionRate_T16p
+
+### updateDistribution: multiple updates
+
+```
+    // 1. update startTime, endTime
+    // 2. update startTime, emissionPerSecond
+    // 3. update endTime, emissionPerSecond
+    // 4. update startTime, endTime, emissionPerSecond
+```
+
+- (+) Can update startTime and endTime                    | testCanUpdateStartTimeAndEndTimeD1_T16p
+- (+) Can update startTime and emissionPerSecond          | testCanUpdateStartTimeAndEmissionPerSecondD1_T16p
+- (+) Can update endTime and emissionPerSecond            | testCanUpdateEndTimeAndEmissionPerSecondD1_T16p
+- (+) Can update all fields simultaneously                | testCanUpdateAllFieldsD1_T16p
+
+
 - (-) Invalid emission rate (revert)                      | testCannotUpdateDistributionWithZeroEmissionRate
 - (-) Rebased emission rate is zero (revert)              | testCannotUpdateDistributionWithRebasedEmissionRateZero
 - (-) Invalid end time (revert)                           | testCannotUpdateDistributionWithInvalidEndTime
