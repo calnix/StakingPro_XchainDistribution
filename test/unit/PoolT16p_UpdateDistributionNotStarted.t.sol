@@ -202,7 +202,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
         uint256 newEmissionPerSecond = 0;
 
         vm.startPrank(operator);
-            pool.updateDistribution(distributionId, 0, 0, newEmissionPerSecond);
+            pool.updateDistribution(distributionId, 0, 100, newEmissionPerSecond);
         vm.stopPrank();
         
         // Get distribution after update
