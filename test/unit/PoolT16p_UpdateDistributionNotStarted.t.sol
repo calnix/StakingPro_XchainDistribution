@@ -393,21 +393,28 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
         uint256 distributionId = 1;
         DataTypes.Distribution memory distribution = getDistribution(distributionId);
         
-        uint256 newStartTime = distribution.startTime + 1;
-        uint256 newEndTime = distribution.endTime + 1;
+        // D1: starts at T21
+        assertEq(distribution.startTime, 21);
+        assertEq(distribution.endTime, 172821);
+        assertEq(distribution.lastUpdateTimeStamp, 21);
+
+        // Get the totalRequired before update
+        (,, uint256 totalRequiredBefore,,) = rewardsVault.distributions(distributionId);
+        
+        uint256 newStartTime = distribution.startTime - 1;
+        uint256 newEndTime = distribution.endTime + 10;
         uint256 newEmissionPerSecond = distribution.emissionPerSecond * 2;
         
         // Calculate expected total required for the entire distribution period
         uint256 expectedTotalRequired = (newEndTime - newStartTime) * newEmissionPerSecond;
-        
+
         vm.startPrank(operator);
             vm.expectEmit(true, true, true, true);
             emit DistributionUpdated(distributionId, newStartTime, newEndTime, newEmissionPerSecond);
-
-            vm.expectCall(
-                address(rewardsVault),
-                abi.encodeCall(rewardsVault.updateDistribution, (distributionId, expectedTotalRequired))
-            );
+           
+            // Also expect the RewardsVault to emit its own event
+            vm.expectEmit(true, true, true, true, address(rewardsVault));
+            emit DistributionUpdated(distributionId, expectedTotalRequired);
             
             pool.updateDistribution(distributionId, newStartTime, newEndTime, newEmissionPerSecond);
         vm.stopPrank();
@@ -415,10 +422,18 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
         // Get distribution after update
         DataTypes.Distribution memory distributionAfter = getDistribution(distributionId);
         
+        // Get the totalRequired after update
+        (,, uint256 totalRequiredAfter,,) = rewardsVault.distributions(distributionId);
+        
         // Verify all fields were updated
         assertEq(distributionAfter.startTime, newStartTime);
         assertEq(distributionAfter.endTime, newEndTime);
         assertEq(distributionAfter.emissionPerSecond, newEmissionPerSecond);
+        assertEq(distributionAfter.lastUpdateTimeStamp, newStartTime);
+
+        // Verify totalRequired was updated in the RewardsVault
+        assertEq(totalRequiredAfter, expectedTotalRequired);
+        assertNotEq(totalRequiredBefore, totalRequiredAfter);
     }
 
 }
