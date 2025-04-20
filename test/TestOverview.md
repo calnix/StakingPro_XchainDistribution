@@ -116,6 +116,10 @@ Use of RewardsVaultV1.sol.
 
 17. T86471: `setEndTime`
     - transition fn checks setEndTime
+    - check setupDistribution endTime checks
+    
+18. T86472: contract has ended
+    - transition fn checks setEndTime
     - on transition, check other fns's endTime checks
     - check claimRewards
 

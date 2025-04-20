@@ -68,7 +68,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
     // distributions
     uint256[] public activeDistributions;    // array stores key values for distributions mapping; includes not yet started distributions  
-    uint256 public maxActiveAllowed;
+    uint256 public MAX_ACTIVE_DISTRIBUTIONS;
 
 //-------------------------------mappings--------------------------------------------
 
@@ -131,7 +131,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         STORED_SIGNER = storedSigner;
         
         // sane limit: modifiable
-        maxActiveAllowed = 15;
+        MAX_ACTIVE_DISTRIBUTIONS = 15;
 
         // access control
         _grantRole(DEFAULT_ADMIN_ROLE, owner);  // default admin role for all roles
@@ -668,7 +668,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(newMaxActiveAllowed == 0) revert Errors.InvalidMaxActiveAllowed();
         if(newMaxActiveAllowed < activeDistributions.length) revert Errors.MaxActiveDistributions();
 
-        maxActiveAllowed = newMaxActiveAllowed;
+        MAX_ACTIVE_DISTRIBUTIONS = newMaxActiveAllowed;
 
         emit MaximumActiveDistributionsUpdated(newMaxActiveAllowed);
     }
@@ -739,7 +739,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     ) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
 
         // cannot exceed max
-        if(activeDistributions.length >= maxActiveAllowed) revert Errors.MaxActiveDistributions();
+        if(activeDistributions.length >= MAX_ACTIVE_DISTRIBUTIONS) revert Errors.MaxActiveDistributions();
 
         // d0 must be first
         if(activeDistributions.length == 0) {

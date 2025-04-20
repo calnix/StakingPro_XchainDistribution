@@ -330,6 +330,35 @@ Contract states:
 
 ## setupDistribution
 
+Contract states:
+- (+) Contract not started                                | testOperatorCanSetupDistributionWhenNotStarted_T0
+- (-) Contract paused (should revert)                     | testCannotSetupDistributionWhenPaused
+- (+) Contract under maintenance                          | testCanSetupDistributionWhenInMaintenanceMode
+- (-) Contract ended (should revert)                      | testCannotSetupDistributionAfterContractEnded
+
+- (-) Exceeds max active distributions (revert)           | testCannotSetupDistributionExceedsMaxActiveDistributions_T6
+- (-) 1st distribution NOT D0 (revert)                    | testFirstDistributionMustBeD0_T0
+- (-) Zero token precision (revert)                       | testCannotSetupDistributionWithZeroTokenPrecision_T0
+- (-) Invalid emission rate (revert)                      | testCannotSetupDistributionWithZeroEmissionRate_T0
+- (-) Invalid start time (revert)                         | testCannotSetupDistributionWithInvalidStartTime_T6
+- (-) Distribution start time exceeds contract end time (revert) | testCannotSetupDistributionWithStartTimeExceedingEndTime_T86471
+- (-) Distribution end time exceeds contract end time (revert) | testCannotSetupDistributionWithEndTimeExceedingContractEndTime_T86471
+- (-) Rebased emission rate is zero (revert)              | testCannotSetupDistributionWithRebasedEmissionRateZero_T0
+- (-) Invalid end time (revert)                           | testCannotSetupDistributionWithInvalidEndTime_T6
+- (-) Invalid Dst Eid (revert)                            | testCannotSetupTokenDistributionWithInvalidDstEid_T6
+- (-) Invalid Token address (revert)                      | testCannotSetupTokenDistributionWithInvalidTokenAddress_T6
+- (-) Cannot reuse distribution id                        | testCannotSetupDistributionIdDistributionAlreadySetup_T11
+- (-) Invalid rewards vault (revert: `InvalidAddress`)    | testCannotSetupDistributionWithInvalidRewardsVault_T11
+- (+) Emits DistributionCreated event                     | testSetupDistributionEmitsEvent_T11
+
+- (-) Users cannot setup distribution (revert)            | testUserCannotSetupDistribution_T0 & testUserCannotSetupDistribution_T6
+- (+) Operator can setup distribution                     | testOperatorCanSetupDistribution_T6
+
+TODO
+
+- x-chain distribution setup
+
+## updateDistribution
 
 
 

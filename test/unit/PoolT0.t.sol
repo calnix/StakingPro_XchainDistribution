@@ -167,7 +167,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
 
     function testCanUpdateActiveDistributionsWhenNotStarted() public {
         // Check initial value
-        uint256 initialMaxActive = pool.maxActiveAllowed();
+        uint256 initialMaxActive = pool.MAX_ACTIVE_DISTRIBUTIONS();
         uint256 newMaxActive = 1;
         assertNotEq(initialMaxActive, newMaxActive);
 
@@ -179,7 +179,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
         vm.stopPrank();
         
         // Check value was updated
-        uint256 updatedMaxActive = pool.maxActiveAllowed();
+        uint256 updatedMaxActive = pool.MAX_ACTIVE_DISTRIBUTIONS();
         assertEq(updatedMaxActive, newMaxActive);
     }
 
@@ -244,8 +244,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
         assertEq(pool.VAULT_COOLDOWN_DURATION(), newVaultCooldown);
     }
 
-
-
+    
     function testCanUpdateNftMultiplierWhenNotStarted() public {
         uint256 initialNftMultiplier = pool.NFT_MULTIPLIER();
         uint256 newNftMultiplier = initialNftMultiplier + 1;
@@ -262,18 +261,103 @@ contract StateT0_DeployTest is StateT0_Deploy {
     }
     
 // ------ state transition ------
-    function testOperatorCanSetupDistribution() public {
-        vm.prank(operator);
+
+    function testUserCannotSetupDistribution_T0() public {
+        uint256 distributionId = 0;
+        uint256 distributionStartTime = 1;
+        uint256 distributionEndTime;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = 0x00;
+
+        vm.startPrank(user1);
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+    }
+
+    function testFirstDistributionMustBeD0_T0() public {
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = 1;
+        uint256 distributionEndTime;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = 0x00;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidDistributionId.selector);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+    }
+
+    function testCannotSetupDistributionWithZeroTokenPrecision_T0() public {
+        uint256 distributionId = 0;
+        uint256 distributionStartTime = 1;
+        uint256 distributionEndTime;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 0;
+        bytes32 tokenAddress = 0x00;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.ZeroTokenPrecision.selector);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+    }
+    
+    function testCannotSetupDistributionWithZeroEmissionRate_T0() public {
+        uint256 distributionId = 0;
+        uint256 distributionStartTime = 1;
+        uint256 distributionEndTime;
+        uint256 emissionPerSecond = 0;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = 0x00;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.ZeroEmissionRate.selector);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+    }
+
+    function testCannotSetupDistributionWithRebasedEmissionRateZero_T0() public {
+        uint256 distributionId = 0;
+        uint256 distributionStartTime = 1;
+        uint256 distributionEndTime;
+        uint256 emissionPerSecond = 1;
+        uint256 tokenPrecision = 1E19;
+        bytes32 tokenAddress = 0x00;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.RebasedEmissionRateIsZero.selector);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+    }
+
+    function testOperatorCanSetupDistributionWhenNotStarted_T0() public {
+        uint256 distributionId = 0;
+        uint256 distributionStartTime = 1;
+        uint256 distributionEndTime;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = 0x00;
         
-        // staking power
-            uint256 distributionId = 0;
-            uint256 distributionStartTime = 1;
-            uint256 distributionEndTime;
-            uint256 emissionPerSecond = 1 ether;
-            uint256 tokenPrecision = 1E18;
-            uint32 dstEid = 0;
-            bytes32 tokenAddress = 0x00;
-        pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);        
+        // Check state before
+        assertEq(pool.getActiveDistributionsLength(), 0);
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit DistributionCreated(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+        
+        // Check state after
+        assertEq(pool.getActiveDistributionsLength(), 1);
+        
+        DataTypes.Distribution memory distribution = getDistribution(distributionId);
+        assertEq(distribution.distributionId, distributionId);
+        assertEq(distribution.startTime, distributionStartTime);
+        assertEq(distribution.endTime, distributionEndTime);
+        assertEq(distribution.emissionPerSecond, emissionPerSecond);
+        assertEq(distribution.TOKEN_PRECISION, tokenPrecision);
     }
 
 }

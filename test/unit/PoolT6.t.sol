@@ -252,7 +252,121 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
     }
 
 //----- state transition: PoolT11.t.sol
-    function testOperatorCanSetupDistribution() public {
+
+    function testCannotSetupDistributionExceedsMaxActiveDistributions_T6() public {
+        // distribution params
+        uint256 distributionStartTime = block.timestamp;
+        uint256 distributionEndTime = block.timestamp + 1 days;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = bytes32(0);
+
+        uint256 maxActiveDistributions = pool.MAX_ACTIVE_DISTRIBUTIONS();
+            
+        // setup distributions until maximum is hit
+        vm.startPrank(operator);
+        
+        // already have distribution 0 active from setup
+        for (uint256 i = 1; i <= maxActiveDistributions; ++i) {
+
+            if (i == maxActiveDistributions) {
+                // The last iteration would exceed the maximum
+                vm.expectRevert(Errors.MaxActiveDistributions.selector);
+            }
+            
+            pool.setupDistribution(
+                i, 
+                distributionStartTime, 
+                distributionEndTime, 
+                emissionPerSecond, 
+                tokenPrecision, 
+                dstEid, 
+                tokenAddress
+            );
+        }
+        
+        vm.stopPrank();
+    }
+
+    function testCannotSetupDistributionWithInvalidStartTime_T6() public {
+        // distribution params  
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = block.timestamp - 1;
+        uint256 distributionEndTime = block.timestamp + 1 days;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = 0x00;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidStartTime.selector);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+    }
+
+    function testCannotSetupTokenDistributionWithInvalidEndTime_T6() public {
+        // distribution params  
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = block.timestamp;
+        uint256 distributionEndTime = block.timestamp - 1;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = 0x00;
+
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidEndTime.selector);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+    }   
+
+    function testCannotSetupTokenDistributionWithInvalidDstEid_T6() public {
+        // distribution params  
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = block.timestamp;
+        uint256 distributionEndTime = block.timestamp + 1 days;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = 0x00;
+        uint32 dstEid_ = 0;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidDstEid.selector);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid_, tokenAddress);
+        vm.stopPrank();
+    }
+
+    function testCannotSetupTokenDistributionWithInvalidTokenAddress_T6() public {
+        // distribution params  
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = block.timestamp;
+        uint256 distributionEndTime = block.timestamp + 1 days;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = 0x00;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidTokenAddress.selector);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+    }   
+
+    function testUserCannotSetupDistribution_T6() public {
+        // distribution params  
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = 21;
+        uint256 distributionEndTime = 21 + 2 days;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken1));
+        uint256 totalRequired = 2 days * emissionPerSecond;
+
+        vm.startPrank(user1);
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+    }
+
+    function testOperatorCanSetupDistribution_T6() public {
         // operator sets up distribution
         vm.startPrank(operator);
 
@@ -271,7 +385,6 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
                 abi.encodeCall(rewardsVault.setupDistribution, (distributionId, dstEid, tokenAddress, totalRequired))
             );
 
-            // create distribution 1
             vm.expectEmit(true, true, true, true);
             emit DistributionCreated(
                 distributionId,
@@ -280,6 +393,8 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
                 emissionPerSecond,
                 tokenPrecision
             );
+
+            // create distribution 1
             pool.setupDistribution(
                 distributionId, 
                 distributionStartTime, 
@@ -292,7 +407,7 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
         vm.stopPrank();
 
         // check active distributions length increased
-        assertEq(pool.getActiveDistributionsLength(), 2);
+        assertEq(pool.getActiveDistributionsLength(), distributionId + 1);
 
         // verify distribution params were set correctly in rewardsVault
         (

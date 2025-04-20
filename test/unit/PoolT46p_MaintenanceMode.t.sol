@@ -157,7 +157,7 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
             pool.updateMaxActiveDistributions(newMaxActive);
         vm.stopPrank();
 
-        assertEq(pool.maxActiveAllowed(), newMaxActive);
+        assertEq(pool.MAX_ACTIVE_DISTRIBUTIONS(), newMaxActive);
     }
 
     function testCanUpdateMaximumFeeFactorWhenInMaintenanceMode() public {
@@ -209,7 +209,42 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
             vm.expectEmit(true, true, true, true);
             emit VaultCooldownDurationUpdated(initialVaultCooldown, newVaultCooldown);
             pool.updateVaultCooldown(newVaultCooldown);
+        vm.stopPrank();
+
+        assertEq(pool.VAULT_COOLDOWN_DURATION(), newVaultCooldown);
+        assertNotEq(initialVaultCooldown, newVaultCooldown);
     }
+
+    function testCanSetupDistributionWhenInMaintenanceMode() public {
+        uint256 distributionId = 2;
+        uint256 distributionStartTime = block.timestamp;
+        uint256 distributionEndTime = block.timestamp + 1000;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        uint32 dstEid_ = 0;
+        bytes32 tokenAddress = 0x00;
+        
+        // Check state before
+        uint256 activeDistributionsLengthBefore = pool.getActiveDistributionsLength();
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit DistributionCreated(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid_, tokenAddress);
+        vm.stopPrank();
+
+        // Check state after
+        uint256 activeDistributionsLengthAfter = pool.getActiveDistributionsLength();
+        assertEq(activeDistributionsLengthAfter, activeDistributionsLengthBefore + 1);
+
+        DataTypes.Distribution memory distribution = getDistribution(distributionId);
+        assertEq(distribution.distributionId, distributionId);
+        assertEq(distribution.startTime, distributionStartTime);
+        assertEq(distribution.endTime, distributionEndTime);
+        assertEq(distribution.emissionPerSecond, emissionPerSecond);
+        assertEq(distribution.TOKEN_PRECISION, tokenPrecision);
+    }
+
 
 // ---- state transition ----
     function testOperatorCanUpdateDistributions() public {

@@ -49,9 +49,19 @@ abstract contract StateT11_Distribution1Created is StateT6_User2StakeAssetsToVau
 // TODO
 contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
 
-    /**TODO
-        test post dstr setup stuff
-     */
+    function testCannotSetupDistributionIdDistributionAlreadySetup_T11() public {
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = 21;
+        uint256 distributionEndTime = 21 + 2 days;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken1));
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.DistributionAlreadySetup.selector);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+    }
 
     function testCannotSetRewardsVaultWhenTokenDistributionExists_T11() public {
         vm.startPrank(operator);
@@ -105,7 +115,7 @@ contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
         vm.stopPrank();
 
         assertEq(pool.getActiveDistributionsLength(), 2);
-        assertEq(pool.maxActiveAllowed(), 3);
+        assertEq(pool.MAX_ACTIVE_DISTRIBUTIONS(), 3);
     }
 
 // state transition: Pool16p_UpdateActiveDistributions.t.sol
@@ -142,7 +152,7 @@ contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
 
     function testCanUpdateActiveDistributionsToBeGreaterThanCurrent_T11() public {
         // Check initial value
-        uint256 initialMaxActive = pool.maxActiveAllowed();
+        uint256 initialMaxActive = pool.MAX_ACTIVE_DISTRIBUTIONS();
         uint256 newMaxActive = initialMaxActive + 1;
         
         vm.startPrank(operator);
@@ -153,7 +163,7 @@ contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
         vm.stopPrank();
         
         // Check value was updated
-        uint256 updatedMaxActive = pool.maxActiveAllowed();
+        uint256 updatedMaxActive = pool.MAX_ACTIVE_DISTRIBUTIONS();
         assertEq(updatedMaxActive, newMaxActive);
     }
 }
