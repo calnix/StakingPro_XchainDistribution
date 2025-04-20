@@ -44,7 +44,7 @@ contract StateT86471_ContractSetEndTimeTest is StateT86471_ContractSetEndTime {
     function testCannotSetupDistributionWithStartTimeExceedingEndTime_T86471() public {
         // distribution params  
         uint256 distributionId = 1;
-        uint256 distributionStartTime = pool.endTime() + 1;
+        uint256 distributionStartTime = pool.endTime(); // type(uint256).max
         uint256 distributionEndTime = pool.endTime() - 1;
         uint256 emissionPerSecond = 1 ether;
         uint256 tokenPrecision = 1E18;

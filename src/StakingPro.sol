@@ -749,10 +749,13 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(tokenPrecision == 0) revert Errors.ZeroTokenPrecision();
         if(emissionPerSecond == 0) revert Errors.ZeroEmissionRate();
 
+        // distributionStartTime has implicit zero check
         if(distributionStartTime < startTime) revert Errors.InvalidDistributionStartTime();
         if(distributionStartTime < block.timestamp) revert Errors.InvalidDistributionStartTime();
+        // endTime > startTime
+        if(distributionEndTime <= distributionStartTime) revert Errors.InvalidDistributionEndTime();
 
-        // contract endTime set
+        // contract endTime check
         if(endTime > 0){
             // newEndTime must be <= endTime
             if(distributionEndTime > endTime) revert Errors.InvalidEndTime();
@@ -763,11 +766,9 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // rebase check: smallest tick rebased must be > 0. sanity checks _calculateDistributionIndex 
         uint256 emissionPerSecondRebased = (emissionPerSecond * 1E18) / tokenPrecision;
         if(emissionPerSecondRebased == 0) revert Errors.RebasedEmissionRateIsZero();
-
+    
+        // token distributions must have valid dstEid + tokenAddress
         if(distributionId > 0){
-            
-            // token distributions must have valid endTime
-            if(distributionEndTime <= distributionStartTime) revert Errors.InvalidDistributionEndTime();
             
             // LZ sanity checks
             if(dstEid == 0) revert Errors.InvalidDstEid();

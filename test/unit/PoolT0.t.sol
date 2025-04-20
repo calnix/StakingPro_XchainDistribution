@@ -321,7 +321,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
     function testCannotSetupDistributionWithRebasedEmissionRateZero_T0() public {
         uint256 distributionId = 0;
         uint256 distributionStartTime = 1;
-        uint256 distributionEndTime;
+        uint256 distributionEndTime = type(uint256).max;
         uint256 emissionPerSecond = 1;
         uint256 tokenPrecision = 1E19;
         bytes32 tokenAddress = 0x00;
@@ -335,7 +335,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
     function testOperatorCanSetupDistributionWhenNotStarted_T0() public {
         uint256 distributionId = 0;
         uint256 distributionStartTime = 1;
-        uint256 distributionEndTime;
+        uint256 distributionEndTime = type(uint256).max;
         uint256 emissionPerSecond = 1 ether;
         uint256 tokenPrecision = 1E18;
         bytes32 tokenAddress = 0x00;
@@ -372,7 +372,7 @@ abstract contract StateT0_DeployAndSetupStakingPower is StateT0_Deploy {
         // staking power
             uint256 distributionId = 0;
             uint256 distributionStartTime = 1;
-            uint256 distributionEndTime;
+            uint256 distributionEndTime = type(uint256).max;
             uint256 emissionPerSecond = 1 ether;
             uint256 tokenPrecision = 1E18;
             uint32 dstEid = 3141;
@@ -403,7 +403,6 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
         uint256 distributionId = 0;
         uint256 distributionStartTime = 1;
  
-
         // update distribution
         uint256 newDistributionStartTime = distributionStartTime + 1;
         

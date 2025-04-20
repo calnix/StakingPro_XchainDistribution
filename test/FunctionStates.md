@@ -361,6 +361,7 @@ TODO
 ## updateDistribution
 
 Contract states:
+
 - (+) Contract not started                                | testCanUpdateDistributionWhenContractNotStarted_T0
 - (-) Contract paused (should revert)                     | testCannotUpdateDistributionWhenPaused
 - (+) Contract under maintenance                          | testCanUpdateDistributionWhenInMaintenanceMode

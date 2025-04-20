@@ -80,7 +80,7 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
         assertEq(distribution.index, expectedIndex);
         assertEq(distribution.lastUpdateTimeStamp, 6);
         assertEq(distribution.emissionPerSecond, 1 ether);
-        assertEq(distribution.endTime, 0);
+        assertEq(distribution.endTime, type(uint256).max);
     }
 
     function testVault1_T6() public {

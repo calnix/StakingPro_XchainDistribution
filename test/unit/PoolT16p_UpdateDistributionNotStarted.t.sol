@@ -41,13 +41,14 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     }
 
 // ---------------- updateDistribution: startTime modification ----------------
+    
     // cannot update if started
     function test_StartTimeModification_CannotUpdateIfStarted_T16p() public {
         uint256 distributionId = 0;
         uint256 newStartTime = block.timestamp + 1;
 
         vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidStartTime.selector);
+            vm.expectRevert(Errors.DistributionStarted.selector);
             pool.updateDistribution(distributionId, newStartTime, 0, 0);
         vm.stopPrank();
     }
