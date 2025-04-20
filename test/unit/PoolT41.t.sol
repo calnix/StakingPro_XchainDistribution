@@ -825,7 +825,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
     }
 
 
-    // ---- state transition: for PoolT46p_MaintenanceMode.t.sol ----
+// ---- state transition: for PoolT46p_MaintenanceMode.t.sol ----
 
     function testUserCannotEnableMaintenanceMode() public {
         vm.startPrank(user1);
@@ -851,5 +851,30 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         assertEq(pool.isUnderMaintenance(), 1);
     }
 
+// ---- state transition: for PoolT46p_UpdateMaximumFeeFactor.t.sol ----
 
+    function testUserCannotUpdateMaximumFeeFactor_T41() public {
+        vm.startPrank(user1);
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
+            pool.updateMaximumFeeFactor(1000);
+        vm.stopPrank();
+    }
+    
+    function testCannotSetInvalidMaximumFeeFactor_T41() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidMaxFeeFactor.selector);
+            pool.updateMaximumFeeFactor(1_000_000);
+        vm.stopPrank();
+    }
+    
+    function testOperatorCanUpdateMaximumFeeFactor_T41() public {
+        uint256 initialMaxFeeFactor = pool.MAXIMUM_FEE_FACTOR();
+        uint256 newMaxFeeFactor = initialMaxFeeFactor + 1;
+
+        vm.startPrank(operator);
+            pool.updateMaximumFeeFactor(newMaxFeeFactor);
+        vm.stopPrank();
+
+        assertEq(pool.MAXIMUM_FEE_FACTOR(), newMaxFeeFactor);
+    }
 }

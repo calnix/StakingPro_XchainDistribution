@@ -251,7 +251,7 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
         assertEq(rewards, 0);
     }
 
-// state transition
+//----- state transition: PoolT11.t.sol
     function testOperatorCanSetupDistribution() public {
         // operator sets up distribution
         vm.startPrank(operator);
@@ -308,5 +308,38 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
         assertEq(storedTotalRequired, totalRequired);
         assertEq(totalClaimed, 0);
         assertEq(totalDeposited, 0);
+    }
+
+//----- state transition: PoolT6p_updateMinimumRp.t.sol
+
+    function testUserCannotUpdateMinimumRealmPoints_T6() public {
+        vm.startPrank(user1);
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
+            pool.updateMinimumRealmPoints(1000);
+        vm.stopPrank();
+    }
+
+    function testCannotSetMinimumRealmPointsToZero_T6() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.MinimumRealmPointsZero.selector);
+            pool.updateMinimumRealmPoints(0);
+        vm.stopPrank();
+    }
+
+    function testOperatorCanUpdateMinimumRealmPoints_T6() public {
+        // Get initial value
+        uint256 initialMinRealmPoints = pool.MINIMUM_REALMPOINTS_REQUIRED();
+        uint256 newMinRealmPoints = initialMinRealmPoints + 1;
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit MinimumRealmPointsUpdated(initialMinRealmPoints, newMinRealmPoints);
+            pool.updateMinimumRealmPoints(newMinRealmPoints);
+        vm.stopPrank();
+        
+        // Check value was updated
+        uint256 updatedMinRealmPoints = pool.MINIMUM_REALMPOINTS_REQUIRED();
+        assertEq(updatedMinRealmPoints, newMinRealmPoints);
+        assertNotEq(initialMinRealmPoints, updatedMinRealmPoints);
     }
 }

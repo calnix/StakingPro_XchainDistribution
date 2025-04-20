@@ -109,4 +109,36 @@ contract StateT46p_UpdateMaximumFeeFactorTest is StateT46p_UpdateMaximumFeeFacto
         assertEq(pool.getVault(vaultId2).creatorFeeFactor, creatorFeeFactor, "creatorFeeFactor mismatch");
         assertEq(pool.getVault(vaultId2).realmPointsFeeFactor, realmPointsFeeFactor, "realmPointsFeeFactor mismatch");
     }
+
+    function testCanDecreaseMaximumFeeFactor() public {
+        uint256 initialMaxFeeFactor = pool.MAXIMUM_FEE_FACTOR();
+        uint256 newMaxFeeFactor = 1000;
+        
+        assertGt(initialMaxFeeFactor, newMaxFeeFactor, "New max fee factor should be lower than initial");
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit MaximumFeeFactorUpdated(initialMaxFeeFactor, newMaxFeeFactor);
+            pool.updateMaximumFeeFactor(newMaxFeeFactor);
+        vm.stopPrank();
+
+        assertEq(pool.MAXIMUM_FEE_FACTOR(), newMaxFeeFactor);
+        assertLt(pool.MAXIMUM_FEE_FACTOR(), initialMaxFeeFactor);
+    }
+
+    function testCanIncreaseMaximumFeeFactor() public {
+        uint256 initialMaxFeeFactor = pool.MAXIMUM_FEE_FACTOR();
+        uint256 newMaxFeeFactor = initialMaxFeeFactor + 1;
+        
+        assertLt(initialMaxFeeFactor, newMaxFeeFactor, "New max fee factor should be higher than initial");
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit MaximumFeeFactorUpdated(initialMaxFeeFactor, newMaxFeeFactor);
+            pool.updateMaximumFeeFactor(newMaxFeeFactor);
+        vm.stopPrank();
+
+        assertEq(pool.MAXIMUM_FEE_FACTOR(), newMaxFeeFactor);
+        assertGt(pool.MAXIMUM_FEE_FACTOR(), initialMaxFeeFactor);
+    }
 }

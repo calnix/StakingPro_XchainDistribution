@@ -183,6 +183,39 @@ contract StateT0_DeployTest is StateT0_Deploy {
         assertEq(updatedMaxActive, newMaxActive);
     }
 
+    function testCanUpdateMaximumFeeFactorWhenNotStarted() public {
+        // Check initial value
+        uint256 initialMaxFeeFactor = pool.MAXIMUM_FEE_FACTOR();
+        uint256 newMaxFeeFactor = 1000;
+        assertNotEq(initialMaxFeeFactor, newMaxFeeFactor);
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit MaximumFeeFactorUpdated(initialMaxFeeFactor, newMaxFeeFactor);
+            pool.updateMaximumFeeFactor(newMaxFeeFactor);
+        vm.stopPrank();
+
+        // Check value was updated
+        uint256 updatedMaxFeeFactor = pool.MAXIMUM_FEE_FACTOR();
+        assertEq(updatedMaxFeeFactor, newMaxFeeFactor);
+        assertNotEq(initialMaxFeeFactor, updatedMaxFeeFactor);
+    }
+
+    function testCanUpdateMinimumRealmPointsWhenNotStarted() public {
+        uint256 initialMinRealmPoints = pool.MINIMUM_REALMPOINTS_REQUIRED();
+        uint256 newMinRealmPoints = initialMinRealmPoints + 1;
+        assertNotEq(initialMinRealmPoints, newMinRealmPoints);
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit MinimumRealmPointsUpdated(initialMinRealmPoints, newMinRealmPoints);
+            pool.updateMinimumRealmPoints(newMinRealmPoints);
+        vm.stopPrank();
+
+        assertEq(pool.MINIMUM_REALMPOINTS_REQUIRED(), newMinRealmPoints);
+        assertNotEq(initialMinRealmPoints, pool.MINIMUM_REALMPOINTS_REQUIRED());
+    }
+
 // ------ state transition ------
     function testOperatorCanSetupDistribution() public {
         vm.prank(operator);

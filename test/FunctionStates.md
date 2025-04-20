@@ -265,17 +265,45 @@ Contract states:
 (-) Active token distributions (revert: `ActiveTokenDistributions`) | testCannotSetRewardsVaultWhenTokenDistributionExists_T11
 (-) Users cannot set rewards vault (revert)                         | testUserCannotSetRewardsVault
 
-## updateActiveDistributions
+## updateMaxActiveDistributions
 
 Contract states:
-(+) Contract not started                                | testCanUpdateActiveDistributionsWhenNotStarted
-(-) Contract paused (should revert)                     | testCannotUpdateActiveDistributionsWhenPaused
-(+) Contract under maintenance                          | testCanUpdateActiveDistributionsWhenInMaintenanceMode
-(-) Contract ended (should revert)                      | testCannotUpdateActiveDistributionsAfterContractEnded
+- (+) Contract not started                                | testCanUpdateActiveDistributionsWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotUpdateActiveDistributionsWhenPaused
+- (+) Contract under maintenance                          | testCanUpdateActiveDistributionsWhenInMaintenanceMode
+- (-) Contract ended (should revert)                      | testCannotUpdateActiveDistributionsAfterContractEnded
 
-(-) Users cannot update active distributions (revert)              | testUserCannotUpdateActiveDistributions_T11
-(-) Invalid max active allowed (revert: `InvalidMaxActiveAllowed`) | testCannotSetMaxActiveDistributionsToZero_T11
-(-) Operator cannot update to decrease from current active (revert: `MaxActiveDistributions`) | testCannotUpdateActiveDistributionsToLessThanCurrent_T11
-(+) Operator can update active distributions to increase           | testCanUpdateActiveDistributionsToBeGreaterThanCurrent_T11
+- (-) Users cannot update active distributions (revert)              | testUserCannotUpdateActiveDistributions_T11
+- (-) Invalid max active allowed (revert: `InvalidMaxActiveAllowed`) | testCannotSetMaxActiveDistributionsToZero_T11
+- (-) Operator cannot update to decrease from current active (revert: `MaxActiveDistributions`) | testCannotUpdateActiveDistributionsToLessThanCurrent_T11
+- (+) Operator can update active distributions to increase           | testCanUpdateActiveDistributionsToBeGreaterThanCurrent_T11
 
 ## updateMaximumFeeFactor
+
+Contract states:
+- (+) Contract not started                                | testCanUpdateMaximumFeeFactorWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotUpdateMaximumFeeFactorWhenPaused
+- (+) Contract under maintenance                          | testCanUpdateMaximumFeeFactorWhenInMaintenanceMode
+- (-) Contract ended (should revert)                      | testCannotUpdateMaximumFeeFactorAfterContractEnded
+
+- (-) Users cannot update maximum fee factor (revert)     | testUserCannotUpdateMaximumFeeFactor_T41
+- (-) Invalid fee factor (revert: `InvalidFeeFactor`)     | testCannotSetInvalidMaximumFeeFactor_T41
+- (+) Operator can update maximum fee factor              | testOperatorCanUpdateMaximumFeeFactor_T41
+- (+) Operator can decrease maximum fee factor            | testCanDecreaseMaximumFeeFactor
+- (+) Operator can increase maximum fee factor            | testCanIncreaseMaximumFeeFactor
+
+## updateMinimumRealmPoints
+
+Contract states:
+- (+) Contract not started                                | testCanUpdateMinimumRealmPointsWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotUpdateMinimumRealmPointsWhenPaused
+- (+) Contract under maintenance                          | testCanUpdateMinimumRealmPointsWhenInMaintenanceMode
+- (-) Contract ended (should revert)                      | testCannotUpdateMinimumRealmPointsAfterContractEnded
+
+- (-) Users cannot update minimum realm points (revert)   | testUserCannotUpdateMinimumRealmPoints_T6
+- (-) Cannot set minimum realm points to zero (revert)    | testCannotSetMinimumRealmPointsToZero_T6
+- (+) Operator can update minimum realm points            | testOperatorCanUpdateMinimumRealmPoints_T6
+
+## updateNftMultiplier
+
+

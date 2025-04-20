@@ -159,6 +159,27 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         assertEq(pool.maxActiveAllowed(), newMaxActive);
     }
 
+    function testCanUpdateMaximumFeeFactorWhenInMaintenanceMode() public {
+        uint256 initialMaxFeeFactor = pool.MAXIMUM_FEE_FACTOR();
+        uint256 newMaxFeeFactor = initialMaxFeeFactor + 1;
+
+        vm.startPrank(operator);
+            pool.updateMaximumFeeFactor(newMaxFeeFactor);
+        vm.stopPrank();
+
+        assertEq(pool.MAXIMUM_FEE_FACTOR(), newMaxFeeFactor);
+    }
+
+    function testCanUpdateMinimumRealmPointsWhenInMaintenanceMode() public {
+        uint256 initialMinRealmPoints = pool.MINIMUM_REALMPOINTS_REQUIRED();
+        uint256 newMinRealmPoints = initialMinRealmPoints + 1;
+
+        vm.startPrank(operator);
+            pool.updateMinimumRealmPoints(newMinRealmPoints);
+        vm.stopPrank();
+
+        assertEq(pool.MINIMUM_REALMPOINTS_REQUIRED(), newMinRealmPoints);
+    }
 
 // ---- state transition ----
     function testOperatorCanUpdateDistributions() public {

@@ -132,6 +132,18 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         vm.expectRevert(Pausable.EnforcedPause.selector);
         pool.updateMaxActiveDistributions(1);
     }
+
+    function testCannotUpdateMaximumFeeFactorWhenPaused() public {
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.updateMaximumFeeFactor(1000);
+    }
+
+    function testCannotUpdateMinimumRealmPointsWhenPaused() public {
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.updateMinimumRealmPoints(1000);
+    }
 }
 
 abstract contract StateT56p_Frozen is StateT56p_Paused {

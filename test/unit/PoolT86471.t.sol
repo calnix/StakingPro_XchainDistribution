@@ -178,4 +178,17 @@ contract StateT86471_ContractEndedTest is StateT86471_ContractEnded {
         vm.stopPrank();
     }
 
+    function testCannotUpdateMaximumFeeFactorAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.updateMaximumFeeFactor(1000);
+        vm.stopPrank();
+    }
+
+    function testCannotUpdateMinimumRealmPointsAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.updateMinimumRealmPoints(1000);
+        vm.stopPrank();
+    }
 }   
