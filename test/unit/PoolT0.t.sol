@@ -216,21 +216,6 @@ contract StateT0_DeployTest is StateT0_Deploy {
         assertNotEq(initialMinRealmPoints, pool.MINIMUM_REALMPOINTS_REQUIRED());
     }
 
-    function testCanUpdateNftMultiplierWhenNotStarted() public {
-        uint256 initialNftMultiplier = pool.NFT_MULTIPLIER();
-        uint256 newNftMultiplier = initialNftMultiplier + 1;
-        assertNotEq(initialNftMultiplier, newNftMultiplier);
-        
-        vm.startPrank(operator);
-            vm.expectEmit(true, true, true, true);
-            emit NftMultiplierUpdated(initialNftMultiplier, newNftMultiplier);
-            pool.updateNftMultiplier(newNftMultiplier);
-        vm.stopPrank();
-        
-        assertEq(pool.NFT_MULTIPLIER(), newNftMultiplier);
-        assertNotEq(initialNftMultiplier, pool.NFT_MULTIPLIER());
-    }
-
     function testCanUpdateCreationNftsWhenNotStarted() public {
         uint256 initialCreationNfts = pool.CREATION_NFTS_REQUIRED();
         uint256 newCreationNfts = initialCreationNfts + 1;
@@ -257,6 +242,23 @@ contract StateT0_DeployTest is StateT0_Deploy {
         vm.stopPrank();
 
         assertEq(pool.VAULT_COOLDOWN_DURATION(), newVaultCooldown);
+    }
+
+
+
+    function testCanUpdateNftMultiplierWhenNotStarted() public {
+        uint256 initialNftMultiplier = pool.NFT_MULTIPLIER();
+        uint256 newNftMultiplier = initialNftMultiplier + 1;
+        assertNotEq(initialNftMultiplier, newNftMultiplier);
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit NftMultiplierUpdated(initialNftMultiplier, newNftMultiplier);
+            pool.updateNftMultiplier(newNftMultiplier);
+        vm.stopPrank();
+        
+        assertEq(pool.NFT_MULTIPLIER(), newNftMultiplier);
+        assertNotEq(initialNftMultiplier, pool.NFT_MULTIPLIER());
     }
     
 // ------ state transition ------
