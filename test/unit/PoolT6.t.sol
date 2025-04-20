@@ -259,7 +259,7 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
         uint256 distributionEndTime = block.timestamp + 1 days;
         uint256 emissionPerSecond = 1 ether;
         uint256 tokenPrecision = 1E18;
-        bytes32 tokenAddress = bytes32(0);
+        bytes32 tokenAddress = bytes32(uint256(0x123));
 
         uint256 maxActiveDistributions = pool.MAX_ACTIVE_DISTRIBUTIONS();
             
@@ -288,7 +288,8 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
         vm.stopPrank();
     }
 
-    function testCannotSetupDistributionWithInvalidStartTime_T6() public {
+    // distributionStartTime < startTime
+    function testCannotSetupDistributionStartTimeBeforeContractStartTime_T6() public {
         // distribution params  
         uint256 distributionId = 1;
         uint256 distributionStartTime = block.timestamp - 1;
@@ -298,12 +299,13 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
         bytes32 tokenAddress = 0x00;
 
         vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidStartTime.selector);
+            vm.expectRevert(Errors.InvalidDistributionStartTime.selector);
             pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
         vm.stopPrank();
     }
 
-    function testCannotSetupTokenDistributionWithInvalidEndTime_T6() public {
+    // startTime > endTime
+    function testCannotSetupTokenDistributionStartTimeGreaterThanEndTime_T6() public {
         // distribution params  
         uint256 distributionId = 1;
         uint256 distributionStartTime = block.timestamp;
@@ -314,7 +316,7 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
 
 
         vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidEndTime.selector);
+            vm.expectRevert(Errors.InvalidDistributionEndTime.selector);
             pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
         vm.stopPrank();
     }   

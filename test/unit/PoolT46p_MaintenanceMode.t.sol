@@ -221,8 +221,7 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         uint256 distributionEndTime = block.timestamp + 1000;
         uint256 emissionPerSecond = 1 ether;
         uint256 tokenPrecision = 1E18;
-        uint32 dstEid_ = 0;
-        bytes32 tokenAddress = 0x00;
+        bytes32 tokenAddress = bytes32(uint256(0x123));
         
         // Check state before
         uint256 activeDistributionsLengthBefore = pool.getActiveDistributionsLength();
@@ -230,7 +229,7 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         vm.startPrank(operator);
             vm.expectEmit(true, true, true, true);
             emit DistributionCreated(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision);
-            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid_, tokenAddress);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
         vm.stopPrank();
 
         // Check state after
@@ -244,6 +243,8 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         assertEq(distribution.emissionPerSecond, emissionPerSecond);
         assertEq(distribution.TOKEN_PRECISION, tokenPrecision);
     }
+
+
 
 
 // ---- state transition ----

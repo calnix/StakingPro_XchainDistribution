@@ -168,6 +168,12 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         vm.expectRevert(Pausable.EnforcedPause.selector);
         pool.setupDistribution(0, block.timestamp, block.timestamp + 1, 1000, 1E18, 0, bytes32(0));
     }
+
+    function testCannotUpdateDistributionWhenPaused() public {
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.updateDistribution(0, block.timestamp, block.timestamp + 1, 1000);
+    }
 }
 
 abstract contract StateT56p_Frozen is StateT56p_Paused {

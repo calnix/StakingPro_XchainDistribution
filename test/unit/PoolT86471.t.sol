@@ -17,11 +17,20 @@ abstract contract StateT86471_ContractSetEndTime is StateT86466_User2UnstakedFro
 
 contract StateT86471_ContractSetEndTimeTest is StateT86471_ContractSetEndTime {
 
-    function testCannotSetEndTimeAfterContractEnded() public {
+    function testCanRepeatSetEndTimeBeforeContractEnded() public {
+        // Get initial end time
+        uint256 initialEndTime = pool.endTime();
+        uint256 newEndTime = block.timestamp + 1000;
+        
         vm.startPrank(operator);
-            vm.expectRevert(Errors.StakingEnded.selector);
-            pool.setEndTime(block.timestamp + 1); 
+            vm.expectEmit(true, true, true, true);
+            emit StakingEndTimeSet(newEndTime);
+            pool.setEndTime(newEndTime); 
         vm.stopPrank();
+        
+        // Check end time was updated
+        assertEq(pool.endTime(), newEndTime);
+        assertNotEq(initialEndTime, pool.endTime());
     }
 
     function testCannotSetEndTimeInPast() public {
@@ -36,7 +45,7 @@ contract StateT86471_ContractSetEndTimeTest is StateT86471_ContractSetEndTime {
         // distribution params  
         uint256 distributionId = 1;
         uint256 distributionStartTime = pool.endTime() + 1;
-        uint256 distributionEndTime = pool.endTime() + 2;
+        uint256 distributionEndTime = pool.endTime() - 1;
         uint256 emissionPerSecond = 1 ether;
         uint256 tokenPrecision = 1E18;
         bytes32 tokenAddress = 0x00;

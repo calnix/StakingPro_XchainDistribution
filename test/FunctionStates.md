@@ -340,11 +340,11 @@ Contract states:
 - (-) 1st distribution NOT D0 (revert)                    | testFirstDistributionMustBeD0_T0
 - (-) Zero token precision (revert)                       | testCannotSetupDistributionWithZeroTokenPrecision_T0
 - (-) Invalid emission rate (revert)                      | testCannotSetupDistributionWithZeroEmissionRate_T0
-- (-) Invalid start time (revert)                         | testCannotSetupDistributionWithInvalidStartTime_T6
-- (-) Distribution start time exceeds contract end time (revert) | testCannotSetupDistributionWithStartTimeExceedingEndTime_T86471
-- (-) Distribution end time exceeds contract end time (revert) | testCannotSetupDistributionWithEndTimeExceedingContractEndTime_T86471
+- (-) Invalid distribution start time (revert)                         | testCannotSetupDistributionStartTimeBeforeContractStartTime_T6
+- (-) Distribution startTime exceeds contract end time (revert) | testCannotSetupDistributionWithStartTimeExceedingEndTime_T86471
+- (-) Distribution endTime exceeds contract end time (revert) | testCannotSetupDistributionWithEndTimeExceedingContractEndTime_T86471
 - (-) Rebased emission rate is zero (revert)              | testCannotSetupDistributionWithRebasedEmissionRateZero_T0
-- (-) Invalid end time (revert)                           | testCannotSetupDistributionWithInvalidEndTime_T6
+- (-) Invalid distribution end time (revert)              | testCannotSetupTokenDistributionStartTimeGreaterThanEndTime_T6
 - (-) Invalid Dst Eid (revert)                            | testCannotSetupTokenDistributionWithInvalidDstEid_T6
 - (-) Invalid Token address (revert)                      | testCannotSetupTokenDistributionWithInvalidTokenAddress_T6
 - (-) Cannot reuse distribution id                        | testCannotSetupDistributionIdDistributionAlreadySetup_T11
@@ -360,6 +360,25 @@ TODO
 
 ## updateDistribution
 
+Contract states:
+- (+) Contract not started                                | testCanUpdateDistributionWhenContractNotStarted_T0
+- (-) Contract paused (should revert)                     | testCannotUpdateDistributionWhenPaused
+- (+) Contract under maintenance                          | testCanUpdateDistributionWhenInMaintenanceMode
+- (-) Contract ended (should revert)                      | testCannotUpdateDistributionAfterContractEnded
+
+- (-) Distribution does not exist (revert)                | testCannotUpdateNonExistentDistribution
+- (-) Distribution already ended (revert)                 | testCannotUpdateEndedDistribution
+- (-) Invalid emission rate (revert)                      | testCannotUpdateDistributionWithZeroEmissionRate
+- (-) Rebased emission rate is zero (revert)              | testCannotUpdateDistributionWithRebasedEmissionRateZero
+- (-) Invalid end time (revert)                           | testCannotUpdateDistributionWithInvalidEndTime
+- (-) Distribution end time exceeds contract end time (revert) | testCannotUpdateDistributionWithEndTimeExceedingContractEndTime
+- (+) Emits DistributionUpdated event                     | testUpdateDistributionEmitsEvent
+
+- (-) Users cannot update distribution (revert)           | testUserCannotUpdateDistribution
+- (+) Operator can update distribution                    | testOperatorCanUpdateDistribution
+- (+) Operator can update multiple parameters             | testOperatorCanUpdateMultipleDistributionParameters
+- (+) Operator can update only emission rate              | testOperatorCanUpdateOnlyEmissionRate
+- (+) Operator can update only end time                   | testOperatorCanUpdateOnlyEndTime
 
 
 ## updateNftMultiplier

@@ -260,7 +260,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
         assertNotEq(initialNftMultiplier, pool.NFT_MULTIPLIER());
     }
     
-// ------ state transition ------
+// ------ state transition:StateT0_DeployAndSetupStakingPower ------
 
     function testUserCannotSetupDistribution_T0() public {
         uint256 distributionId = 0;
@@ -388,4 +388,32 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
         - test updateDistribution
         stuff you can can w/ distribvution, but before setup
     */
+
+    function testCannotUpdateDistributionWithNullInputs_T0() public {
+        uint256 distributionId = 0;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidDistributionParameters.selector);
+            pool.updateDistribution(distributionId, 0, 0, 0);
+        vm.stopPrank();
+    }
+    
+    function testCanUpdateDistributionWhenContractNotStarted_T0() public {
+        // staking power
+        uint256 distributionId = 0;
+        uint256 distributionStartTime = 1;
+        uint256 distributionEndTime;
+        uint256 emissionPerSecond = 1 ether;
+ 
+
+        // update distribution
+        uint256 newDistributionStartTime = distributionStartTime + 1;
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit DistributionUpdated(distributionId, newDistributionStartTime, 0, 0);
+
+            pool.updateDistribution(distributionId, newDistributionStartTime, 0, 0);
+        vm.stopPrank();
+    }
 }
