@@ -366,8 +366,10 @@ Contract states:
 - (+) Contract under maintenance                          | testCanUpdateDistributionWhenInMaintenanceMode
 - (-) Contract ended (should revert)                      | testCannotUpdateDistributionAfterContractEnded
 
-- (-) Distribution does not exist (revert)                | testCannotUpdateNonExistentDistribution
-- (-) Distribution already ended (revert)                 | testCannotUpdateEndedDistribution
+- (-) Distribution does not exist (revert)                | testCannotUpdateNonExistentDistribution_T16p
+- (-) Distribution already ended (revert)                 | testCannotUpdateEndedDistribution_T16p
+- (-) Cannot update startTime if distribution started (revert) | test_StartTimeModification_CannotUpdateIfStarted_T16p
+- (-) New startTime must be greater than current time (revert) | test_StartTimeModification_NewStartTimeMustBeGreaterThanCurrent_T16p
 - (-) Invalid emission rate (revert)                      | testCannotUpdateDistributionWithZeroEmissionRate
 - (-) Rebased emission rate is zero (revert)              | testCannotUpdateDistributionWithRebasedEmissionRateZero
 - (-) Invalid end time (revert)                           | testCannotUpdateDistributionWithInvalidEndTime

@@ -243,8 +243,27 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         assertEq(distribution.emissionPerSecond, emissionPerSecond);
         assertEq(distribution.TOKEN_PRECISION, tokenPrecision);
     }
-
-
+    
+    function testCanUpdateDistributionWhenInMaintenanceMode() public {
+        uint256 distributionId = 0;
+        uint256 newEmissionPerSecond = 2 ether;
+        
+        // Get distribution before update
+        DataTypes.Distribution memory distributionBefore = getDistribution(distributionId);
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit DistributionUpdated(distributionId, 0, 0, newEmissionPerSecond);
+            pool.updateDistribution(distributionId, 0, 0, newEmissionPerSecond);
+        vm.stopPrank();
+        
+        // Get distribution after update
+        DataTypes.Distribution memory distributionAfter = getDistribution(distributionId);
+        
+        // Verify emission rate was updated
+        assertEq(distributionAfter.emissionPerSecond, newEmissionPerSecond);
+        assertNotEq(distributionBefore.emissionPerSecond, distributionAfter.emissionPerSecond);
+    }
 
 
 // ---- state transition ----
