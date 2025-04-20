@@ -651,24 +651,19 @@ library PoolLogic {
 
         // staking power cannot be ended: D0.endTime = type(uint256).max
         if(distributionId > 0){
+            // cannot be in the past
+            if(newEndTime <= block.timestamp) revert Errors.InvalidDistributionEndTime();
 
-            // endTime modification
-            if(newEndTime > 0) {
-
-                // cannot be in the past
-                if(newEndTime <= block.timestamp) revert Errors.InvalidDistributionEndTime();
-
-                // If only endTime is being updated, ensure it's after existing startTime
-                if(newStartTime == 0 && newEndTime <= distribution.startTime) revert Errors.InvalidDistributionEndTime();
+            // If only endTime is being updated, ensure it's after existing startTime
+            if(newStartTime == 0 && newEndTime <= distribution.startTime) revert Errors.InvalidDistributionEndTime();
                 
-                // If both times are being updated, ensure end is after start
-                if(newStartTime > 0 && newEndTime <= newStartTime) revert Errors.InvalidDistributionEndTime();
+            // If both times are being updated, ensure end is after start
+            if(newStartTime > 0 && newEndTime <= newStartTime) revert Errors.InvalidDistributionEndTime();
 
-                // update endTime
-                distribution.endTime = newEndTime;
-            }
+            // update endTime
+            distribution.endTime = newEndTime;
         }
-
+        
         // emissionPerSecond modification 
         if(newEmissionPerSecond > 0) {
             
@@ -679,23 +674,13 @@ library PoolLogic {
             distribution.emissionPerSecond = newEmissionPerSecond;
         }
             
-        // recalc. new token requirements 
-        uint256 newFutureEmissions;
-        uint256 newTotalRequired;
-
-        // For distributionId > 0, calculate normal future emissions
-        if (distributionId > 0) {
-            newFutureEmissions = distribution.emissionPerSecond * (distribution.endTime - distribution.lastUpdateTimeStamp);
-            newTotalRequired = newFutureEmissions + distribution.totalEmitted;
+        // recalculate new total required: future emissions + total emitted
+        uint256 newFutureEmissions = distribution.emissionPerSecond * (distribution.endTime - distribution.lastUpdateTimeStamp);
+        uint256 newTotalRequired = newFutureEmissions + distribution.totalEmitted;
             
-            // invariant: newTotalRequired must non-zero
-            if(newTotalRequired == 0) revert Errors.InvalidNewTotalRequired();
-        } else {
-            // For staking power distribution (id=0), return max value 
-            // This value is not actually used since StakingPro only calls REWARDS_VAULT for distributionId > 0
-            newTotalRequired = type(uint256).max;
-        }
-        
+        // invariant: newTotalRequired must non-zero
+       if(newTotalRequired == 0) revert Errors.InvalidNewTotalRequired();
+         
         // update storage
         distributions[distributionId] = distribution;
 
