@@ -71,6 +71,7 @@ library Errors {
     error DistributionEnded();
     error InvalidEmissionPerSecond();
     error InvalidNewTotalRequired();
+    error CannotEndStakingPowerDistribution();
     // endDistributionImmediately
     error DistributionManuallyEnded();
     // popEndedDistribution

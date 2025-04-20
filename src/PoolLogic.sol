@@ -662,7 +662,7 @@ library PoolLogic {
             if(newStartTime == 0 && newEndTime <= distribution.startTime) revert Errors.InvalidDistributionEndTime();
                 
             // If both times are being updated, ensure end is after start
-            if(n0ewStartTime > 0 && newEndTime <= newStartTime) revert Errors.InvalidDistributionEndTime();
+            if(newStartTime > 0 && newEndTime <= newStartTime) revert Errors.InvalidDistributionEndTime();
 
             // update endTime
             distribution.endTime = newEndTime;
