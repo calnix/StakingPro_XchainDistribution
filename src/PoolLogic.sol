@@ -649,8 +649,12 @@ library PoolLogic {
             distribution.startTime = distribution.lastUpdateTimeStamp = newStartTime;
         }
 
-        // staking power cannot be ended: D0.endTime = type(uint256).max
-        if(distributionId > 0){
+        // endTime modification
+        if(newEndTime > 0){
+            
+            // staking power cannot be 'ended': D0.endTime = type(uint256).max
+            if(distributionId == 0) revert Errors.CannotEndStakingPowerDistribution();
+
             // cannot be in the past
             if(newEndTime <= block.timestamp) revert Errors.InvalidDistributionEndTime();
 
@@ -658,7 +662,7 @@ library PoolLogic {
             if(newStartTime == 0 && newEndTime <= distribution.startTime) revert Errors.InvalidDistributionEndTime();
                 
             // If both times are being updated, ensure end is after start
-            if(newStartTime > 0 && newEndTime <= newStartTime) revert Errors.InvalidDistributionEndTime();
+            if(n0ewStartTime > 0 && newEndTime <= newStartTime) revert Errors.InvalidDistributionEndTime();
 
             // update endTime
             distribution.endTime = newEndTime;
