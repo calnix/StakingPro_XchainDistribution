@@ -250,7 +250,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
         uint256 newNftMultiplier = initialNftMultiplier + 1;
         assertNotEq(initialNftMultiplier, newNftMultiplier);
 
-        
+
         
         vm.startPrank(operator);
             pool.enableMaintenance();
@@ -402,7 +402,18 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
             pool.updateDistribution(distributionId, 0, 0, 0);
         vm.stopPrank();
     }
-    
+
+
+    function testCannotUpdateDistributionToStartBeforeContractStartTime_T0() public {
+        uint256 distributionId = 0;
+        uint256 newDistributionStartTime = 0;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidStartTime.selector);
+            pool.updateDistribution(distributionId, newDistributionStartTime, 0, 0);
+        vm.stopPrank();
+    }
+
     function testCanUpdateDistributionWhenContractNotStarted_T0() public {
         // staking power
         uint256 distributionId = 0;

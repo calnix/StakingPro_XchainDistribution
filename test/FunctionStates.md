@@ -367,12 +367,14 @@ Contract states:
 - (+) Contract under maintenance                          | testCanUpdateDistributionWhenInMaintenanceMode
 - (-) Contract ended (should revert)                      | testCannotUpdateDistributionAfterContractEnded
 
-### general
+### General
 
-- (-) Distribution does not exist (revert)                | testCannotUpdateNonExistentDistribution_T16p
-- (-) Distribution already ended (revert)                 | testCannotUpdateEndedDistribution_T16p
+- (-) New startTime before contract startTime (revert)    | testCannotUpdateDistributionToStartBeforeContractStartTime_T0
 - (-) New endTime exceeds contract endTime (revert)       | testCannotUpdateDistributionWithEndTimeExceedingContractEndTime_T86471
 - (-) New startTime exceeds contract endTime (revert)     | testCannotUpdateDistributionWithStartTimeExceedingContractEndTime_T86471
+- (-) Cannot update; all null inputs (revert)             | testCannotUpdateDistributionWithNullInputs_T0
+- (-) Distribution does not exist (revert)                | testCannotUpdateNonExistentDistribution_T16p
+- (-) Distribution already ended [except D0] (revert)     | testCannotUpdateEndedDistribution_T16p
 
 ### updateDistribution: startTime modification only
 
@@ -391,13 +393,13 @@ Contract states:
 
 ### updateDistribution: emissionPerSecond modification only
 
-- (-) Cannot update emission rate to zero (revert)        | test_EmissionRateModification_CannotUpdateEmissionPerSecondToBeZero_T16p
+- (-) Cannot update emission rate to zero (revert)        | same test as testCannotUpdateDistributionWithNullInputs_T0
 - (+) Can update to lower emission rate                   | test_EmissionRateModification_LowerEmissionRate_T16p
 - (+) Can update to higher emission rate                  | test_EmissionRateModification_HigherEmissionRate_T16p
 
 ### updateDistribution: multiple updates
 
-```
+```solidity
     // 1. update startTime, endTime
     // 2. update startTime, emissionPerSecond
     // 3. update endTime, emissionPerSecond

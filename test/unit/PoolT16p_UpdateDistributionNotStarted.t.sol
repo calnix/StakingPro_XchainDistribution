@@ -193,7 +193,8 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     }
 
 // ---------------- updateDistribution: emissionPerSecond modification ----------------
-/*
+
+/* same test as testCannotUpdateDistributionWithNullInputs_T0
     function test_EmissionRateModification_CannotUpdateEmissionPerSecondToBeZero_T16p() public {
         uint256 distributionId = 0;
         

@@ -833,7 +833,9 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             if(newStartTime > endTime) revert Errors.InvalidStartTime();
         }
 
-        if(newStartTime == 0 && newEndTime == 0 && newEmissionPerSecond == 0) revert Errors.InvalidDistributionParameters(); 
+        // all null inputs: also checks for zero emission scenario
+        uint256 totalInputs = newStartTime + newEndTime + newEmissionPerSecond;
+        if(totalInputs == 0) revert Errors.InvalidDistributionParameters(); 
 
         uint256 newTotalRequired = PoolLogic.executeUpdateDistributionParams(distributions, distributionId, newStartTime, newEndTime, newEmissionPerSecond, 
             totalBoostedRealmPoints, totalBoostedStakedTokens);
