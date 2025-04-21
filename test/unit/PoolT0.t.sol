@@ -401,16 +401,27 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
     function testCanUpdateDistributionWhenContractNotStarted_T0() public {
         // staking power
         uint256 distributionId = 0;
-        uint256 distributionStartTime = 1;
- 
+        DataTypes.Distribution memory distributionBefore = getDistribution(distributionId);
+        
         // update distribution
-        uint256 newDistributionStartTime = distributionStartTime + 1;
+        uint256 newDistributionStartTime = distributionBefore.startTime + 1;
+        
+        // Check state before
+        assertEq(distributionBefore.startTime, 1);
+        assertEq(distributionBefore.endTime, 0);
         
         vm.startPrank(operator);
             vm.expectEmit(true, true, true, true);
-            emit DistributionUpdated(distributionId, newDistributionStartTime, 0, 0);
+            emit DistributionUpdated(distributionId, newDistributionStartTime, distributionBefore.endTime, distributionBefore.emissionPerSecond);
 
             pool.updateDistribution(distributionId, newDistributionStartTime, 0, 0);
         vm.stopPrank();
+        
+        DataTypes.Distribution memory distributionAfter = getDistribution(distributionId);
+        
+        // Check state after
+        assertEq(distributionAfter.startTime, newDistributionStartTime);
+        assertEq(distributionAfter.endTime, distributionBefore.endTime);
+        assertEq(distributionAfter.emissionPerSecond, distributionBefore.emissionPerSecond);
     }
 }
