@@ -41,13 +41,14 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     }
 
 // ---------------- updateDistribution: startTime modification ----------------
+    
     // cannot update if started
     function test_StartTimeModification_CannotUpdateIfStarted_T16p() public {
         uint256 distributionId = 0;
         uint256 newStartTime = block.timestamp + 1;
 
         vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidStartTime.selector);
+            vm.expectRevert(Errors.DistributionStarted.selector);
             pool.updateDistribution(distributionId, newStartTime, 0, 0);
         vm.stopPrank();
     }
@@ -107,7 +108,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
         uint256 newEndTime = block.timestamp + 1;
 
         vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidDistributionEndTime.selector);
+            vm.expectRevert(Errors.CannotEndStakingPowerDistribution.selector);
             pool.updateDistribution(distributionId, 0, newEndTime, 0);
         vm.stopPrank();
     }
@@ -131,7 +132,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
         uint256 newEndTime = distribution.startTime - 1;
 
         vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidDistributionEndTime.selector);
+            vm.expectRevert(Errors.InvalidDuration.selector);
             pool.updateDistribution(distributionId, 0, newEndTime, 0);
         vm.stopPrank();
     }
@@ -145,7 +146,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
         uint256 newEndTime = distribution.startTime - 1;
     
         vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidDistributionEndTime.selector);
+            vm.expectRevert(Errors.InvalidDuration.selector);
             pool.updateDistribution(distributionId, newStartTime, newEndTime, 0);
         vm.stopPrank();
     }
@@ -193,6 +194,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
 
 // ---------------- updateDistribution: emissionPerSecond modification ----------------
 
+/* same test as testCannotUpdateDistributionWithNullInputs_T0
     function test_EmissionRateModification_CannotUpdateEmissionPerSecondToBeZero_T16p() public {
         uint256 distributionId = 0;
         
@@ -210,7 +212,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
         // Verify emission rate was not changed
         assertEq(distributionAfter.emissionPerSecond, distributionBefore.emissionPerSecond);
         assertNotEq(distributionAfter.emissionPerSecond, newEmissionPerSecond);
-    }
+    }*/
     
     // lower emission rate
     function test_EmissionRateModification_LowerEmissionRate_T16p() public {
@@ -222,16 +224,10 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
         // Set new emission rate lower than original
         uint256 newEmissionPerSecond = distributionBefore.emissionPerSecond / 2;
         
-        // Calculate expected total required: Need to account for past emissions at old rate and future emissions at new rate
-        // D0: started emitting at T1
-        uint256 emittedSoFar = (block.timestamp - distributionBefore.startTime) * distributionBefore.emissionPerSecond;
-        uint256 futureEmissions = (distributionBefore.endTime - block.timestamp) * newEmissionPerSecond;
-        uint256 expectedTotalRequired = emittedSoFar + futureEmissions;
-
         vm.startPrank(operator);
             // Check for event emission
             vm.expectEmit(true, true, true, true);
-            emit DistributionUpdated(distributionId, distributionBefore.startTime, distributionBefore.endTime, newEmissionPerSecond);
+            emit DistributionUpdated(distributionId, 1, 0, newEmissionPerSecond);
             
             // For distribution 0, we don't expect a call to rewards vault
             pool.updateDistribution(distributionId, 0, 0, newEmissionPerSecond);
@@ -392,21 +388,28 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
         uint256 distributionId = 1;
         DataTypes.Distribution memory distribution = getDistribution(distributionId);
         
-        uint256 newStartTime = distribution.startTime + 1;
-        uint256 newEndTime = distribution.endTime + 1;
+        // D1: starts at T21
+        assertEq(distribution.startTime, 21);
+        assertEq(distribution.endTime, 172821);
+        assertEq(distribution.lastUpdateTimeStamp, 21);
+
+        // Get the totalRequired before update
+        (,, uint256 totalRequiredBefore,,) = rewardsVault.distributions(distributionId);
+        
+        uint256 newStartTime = distribution.startTime - 1;
+        uint256 newEndTime = distribution.endTime + 10;
         uint256 newEmissionPerSecond = distribution.emissionPerSecond * 2;
         
         // Calculate expected total required for the entire distribution period
         uint256 expectedTotalRequired = (newEndTime - newStartTime) * newEmissionPerSecond;
-        
+
         vm.startPrank(operator);
             vm.expectEmit(true, true, true, true);
             emit DistributionUpdated(distributionId, newStartTime, newEndTime, newEmissionPerSecond);
-
-            vm.expectCall(
-                address(rewardsVault),
-                abi.encodeCall(rewardsVault.updateDistribution, (distributionId, expectedTotalRequired))
-            );
+           
+            // Also expect the RewardsVault to emit its own event
+            vm.expectEmit(true, true, true, true, address(rewardsVault));
+            emit DistributionUpdated(distributionId, expectedTotalRequired);
             
             pool.updateDistribution(distributionId, newStartTime, newEndTime, newEmissionPerSecond);
         vm.stopPrank();
@@ -414,10 +417,18 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
         // Get distribution after update
         DataTypes.Distribution memory distributionAfter = getDistribution(distributionId);
         
+        // Get the totalRequired after update
+        (,, uint256 totalRequiredAfter,,) = rewardsVault.distributions(distributionId);
+        
         // Verify all fields were updated
         assertEq(distributionAfter.startTime, newStartTime);
         assertEq(distributionAfter.endTime, newEndTime);
         assertEq(distributionAfter.emissionPerSecond, newEmissionPerSecond);
+        assertEq(distributionAfter.lastUpdateTimeStamp, newStartTime);
+
+        // Verify totalRequired was updated in the RewardsVault
+        assertEq(totalRequiredAfter, expectedTotalRequired);
+        assertNotEq(totalRequiredBefore, totalRequiredAfter);
     }
 
 }

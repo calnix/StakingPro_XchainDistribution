@@ -59,6 +59,7 @@ DistributionId:0 is reserved for staking power.
 - staking power is an off-chain resource, and not represented by ERC20 tokens
 - D0 will not emit any token rewards, and there will be no asset transfers.
 - StakingPro will simply serve to account on-chain the total StakingPower accrued.
+- D0 is expected to have end.time = 0
 
 >Distribution ids are expected to be sequential, starting from 0.
 
@@ -68,6 +69,7 @@ Staking power is distributionId:0.
 
 - only distribution allowed to have an indefinite endTime
 - only distribution that does not emit token rewards
+- D0 is expected to have end.time = 0
 
 Staking power is an off-chain resource - the contract only serves to record the allocation and accruals to users.
 
@@ -700,7 +702,7 @@ endVaults(bytes32[] calldata vaultIds) external whenStarted whenNotPaused whenNo
 ## stakeOnBehalfOf
 
 ```solidity
-stakeOnBehalfOf(bytes32[] calldata vaultIds, address[] calldata onBehalfOfs, uint256[] calldata amounts) external whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance onlyRole(OPERATOR_ROLE)
+stakeOnBehalfOf(bytes32[] calldata vaultIds, address[] calldata onBehalfOfs, uint256[] calldata amounts) external whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance onlyRole(CRON_JOB_ROLE)
 ```
 
 Allows the operator/owner to stake on behalf of users:
@@ -849,10 +851,10 @@ Key constraints:
 
 This function enables flexible management of reward distributions by allowing adjustments to timing and emission rates while maintaining key invariants.
 
-## endDistributionImmediately
+## endDistribution
 
 ```solidity
-endDistributionImmediately(uint256 distributionId) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE)
+endDistribution(uint256 distributionId) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE)
 ```
 
 Allows owner to immediately terminate an active distribution:
@@ -893,6 +895,7 @@ popEndedDistribution(uint256 distributionId) external whenNotEnded whenNotPaused
 In a prior design, distributions would execute a final update check after ending and would be automatically popped from activeDistributions array.
 
 However, this lead to the issue where if a vault hibernates [no state updates for extended period], and the distribution ends, the vault would not receive rewards as expected.
+
 Since no txns updated the vault's accounts while the distribution was active, nothing would be accrued; and once the distribution ends, vaultAccounts cannot be updated against it.
 
 ### Scenario 1: Partially unbooked rewards

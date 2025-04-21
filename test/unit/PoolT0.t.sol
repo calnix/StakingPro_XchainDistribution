@@ -249,10 +249,15 @@ contract StateT0_DeployTest is StateT0_Deploy {
         uint256 initialNftMultiplier = pool.NFT_MULTIPLIER();
         uint256 newNftMultiplier = initialNftMultiplier + 1;
         assertNotEq(initialNftMultiplier, newNftMultiplier);
+
+
         
         vm.startPrank(operator);
+            pool.enableMaintenance();
+
             vm.expectEmit(true, true, true, true);
             emit NftMultiplierUpdated(initialNftMultiplier, newNftMultiplier);
+            
             pool.updateNftMultiplier(newNftMultiplier);
         vm.stopPrank();
         
@@ -321,7 +326,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
     function testCannotSetupDistributionWithRebasedEmissionRateZero_T0() public {
         uint256 distributionId = 0;
         uint256 distributionStartTime = 1;
-        uint256 distributionEndTime;
+        uint256 distributionEndTime = 0;
         uint256 emissionPerSecond = 1;
         uint256 tokenPrecision = 1E19;
         bytes32 tokenAddress = 0x00;
@@ -335,7 +340,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
     function testOperatorCanSetupDistributionWhenNotStarted_T0() public {
         uint256 distributionId = 0;
         uint256 distributionStartTime = 1;
-        uint256 distributionEndTime;
+        uint256 distributionEndTime = 0;
         uint256 emissionPerSecond = 1 ether;
         uint256 tokenPrecision = 1E18;
         bytes32 tokenAddress = 0x00;
@@ -397,21 +402,42 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
             pool.updateDistribution(distributionId, 0, 0, 0);
         vm.stopPrank();
     }
-    
+
+
+    function testCannotUpdateDistributionToStartBeforeContractStartTime_T0() public {
+        uint256 distributionId = 0;
+        uint256 newDistributionStartTime = 0;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidDistributionParameters.selector);
+            pool.updateDistribution(distributionId, newDistributionStartTime, 0, 0);
+        vm.stopPrank();
+    }
+
     function testCanUpdateDistributionWhenContractNotStarted_T0() public {
         // staking power
         uint256 distributionId = 0;
-        uint256 distributionStartTime = 1;
- 
-
+        DataTypes.Distribution memory distributionBefore = getDistribution(distributionId);
+        
         // update distribution
-        uint256 newDistributionStartTime = distributionStartTime + 1;
+        uint256 newDistributionStartTime = distributionBefore.startTime + 1;
+        
+        // Check state before
+        assertEq(distributionBefore.startTime, 1);
+        assertEq(distributionBefore.endTime, 0);
         
         vm.startPrank(operator);
             vm.expectEmit(true, true, true, true);
-            emit DistributionUpdated(distributionId, newDistributionStartTime, 0, 0);
+            emit DistributionUpdated(distributionId, newDistributionStartTime, distributionBefore.endTime, distributionBefore.emissionPerSecond);
 
             pool.updateDistribution(distributionId, newDistributionStartTime, 0, 0);
         vm.stopPrank();
+        
+        DataTypes.Distribution memory distributionAfter = getDistribution(distributionId);
+        
+        // Check state after
+        assertEq(distributionAfter.startTime, newDistributionStartTime);
+        assertEq(distributionAfter.endTime, distributionBefore.endTime);
+        assertEq(distributionAfter.emissionPerSecond, distributionBefore.emissionPerSecond);
     }
 }

@@ -38,6 +38,9 @@ library Errors {
 
     // activateCooldown
     error VaultAlreadyRemoved();
+    
+    // setEndTime
+    error EndTimeAlreadySet();
 
     // setRewardsVault
     error ActiveTokenDistributions();
@@ -71,6 +74,8 @@ library Errors {
     error DistributionEnded();
     error InvalidEmissionPerSecond();
     error InvalidNewTotalRequired();
+    error CannotEndStakingPowerDistribution();
+    error InvalidDuration();
     // endDistributionImmediately
     error DistributionManuallyEnded();
     // popEndedDistribution

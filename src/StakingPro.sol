@@ -618,6 +618,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param endTime_ The new end time for the staking pool
      */
     function setEndTime(uint256 endTime_) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
+        if(endTime > 0) revert Errors.EndTimeAlreadySet();
         if(endTime_ == 0) revert Errors.InvalidEndTime();
         if(endTime_ <= block.timestamp) revert Errors.InvalidEndTime();
 
@@ -629,17 +630,26 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // note: only shortens distribution endTime, does not extend
         for(uint256 i; i < activeDistributions.length; ++i){
             uint256 distributionId = activeDistributions[i];
+
+            DataTypes.Distribution storage distribution = distributions[distributionId];
+
+            if(distribution.endTime > 0) {
+
+                if(distribution.endTime > endTime_) {
+                    // endTime_ is in the future, so newTotalRequired is +ve (and > totalEmitted)
+                    uint256 newTimeLeft = endTime_ - distribution.lastUpdateTimeStamp;
+                    uint256 newTotalRequired = (newTimeLeft * distribution.emissionPerSecond) + distribution.totalEmitted;
+                    
+                    // update storage
+                    distribution.endTime = endTime_;
+                    // update rewards vault
+                    if(distributionId > 0) REWARDS_VAULT.updateDistribution(distributionId, newTotalRequired);
+                }
+
+            } else{
                 
-            if(distributions[distributionId].endTime > endTime_) {
-                
-                // endTime_ is in the future, so newTotalRequired is +ve (and > totalEmitted)
-                uint256 newTimeLeft = endTime_ - distributions[distributionId].lastUpdateTimeStamp;
-                uint256 newTotalRequired = (newTimeLeft * distributions[distributionId].emissionPerSecond) + distributions[distributionId].totalEmitted;
-                
-                // update storage
-                distributions[distributionId].endTime = endTime_;
-                // update rewards vault
-                if(distributionId > 0) REWARDS_VAULT.updateDistribution(distributionId, newTotalRequired);
+                // D0: endTime is not set
+                distribution.endTime = endTime_;
             }
         }
     }
@@ -749,10 +759,11 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(tokenPrecision == 0) revert Errors.ZeroTokenPrecision();
         if(emissionPerSecond == 0) revert Errors.ZeroEmissionRate();
 
+        // distributionStartTime has implicit zero check
         if(distributionStartTime < startTime) revert Errors.InvalidDistributionStartTime();
         if(distributionStartTime < block.timestamp) revert Errors.InvalidDistributionStartTime();
 
-        // contract endTime set
+        // contract endTime check
         if(endTime > 0){
             // newEndTime must be <= endTime
             if(distributionEndTime > endTime) revert Errors.InvalidEndTime();
@@ -763,12 +774,12 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // rebase check: smallest tick rebased must be > 0. sanity checks _calculateDistributionIndex 
         uint256 emissionPerSecondRebased = (emissionPerSecond * 1E18) / tokenPrecision;
         if(emissionPerSecondRebased == 0) revert Errors.RebasedEmissionRateIsZero();
-
+    
+        // token distributions must have valid dstEid + tokenAddress
         if(distributionId > 0){
-            
-            // token distributions must have valid endTime
+            // endTime must be > startTime
             if(distributionEndTime <= distributionStartTime) revert Errors.InvalidDistributionEndTime();
-            
+
             // LZ sanity checks
             if(dstEid == 0) revert Errors.InvalidDstEid();
             if(tokenAddress == bytes32(0)) revert Errors.InvalidTokenAddress();
@@ -819,8 +830,12 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param newEmissionPerSecond New emission rate per second. Must be > 0 if modified
      */
     function updateDistribution(uint256 distributionId, uint256 newStartTime, uint256 newEndTime, uint256 newEmissionPerSecond) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
+        // contract startTime check
+        if(newStartTime > 0){
+            if(newStartTime < startTime) revert Errors.InvalidStartTime();
+        }
 
-        // contract endTime set
+        // contract endTime check
         if(endTime > 0){
             // newEndTime must be <= endTime
             if(newEndTime > endTime) revert Errors.InvalidEndTime();
@@ -828,7 +843,9 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             if(newStartTime > endTime) revert Errors.InvalidStartTime();
         }
 
-        if(newStartTime == 0 && newEndTime == 0 && newEmissionPerSecond == 0) revert Errors.InvalidDistributionParameters(); 
+        // all null inputs: also checks for zero emission scenario
+        uint256 totalInputs = newStartTime + newEndTime + newEmissionPerSecond;
+        if(totalInputs == 0) revert Errors.InvalidDistributionParameters(); 
 
         uint256 newTotalRequired = PoolLogic.executeUpdateDistributionParams(distributions, distributionId, newStartTime, newEndTime, newEmissionPerSecond, 
             totalBoostedRealmPoints, totalBoostedStakedTokens);

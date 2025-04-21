@@ -78,7 +78,7 @@ contract StateT86466_User2UnstakedFromVault2Test is StateT86466_User2UnstakedFro
         vm.stopPrank();
     }
 
-    function testCanSetEndTimeMultipleTimes() public {
+    function testCannotSetEndTimeMultipleTimes() public {
         vm.startPrank(operator);
             // Set first end time
             uint256 firstEndTime = block.timestamp + 5;
@@ -87,8 +87,8 @@ contract StateT86466_User2UnstakedFromVault2Test is StateT86466_User2UnstakedFro
 
             // Set second end time
             uint256 secondEndTime = block.timestamp + 10; 
+            vm.expectRevert(Errors.EndTimeAlreadySet.selector);
             pool.setEndTime(secondEndTime);
-            assertEq(pool.endTime(), secondEndTime);
         vm.stopPrank();
     }
 
@@ -121,11 +121,7 @@ contract StateT86466_User2UnstakedFromVault2Test is StateT86466_User2UnstakedFro
         for(uint256 i; i < pool.getActiveDistributionsLength(); ++i) {
             DataTypes.Distribution memory distribution = getDistribution(i);
 
-            if(initialDistributionEndTimes[i] > newEndTime) {
-                assertEq(distribution.endTime, newEndTime, "Distribution endTime not updated");
-            } else {
-                assertEq(distribution.endTime, initialDistributionEndTimes[i], "Distribution endTime incorrectly updated");
-            }
+            assertEq(distribution.endTime, newEndTime, "Distribution endTime not updated");
         }
     }
 
