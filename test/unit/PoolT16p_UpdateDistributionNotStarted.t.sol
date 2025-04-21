@@ -229,7 +229,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
             emit DistributionUpdated(distributionId, block.timestamp, distributionBefore.endTime, newEmissionPerSecond);
             
             // For distribution 0, we don't expect a call to rewards vault
-            pool.updateDistribution(distributionId, distributionBefore.startTime, distributionBefore.endTime, newEmissionPerSecond);
+            pool.updateDistribution(distributionId, 0, 0, newEmissionPerSecond);
         vm.stopPrank();
         
         // Get distribution after update
