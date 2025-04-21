@@ -59,7 +59,7 @@ DistributionId:0 is reserved for staking power.
 - staking power is an off-chain resource, and not represented by ERC20 tokens
 - D0 will not emit any token rewards, and there will be no asset transfers.
 - StakingPro will simply serve to account on-chain the total StakingPower accrued.
-- D0 is expected to have end.time = `type(uint256).max`
+- D0 is expected to have end.time = 0
 
 >Distribution ids are expected to be sequential, starting from 0.
 
@@ -69,7 +69,7 @@ Staking power is distributionId:0.
 
 - only distribution allowed to have an indefinite endTime
 - only distribution that does not emit token rewards
-- D0 is expected to have end.time = `type(uint256).max`
+- D0 is expected to have end.time = 0
 
 Staking power is an off-chain resource - the contract only serves to record the allocation and accruals to users.
 
@@ -810,7 +810,7 @@ Creates a new distribution with specified parameters:
 ### Staking Power
 
 - Distribution ID 0 is special and used only for staking power
-- Runs indefinitely (endTime = type(uint256).max)
+- Runs indefinitely (endTime = 0)
 - Uses 18 decimals precision
 - No LayerZero parameters needed
 

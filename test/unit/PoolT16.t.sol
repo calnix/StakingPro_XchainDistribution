@@ -139,7 +139,7 @@ contract StateT16_BothUsersStakeAgainTest is StateT16_BothUsersStakeAgain {
         // static
         assertEq(distribution.distributionId, 0);
         assertEq(distribution.TOKEN_PRECISION, 1e18); 
-        assertEq(distribution.endTime, type(uint256).max);
+        assertEq(distribution.endTime, 0);
         assertEq(distribution.startTime, 1);
         assertEq(distribution.emissionPerSecond, 1 ether);
         assertEq(distribution.manuallyEnded, 0);        

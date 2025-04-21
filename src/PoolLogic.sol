@@ -633,7 +633,9 @@ library PoolLogic {
 
         // Check distribution exists + not ended
         if(distribution.startTime == 0) revert Errors.NonExistentDistribution();
-        if(block.timestamp >= distribution.endTime) revert Errors.DistributionEnded();
+        if(distributionId > 0) {
+            if(block.timestamp >= distribution.endTime) revert Errors.DistributionEnded();
+        }
 
         // update distribution index
         distribution = _updateDistributionIndex(distribution, totalBoostedRealmPoints, totalBoostedStakedTokens);
@@ -652,7 +654,7 @@ library PoolLogic {
         // endTime modification
         if(newEndTime > 0){
             
-            // staking power cannot be 'ended': D0.endTime = type(uint256).max
+            // staking power cannot be 'ended': D0.endTime = 0
             if(distributionId == 0) revert Errors.CannotEndStakingPowerDistribution();
 
             // cannot be in the past
@@ -678,10 +680,10 @@ library PoolLogic {
             distribution.emissionPerSecond = newEmissionPerSecond;
         }
             
-        // recalculate new total required: future emissions + total emitted
+        // recalc. new token requirements 
         uint256 newFutureEmissions = distribution.emissionPerSecond * (distribution.endTime - distribution.lastUpdateTimeStamp);
         uint256 newTotalRequired = newFutureEmissions + distribution.totalEmitted;
-            
+        
         // invariant: newTotalRequired must non-zero
        if(newTotalRequired == 0) revert Errors.InvalidNewTotalRequired();
          
@@ -832,15 +834,14 @@ library PoolLogic {
         // distribution has not started
         if(block.timestamp < distribution.startTime) return distribution;
 
-        // staking power: realmPoints | tokens: staked tokens
-        uint256 totalBoostedBalance = distribution.distributionId == 0 ? totalBoostedRealmPoints : totalBoostedStakedTokens;
 
-        // ..... Distribution has ended: execute final update .....
-        if (block.timestamp >= distribution.endTime) {
+        // ..... Distribution has ended: does not apply to distributionId == 0 .....
+        if (distribution.endTime > 0 && block.timestamp >= distribution.endTime) {
             // If final update after distribution ended, do final update to endTime
             if (distribution.lastUpdateTimeStamp < distribution.endTime) {
 
-                (uint256 finalIndex, /*currentTimestamp*/, uint256 finalEmitted) = _calculateDistributionIndex(distribution, totalBoostedBalance);
+                // distributions w/ endTimes involve tokens, not realmPoints: use totalBoostedStakedTokens
+                (uint256 finalIndex, /*currentTimestamp*/, uint256 finalEmitted) = _calculateDistributionIndex(distribution, totalBoostedStakedTokens);
                 
                 emit DistributionIndexUpdated(distribution.distributionId, distribution.endTime, distribution.index, finalIndex);
 
@@ -852,10 +853,12 @@ library PoolLogic {
             }
 
             return distribution;
-        }    
+        }     
 
 
         // ..... Distribution has NOT ended: normal distribution update ....
+        // staking power: realmPoints | tokens: staked tokens
+        uint256 totalBoostedBalance = distribution.distributionId == 0 ? totalBoostedRealmPoints : totalBoostedStakedTokens;
         (uint256 nextIndex, uint256 currentTimestamp, uint256 emittedRewards) = _calculateDistributionIndex(distribution, totalBoostedBalance);
         
         if (nextIndex > distribution.index) {
@@ -887,7 +890,17 @@ library PoolLogic {
             return (distribution.index, block.timestamp, 0);                       
         }
 
-        uint256 currentTimestamp = block.timestamp > distribution.endTime ? distribution.endTime : block.timestamp;
+        uint256 currentTimestamp;
+        
+        // Token distributions will have endTime set; use it as the cap
+        if(distribution.endTime > 0) {
+            currentTimestamp = block.timestamp > distribution.endTime ? distribution.endTime : block.timestamp;
+        }
+        // Staking Power will not have endTime set; use current block timestamp
+        else {
+            currentTimestamp = block.timestamp;
+        }
+
         uint256 timeDelta = currentTimestamp - distribution.lastUpdateTimeStamp;
         
         // emissionPerSecond expressed w/ full token precision 
@@ -924,7 +937,9 @@ library PoolLogic {
         if(vault.removed == 1) return (vaultAccount, distribution);
 
         // distribution ended before vault began: skip updating
-        if(vault.startTime >= distribution.endTime) return (vaultAccount, distribution);
+        if(distribution.endTime > 0) {
+            if(vault.startTime >= distribution.endTime) return (vaultAccount, distribution);
+        }
 
         // If vault has ended, vaultIndex should not be updated, beyond the final update.
         /** note:
@@ -1286,6 +1301,11 @@ library PoolLogic {
 
         // vault has been removed from circulation: final update done by endVaults()
         if(vault.removed == 1) return (vaultAccount, distribution);
+
+        // distribution ended before vault began: skip updating
+        if(distribution.endTime > 0) {
+            if(vault.startTime >= distribution.endTime) return (vaultAccount, distribution);
+        }
         
         // STAKING POWER: staked realm points | TOKENS: staked moca tokens
         uint256 boostedBalance = distribution.distributionId == 0 ? vault.boostedRealmPoints : vault.boostedStakedTokens;
@@ -1325,23 +1345,26 @@ library PoolLogic {
         // distribution has not started
         if(block.timestamp < distribution.startTime) return distribution;
 
-        // staking power: realmPoints | tokens: staked tokens
-        uint256 totalBoostedBalance = distribution.distributionId == 0 ? totalBoostedRealmPoints : totalBoostedStakedTokens;
-
-        // ..... Distribution has ended: execute final update .....
-        if (block.timestamp >= distribution.endTime) {
+        // ..... Distribution has ended: does not apply to distributionId == 0 .....
+        if (distribution.endTime > 0 && block.timestamp >= distribution.endTime) {
+            // If final update after distribution ended, do final update to endTime
             if (distribution.lastUpdateTimeStamp < distribution.endTime) {
-                (uint256 finalIndex, /*currentTimestamp*/, uint256 finalEmitted) = _calculateDistributionIndex(distribution, totalBoostedBalance);
+
+                // distributions w/ endTimes involve tokens, not realmPoints: use totalBoostedStakedTokens
+                (uint256 finalIndex, /*currentTimestamp*/, uint256 finalEmitted) = _calculateDistributionIndex(distribution, totalBoostedStakedTokens);
                 
                 distribution.index = finalIndex;
                 distribution.totalEmitted += finalEmitted;
-                distribution.lastUpdateTimeStamp = distribution.endTime; 
+                distribution.lastUpdateTimeStamp = distribution.endTime;               
+
             }
 
             return distribution;
-        }    
+        }     
 
         // ..... Distribution has NOT ended: normal distribution update ....
+        // staking power: realmPoints | tokens: staked tokens
+        uint256 totalBoostedBalance = distribution.distributionId == 0 ? totalBoostedRealmPoints : totalBoostedStakedTokens;
         (uint256 nextIndex, uint256 currentTimestamp, uint256 emittedRewards) = _calculateDistributionIndex(distribution, totalBoostedBalance);
 
         if (nextIndex > distribution.index) {

@@ -40,18 +40,18 @@ contract StateT86471_ContractSetEndTimeTest is StateT86471_ContractSetEndTime {
         vm.stopPrank();
     }
 
-
+    // endTime < startTime
     function testCannotSetupDistributionWithStartTimeExceedingEndTime_T86471() public {
         // distribution params  
-        uint256 distributionId = 1;
-        uint256 distributionStartTime = pool.endTime(); // type(uint256).max
+        uint256 distributionId = 2;
+        uint256 distributionStartTime = pool.endTime(); // 
         uint256 distributionEndTime = pool.endTime() - 1;
         uint256 emissionPerSecond = 1 ether;
         uint256 tokenPrecision = 1E18;
         bytes32 tokenAddress = 0x00;
 
         vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidStartTime.selector);
+            vm.expectRevert(Errors.InvalidDistributionEndTime.selector);
             pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
         vm.stopPrank();
     }
