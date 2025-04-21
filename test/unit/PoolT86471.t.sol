@@ -71,5 +71,35 @@ contract StateT86471_ContractSetEndTimeTest is StateT86471_ContractSetEndTime {
             pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
         vm.stopPrank();
     }
+
+    function testCannotUpdateDistributionWithEndTimeExceedingContractEndTime_T86471() public {
+        uint256 distributionId = 1;
+
+        // get distribution
+        DataTypes.Distribution memory distribution = getDistribution(distributionId);
+
+        // new endTime
+        uint256 newEndTime = pool.endTime() + 1;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidEndTime.selector);
+            pool.updateDistribution(distributionId, 0, newEndTime, 0);
+        vm.stopPrank();
+    }
+
+    function testCannotUpdateDistributionWithStartTimeExceedingContractEndTime_T86471() public {
+        uint256 distributionId = 1;
+
+        // get distribution
+        DataTypes.Distribution memory distribution = getDistribution(distributionId);
+
+        // new startTime
+        uint256 newStartTime = pool.endTime() + 1;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidStartTime.selector);
+            pool.updateDistribution(distributionId, newStartTime, 0, 0);
+        vm.stopPrank();
+    }
     
 }

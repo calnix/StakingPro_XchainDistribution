@@ -367,8 +367,12 @@ Contract states:
 - (+) Contract under maintenance                          | testCanUpdateDistributionWhenInMaintenanceMode
 - (-) Contract ended (should revert)                      | testCannotUpdateDistributionAfterContractEnded
 
+### general
+
 - (-) Distribution does not exist (revert)                | testCannotUpdateNonExistentDistribution_T16p
 - (-) Distribution already ended (revert)                 | testCannotUpdateEndedDistribution_T16p
+- (-) New endTime exceeds contract endTime (revert)       | testCannotUpdateDistributionWithEndTimeExceedingContractEndTime_T86471
+- (-) New startTime exceeds contract endTime (revert)     | testCannotUpdateDistributionWithStartTimeExceedingContractEndTime_T86471
 
 ### updateDistribution: startTime modification only
 
@@ -405,19 +409,7 @@ Contract states:
 - (+) Can update endTime and emissionPerSecond            | testCanUpdateEndTimeAndEmissionPerSecondD1_T16p
 - (+) Can update all fields simultaneously                | testCanUpdateAllFieldsD1_T16p
 
-
-- (-) Invalid emission rate (revert)                      | testCannotUpdateDistributionWithZeroEmissionRate
-- (-) Rebased emission rate is zero (revert)              | testCannotUpdateDistributionWithRebasedEmissionRateZero
-- (-) Invalid end time (revert)                           | testCannotUpdateDistributionWithInvalidEndTime
-- (-) Distribution end time exceeds contract end time (revert) | testCannotUpdateDistributionWithEndTimeExceedingContractEndTime
-- (+) Emits DistributionUpdated event                     | testUpdateDistributionEmitsEvent
-
-- (-) Users cannot update distribution (revert)           | testUserCannotUpdateDistribution
-- (+) Operator can update distribution                    | testOperatorCanUpdateDistribution
-- (+) Operator can update multiple parameters             | testOperatorCanUpdateMultipleDistributionParameters
-- (+) Operator can update only emission rate              | testOperatorCanUpdateOnlyEmissionRate
-- (+) Operator can update only end time                   | testOperatorCanUpdateOnlyEndTime
-
+## 
 
 ## updateNftMultiplier
 

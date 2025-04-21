@@ -820,8 +820,12 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param newEmissionPerSecond New emission rate per second. Must be > 0 if modified
      */
     function updateDistribution(uint256 distributionId, uint256 newStartTime, uint256 newEndTime, uint256 newEmissionPerSecond) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
-
-        // contract endTime set
+        // contract startTime check
+        if(startTime > 0){
+            if(newStartTime < startTime) revert Errors.InvalidStartTime();
+        }
+    
+        // contract endTime check
         if(endTime > 0){
             // newEndTime must be <= endTime
             if(newEndTime > endTime) revert Errors.InvalidEndTime();
