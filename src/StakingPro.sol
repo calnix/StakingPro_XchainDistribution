@@ -618,6 +618,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param endTime_ The new end time for the staking pool
      */
     function setEndTime(uint256 endTime_) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
+        if(endTime > 0) revert Errors.EndTimeAlreadySet();
         if(endTime_ == 0) revert Errors.InvalidEndTime();
         if(endTime_ <= block.timestamp) revert Errors.InvalidEndTime();
 
@@ -629,17 +630,26 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // note: only shortens distribution endTime, does not extend
         for(uint256 i; i < activeDistributions.length; ++i){
             uint256 distributionId = activeDistributions[i];
+
+            DataTypes.Distribution storage distribution = distributions[distributionId];
+
+            if(distribution.endTime > 0) {
+
+                if(distribution.endTime > endTime_) {
+                    // endTime_ is in the future, so newTotalRequired is +ve (and > totalEmitted)
+                    uint256 newTimeLeft = endTime_ - distribution.lastUpdateTimeStamp;
+                    uint256 newTotalRequired = (newTimeLeft * distribution.emissionPerSecond) + distribution.totalEmitted;
+                    
+                    // update storage
+                    distribution.endTime = endTime_;
+                    // update rewards vault
+                    if(distributionId > 0) REWARDS_VAULT.updateDistribution(distributionId, newTotalRequired);
+                }
+
+            } else{
                 
-            if(distributions[distributionId].endTime > endTime_) {
-                
-                // endTime_ is in the future, so newTotalRequired is +ve (and > totalEmitted)
-                uint256 newTimeLeft = endTime_ - distributions[distributionId].lastUpdateTimeStamp;
-                uint256 newTotalRequired = (newTimeLeft * distributions[distributionId].emissionPerSecond) + distributions[distributionId].totalEmitted;
-                
-                // update storage
-                distributions[distributionId].endTime = endTime_;
-                // update rewards vault
-                if(distributionId > 0) REWARDS_VAULT.updateDistribution(distributionId, newTotalRequired);
+                // D0: endTime is not set
+                distribution.endTime = endTime_;
             }
         }
     }

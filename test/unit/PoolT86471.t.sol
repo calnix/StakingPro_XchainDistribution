@@ -17,26 +17,14 @@ abstract contract StateT86471_ContractSetEndTime is StateT86466_User2UnstakedFro
 
 contract StateT86471_ContractSetEndTimeTest is StateT86471_ContractSetEndTime {
 
-    function testCanRepeatSetEndTimeBeforeContractEnded() public {
+    function testCannotRepeatSetEndTimeBeforeContractEnded() public {
         // Get initial end time
         uint256 initialEndTime = pool.endTime();
         uint256 newEndTime = block.timestamp + 1000;
         
         vm.startPrank(operator);
-            vm.expectEmit(true, true, true, true);
-            emit StakingEndTimeSet(newEndTime);
+            vm.expectRevert(Errors.EndTimeAlreadySet.selector);
             pool.setEndTime(newEndTime); 
-        vm.stopPrank();
-        
-        // Check end time was updated
-        assertEq(pool.endTime(), newEndTime);
-        assertNotEq(initialEndTime, pool.endTime());
-    }
-
-    function testCannotSetEndTimeInPast() public {
-        vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidEndTime.selector);
-            pool.setEndTime(block.timestamp - 1);
         vm.stopPrank();
     }
 

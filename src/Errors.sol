@@ -38,6 +38,9 @@ library Errors {
 
     // activateCooldown
     error VaultAlreadyRemoved();
+    
+    // setEndTime
+    error EndTimeAlreadySet();
 
     // setRewardsVault
     error ActiveTokenDistributions();

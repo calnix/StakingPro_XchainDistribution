@@ -409,7 +409,7 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
         uint256 newDistributionStartTime = 0;
 
         vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidStartTime.selector);
+            vm.expectRevert(Errors.InvalidDistributionParameters.selector);
             pool.updateDistribution(distributionId, newDistributionStartTime, 0, 0);
         vm.stopPrank();
     }

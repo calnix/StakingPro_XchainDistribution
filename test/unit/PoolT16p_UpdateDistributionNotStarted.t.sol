@@ -132,7 +132,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
         uint256 newEndTime = distribution.startTime - 1;
 
         vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidDistributionEndTime.selector);
+            vm.expectRevert(Errors.InvalidDuration.selector);
             pool.updateDistribution(distributionId, 0, newEndTime, 0);
         vm.stopPrank();
     }
@@ -146,7 +146,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
         uint256 newEndTime = distribution.startTime - 1;
     
         vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidDistributionEndTime.selector);
+            vm.expectRevert(Errors.InvalidDuration.selector);
             pool.updateDistribution(distributionId, newStartTime, newEndTime, 0);
         vm.stopPrank();
     }
