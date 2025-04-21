@@ -821,10 +821,10 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      */
     function updateDistribution(uint256 distributionId, uint256 newStartTime, uint256 newEndTime, uint256 newEmissionPerSecond) external whenNotEnded whenNotPaused onlyRole(Constants.OPERATOR_ROLE) {
         // contract startTime check
-        if(startTime > 0){
+        if(newStartTime > 0){
             if(newStartTime < startTime) revert Errors.InvalidStartTime();
         }
-    
+
         // contract endTime check
         if(endTime > 0){
             // newEndTime must be <= endTime

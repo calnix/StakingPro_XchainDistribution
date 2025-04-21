@@ -250,7 +250,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
         uint256 newNftMultiplier = initialNftMultiplier + 1;
         assertNotEq(initialNftMultiplier, newNftMultiplier);
 
-
+        
         
         vm.startPrank(operator);
             pool.enableMaintenance();
