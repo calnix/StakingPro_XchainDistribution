@@ -716,7 +716,9 @@ Allows the operator/owner to stake on behalf of users:
 setEndTime(uint256 endTime_) external whenNotEnded whenNotPaused onlyRole(OPERATOR_ROLE)
 ```
 
-- endTime can be moved forward or backward; as long its a future timestamp
+- Only callable once.
+- We opt to not allow for repeated calls, as this would cause havok with D0 endTimes creating shifting goalposts.
+- If fat-finger, freeze and exit.
 - Only callable when contract is not ended or frozen
 
 > fn updates the endTime of active distributions that have far-dated endTimes(> endTime_)
@@ -1240,8 +1242,7 @@ This serves as a sanity check to ensure that the multiplier is updated correctly
 
 - Set endTime global variable via `setEndTime`.
 - Users will be able to call: `unstakeAll` and `claimRewards` after `endTime`.
-- `setEndTime` can be called repeatedly, by owner, to update `endTime`.
-- `endTime` can be moved forward or backward.
+- `setEndTime` CANNOT be called repeatedly.
 
 **What if endTime is set, but there are still active distributions continuing beyond endTime?**
 
