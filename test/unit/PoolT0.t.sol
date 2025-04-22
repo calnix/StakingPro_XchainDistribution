@@ -487,7 +487,7 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
     function testCanPopEndedDistributionWhenNotStarted() public {
             // Setup a distribution first
             uint256 distributionId = 1;
-            uint256 distributionStartTime = block.timestamp + 100;
+            uint256 distributionStartTime = block.timestamp + 1;
             uint256 distributionEndTime = distributionStartTime + 1000;
             uint256 emissionPerSecond = 1 ether;
             uint256 tokenPrecision = 1E18;
@@ -512,6 +512,8 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
             assertEq(distribution.TOKEN_PRECISION, tokenPrecision);
             assertEq(distribution.manuallyEnded, 0);
         
+        vm.warp(distributionStartTime); 
+
         vm.startPrank(operator);
             vm.expectRevert(Errors.InvalidDistributionId.selector);
             pool.popEndedDistribution(distributionId);

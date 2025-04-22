@@ -766,7 +766,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         vm.stopPrank();
     }
 
-    function testOperatorCannotEndAlreadyEndedDistribution_T41() public {
+    function testCannotEndAlreadyEndedDistribution_T41() public {
         // Warp to after distribution end time
         vm.warp(distribution1_T41.endTime + 1);
         
@@ -776,9 +776,18 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         vm.stopPrank();
     }
 
-    function testOperatorCannotPopUnendedDistribution_T41() public {
+    function testCannotPopActiveDistribution_T41() public {
         vm.startPrank(operator);
             vm.expectRevert(Errors.DistributionNotEnded.selector);
+            pool.popEndedDistribution(1);
+        vm.stopPrank();
+    }
+
+    function testCannotPopDistributionIfEndedButNotUpdated_T41() public {
+        vm.warp(distribution1_T41.endTime + 1);
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.DistributionNotUpdated.selector);
             pool.popEndedDistribution(1);
         vm.stopPrank();
     }

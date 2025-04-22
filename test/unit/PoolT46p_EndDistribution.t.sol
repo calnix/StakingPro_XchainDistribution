@@ -15,16 +15,6 @@ abstract contract StateT41_EndDistribution is StateT41_User2StakesToVault2 {
     }
 }
 
-contract StateT46_EndDistributionTest is StateT41_EndDistribution {
-
-    function testCannotPopDistributionIfEndedButNotUpdated_T46p() public {
-        vm.startPrank(operator);
-            vm.expectRevert(Errors.DistributionNotUpdated.selector);
-            pool.popEndedDistribution(1);
-        vm.stopPrank();
-    }
-}
-
 abstract contract StateT46_UpdateEndedDistribution is StateT41_EndDistribution {
 
     // for reference
@@ -64,6 +54,7 @@ abstract contract StateT46_UpdateEndedDistribution is StateT41_EndDistribution {
     uint256 user2BalanceAfter;
 
     function setUp() public virtual override {
+        super.setUp();
 
         // snapshot T41 rewards before triggering update:
         user1Vault1ClaimableAtT41ViewFn = pool.getClaimableRewards(user1, vaultId1, 1);
@@ -694,7 +685,7 @@ abstract contract StateT46p_PopDistribution is StateT46_UpdateEndedDistribution 
 
 contract PoolT46p_PopDistributionTest is StateT46p_PopDistribution {
 
-    function testCannotPopPoppedDistribution() public {
+    function testCannotPopPoppedDistribution_T46p() public {
         vm.startPrank(operator);
             vm.expectRevert(Errors.DistributionNotFound.selector);
             pool.popEndedDistribution(1);
@@ -717,3 +708,4 @@ contract PoolT46p_PopDistributionTest is StateT46p_PopDistribution {
         assertEq(address(pool.REWARDS_VAULT()), address(rewardsVault2));
     }
 }
+

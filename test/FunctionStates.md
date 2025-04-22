@@ -471,7 +471,7 @@ Scenario: Both D0 & D1 have started, Contract End Time set
 
 - (+) Distribution not started                            | testCanEndDistributionBeforeDistributionStarts_T16
 - (+) Distribution in progress                            | testCanEndDistributionWhileDistributionInProgress_T26
-- (-) Distribution already ended (should revert)          | testOperatorCannotEndAlreadyEndedDistribution_T41 + testCannotEndAlreadyEndedDistribution_T46p
+- (-) Distribution already ended (should revert)          | testCannotEndAlreadyEndedDistribution_T41 + testCannotEndAlreadyEndedDistribution_T46p
 - (-) Distribution0 cannot be ended (special case)        | testCannotEndDistribution0_T46p
 - (-) Cannot end non-existent distribution (revert)       | testCannotEndNonExistentDistribution_T46p
 - (-) Cannot end distribution that was manually ended     | testCannotEndDistributionManuallyEnded_T46p
@@ -495,31 +495,18 @@ Scenario: Both D0 & D1 have started, Contract End Time set
 - (+) Contract under maintenance                          | testCanPopEndedDistributionWhenInMaintenanceMode
 - (-) Contract ended (should revert)                      | testCannotPopEndedDistributionAfterContractEnded
 
-testCannotPopDistribution0_T46p
-testUserCannotPopEndedDistribution_T46p
-testCannotPopNonExistentDistribution_T46p
-testOperatorCannotPopUnendedDistribution_T41
 ### Distribution States:
 
-- (-) No distributions to pop (empty array, should revert) | testCannotPopFromEmptyEndedDistributionsArray
+- (-) Cannot pop Distribution0 (special case, should revert) | testCannotPopDistribution0_T46p
+- (-) Cannot pop non-existent distribution (should revert)   | testCannotPopNonExistentDistribution_T46p
+- (-) Cannot pop unended distribution (should revert)        | testCannotPopActiveDistribution_T41
+- (-) Cannot pop distribution if ended but not updated       | testCannotPopDistributionIfEndedButNotUpdated_T41
+- (-) Cannot pop already popped distribution (should revert) | testCannotPopPoppedDistribution_T46p
 
-- (-) Distribution not ended (should revert)              | testCannotPopActiveDistribution
-- (+) Single ended distribution to pop                    | testCanPopSingleEndedDistribution
-- (+) Multiple ended distributions to pop                 | testCanPopMultipleEndedDistributions
-- (+) Pop specific distribution by index                  | testCanPopSpecificEndedDistributionByIndex
-- (-) Invalid index (out of bounds, should revert)        | testCannotPopWithInvalidIndex
+### Authorization States:
 
-### Authorization:
-
-- (-) Users cannot pop ended distribution (revert)        | testUserCannotPopEndedDistribution
-- (+) Operator can pop ended distribution                 | testOperatorCanPopEndedDistribution
-
-### State Updates:
-
-- (+) Popping updates endedDistributions array correctly  | testPopEndedDistributionUpdatesArrayCorrectly
-- (+) Popping maintains array order correctly             | testPopEndedDistributionMaintainsArrayOrder
-- (+) Popping last element works correctly                | testPopLastEndedDistributionWorks
-
+- (-) Users cannot pop ended distribution (should revert)    | testUserCannotPopEndedDistribution_T46p
+- (+) Operator can pop ended distribution                    | testCanPopEndedDistribution_T46p
 
 ## 
 ## updateNftMultiplier
