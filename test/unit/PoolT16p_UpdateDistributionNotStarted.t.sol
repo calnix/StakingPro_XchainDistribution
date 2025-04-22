@@ -433,5 +433,5 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
 
 }
 
-// note: then go to UpdateDistributionStarted
-// note: then go to UpdateDistributionIfContractEndTimeSet
+// note: then go to PoolT26p_UpdateDistributionStarted 
+// note: then go to PoolT86471p_UpdateDistributionContractEndTimeSet

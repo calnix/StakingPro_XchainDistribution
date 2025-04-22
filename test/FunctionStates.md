@@ -358,7 +358,10 @@ TODO
 
 - x-chain distribution setup
 
-## updateDistribution
+## updateDistribution: PoolT16p_UpdateDistributionNotStarted.t.sol
+
+- D0 started
+- D1 not started
 
 Contract states:
 
@@ -411,8 +414,73 @@ Contract states:
 - (+) Can update endTime and emissionPerSecond            | testCanUpdateEndTimeAndEmissionPerSecondD1_T16p
 - (+) Can update all fields simultaneously                | testCanUpdateAllFieldsD1_T16p
 
-## 
+## updateDistribution: PoolT26p_UpdateDistributionStarted.t.sol
 
+Scenario: Both D0 & D1 have started
+
+#### D0 (Distribution 0) Update Attempts:
+- (-) Cannot update startTime (revert)                    | testCannotUpdateD0StartTimeWhenStarted_T26p
+- (-) Cannot update endTime (revert)                      | testCannotUpdateD0EndTimeWhenStarted_T26p
+- (+) Can update emissionPerSecond                        | testCanUpdateD0EmissionRateWhenStarted_T26p
+- (-) Cannot update any combination of fields (revert)    | testCannotUpdateD0MultipleFieldsWhenStarted_T26p
+
+#### D1 (Distribution 1) Update Attempts:
+- (-) Cannot update startTime (revert)                    | testCannotUpdateD1StartTimeWhenStarted_T26p
+- (+) Can update endTime to extend distribution           | testCanExtendD1EndTimeWhenStarted_T26p
+- (+) Can update endTime to shorten distribution          | testCanShortenD1EndTimeWhenStarted_T26p
+- (+) Can update emissionPerSecond to increase rate       | testCanIncreaseD1EmissionRateWhenStarted_T26p
+- (+) Can update emissionPerSecond to decrease rate       | testCanDecreaseD1EmissionRateWhenStarted_T26p
+- (+) Can update both endTime and emissionPerSecond       | testCanUpdateD1EndTimeAndEmissionRateWhenStarted_T26p
+- (-) Any combination of startTime should revert          | testCannotUpdateD1MultipleFieldsWhenStarted_T26p
+
+## updateDistribution: PoolT86471p_UpdateDistributionContractEndTimeSet.t.sol
+
+Scenario: Both D0 & D1 have started, Contract End Time set
+
+### General
+
+- (-) Cannot update distribution w/ endTime beyond contract endTime    | testInvalidEndTimeVersusContractEndTime_T86471p
+- (-) Cannot update distribution w/ startTime beyond contract endTime  | testInvalidStartTimeVersusContractEndTime_T86471p
+
+### D0 (Distribution 0) Update Attempts:
+
+- (-) Cannot update endTime (revert)                      | testCannotUpdateD0EndTimeWithEndTimeSet_T86471p
+- (+) Can update emissionPerSecond (revert)               | testCanUpdateD0EmissionRateWithEndTimeSet_T86471p
+- (-) Cannot update any combination of fields (revert)    | testCannotUpdateD0MultipleFieldsWithEndTimeSet_T86471p
+
+### D1 (Distribution 1) Update Attempts:
+
+- (-) Cannot update startTime (revert)                    | testCannotUpdateD1StartTimeWithEndTimeSet_T86471p
+- (-) Cannot update endTime beyond contract end time      | testCannotExtendD1EndTimeBeyondContractEndTime_T86471p
+- (+) Can update endTime within contract end time         | testCanUpdateD1EndTimeWithinContractEndTime_T86471p
+- (+) Can update emissionPerSecond                        | testCanUpdateD1EmissionRateWithEndTimeSet_T86471p
+- (+) Can update both valid endTime and emissionPerSecond | testCanUpdateD1ValidEndTimeAndEmissionRate_T86471p
+
+## endDistribution
+
+### Contract States:
+- (+) Contract not started                                | testCanEndDistributionWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotEndDistributionWhenPaused
+- (+) Contract under maintenance                          | testCanEndDistributionWhenInMaintenanceMode
+- (+) Contract ended                                      | testCanEndDistributionAfterContractEnded
+
+### Distribution States:
+- (+) Distribution not started                            | testCanEndDistributionBeforeDistributionStarts
+- (+) Distribution in progress                            | testCanEndDistributionWhileDistributionInProgress
+- (+) Distribution already ended                          | testCanEndAlreadyEndedDistribution
+
+### Authorization:
+- (-) Users cannot end distribution (revert)              | testUserCannotEndDistribution
+- (+) Operator can end distribution                       | testOperatorCanEndDistribution
+
+### Effects:
+- (+) Ending sets correct end timestamp                   | testEndDistributionSetsCorrectEndTimestamp
+- (+) Ending updates totalEmitted correctly               | testEndDistributionUpdatesTotalEmittedCorrectly
+- (+) Ending emits DistributionEnded event                | testEndDistributionEmitsCorrectEvent
+- (+) Ending updates RewardsVault state correctly         | testEndDistributionUpdatesRewardsVaultState
+- (+) Ending updates distribution index correctly         | testEndDistributionUpdatesDistributionIndex
+
+##
 ## updateNftMultiplier
 
 Contract states:
