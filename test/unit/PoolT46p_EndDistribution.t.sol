@@ -153,6 +153,59 @@ abstract contract StateT46_EndDistribution is StateT41_User2StakesToVault2 {
 
 contract StateT46_EndDistributionTest is StateT46_EndDistribution {
 
+    function testDistribution1EndedSuccessfully_T46p() public {
+        DataTypes.Distribution memory distribution = getDistribution(1);
+        assertEq(distribution.endTime, 41, "distribution end time mismatch");
+        assertEq(distribution.manuallyEnded, 1, "distribution manually ended mismatch");
+    }
+
+    function testCannotEndAlreadyEndedDistribution_T46p() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.DistributionEnded.selector);
+            pool.endDistribution(1);
+        vm.stopPrank();
+    }
+
+    function testCannotEndDistributionManuallyEnded_T46p() public {
+        // setup new distribution
+        uint256 distributionId = 3;
+        uint256 distributionStartTime = block.timestamp;
+        uint256 distributionEndTime = block.timestamp + 100;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1e18;
+        bytes32 tokenAddress = bytes32(uint256(uint160(address(rewardsToken1))));
+        
+        vm.startPrank(operator);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+
+        // end distribution
+        vm.startPrank(operator);
+            pool.endDistribution(distributionId);
+        vm.stopPrank();
+        assertEq(getDistribution(distributionId).manuallyEnded, 1, "distribution manually ended mismatch");
+
+        // end distribution
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.DistributionManuallyEnded.selector);
+            pool.endDistribution(distributionId);
+        vm.stopPrank();
+    }
+
+    function testCannotEndDistribution0_T46p() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidDistributionId.selector);
+            pool.endDistribution(0);
+        vm.stopPrank();
+    }
+
+    function testCannotEndNonExistentDistribution_T46p() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.NonExistentDistribution.selector);
+            pool.endDistribution(3);
+        vm.stopPrank();
+    }
+
 // ---------------- base assets ----------------
 
     function testPool_T46() public {

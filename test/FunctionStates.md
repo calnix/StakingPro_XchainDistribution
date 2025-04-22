@@ -450,7 +450,6 @@ Scenario: Both D0 & D1 have started, Contract End Time set
 
 ### D1 (Distribution 1) Update Attempts:
 
-- (-) Cannot update startTime (revert)                    | testCannotUpdateD1StartTimeWithEndTimeSet_T86471p
 - (-) Cannot update endTime beyond contract end time      | testCannotExtendD1EndTimeBeyondContractEndTime_T86471p
 - (+) Can update endTime within contract end time         | testCanUpdateD1EndTimeWithinContractEndTime_T86471p
 - (+) Can update emissionPerSecond                        | testCanUpdateD1EmissionRateWithEndTimeSet_T86471p
@@ -458,29 +457,37 @@ Scenario: Both D0 & D1 have started, Contract End Time set
 
 ## endDistribution
 
+- PoolT46p_EndDistribution.t.sol
+- [PoolT41_EndDistribution Section: line 752](../test/unit/PoolT41.t.sol)
+
 ### Contract States:
-- (+) Contract not started                                | testCanEndDistributionWhenNotStarted
+
+- (+) Contract not started                                | testCanEndDistributionWhenStakingNotStarted
 - (-) Contract paused (should revert)                     | testCannotEndDistributionWhenPaused
 - (+) Contract under maintenance                          | testCanEndDistributionWhenInMaintenanceMode
-- (+) Contract ended                                      | testCanEndDistributionAfterContractEnded
+- (-) Contract ended                                      | testCannotEndDistributionAfterContractEnded
 
 ### Distribution States:
-- (+) Distribution not started                            | testCanEndDistributionBeforeDistributionStarts
-- (+) Distribution in progress                            | testCanEndDistributionWhileDistributionInProgress
-- (+) Distribution already ended                          | testCanEndAlreadyEndedDistribution
+
+- (+) Distribution not started                            | testCanEndDistributionBeforeDistributionStarts_T16
+- (+) Distribution in progress                            | testCanEndDistributionWhileDistributionInProgress_T26
+- (-) Distribution already ended (should revert)          | testOperatorCannotEndAlreadyEndedDistribution_T41 + testCannotEndAlreadyEndedDistribution_T46p
+- (-) Distribution0 cannot be ended (special case)        | testCannotEndDistribution0_T46p
+- (-) Cannot end non-existent distribution (revert)       | testCannotEndNonExistentDistribution_T46p
+- (-) Cannot end distribution that was manually ended     | testCannotEndDistributionManuallyEnded_T46p
 
 ### Authorization:
-- (-) Users cannot end distribution (revert)              | testUserCannotEndDistribution
-- (+) Operator can end distribution                       | testOperatorCanEndDistribution
 
-### Effects:
-- (+) Ending sets correct end timestamp                   | testEndDistributionSetsCorrectEndTimestamp
+- (-) Users cannot end distribution (revert)              | testUserCannotEndDistribution_T41
+- (+) Operator can end distribution                       | testOperatorCanEndDistribution_T41
+
+### RewardsVault:
+
 - (+) Ending updates totalEmitted correctly               | testEndDistributionUpdatesTotalEmittedCorrectly
-- (+) Ending emits DistributionEnded event                | testEndDistributionEmitsCorrectEvent
 - (+) Ending updates RewardsVault state correctly         | testEndDistributionUpdatesRewardsVaultState
-- (+) Ending updates distribution index correctly         | testEndDistributionUpdatesDistributionIndex
 
 ##
+
 ## updateNftMultiplier
 
 Contract states:

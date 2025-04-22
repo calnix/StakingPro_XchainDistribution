@@ -37,7 +37,7 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
         for sanity, we check that state is stale.
      */
     
-    // ---------------- stale checks: should be as per T16 ----------------
+// ---------------- stale checks: should be as per T16 ----------------
         function testUser1_T26() public {
             DataTypes.User memory user = pool.getUser(user1, vaultId1);
 
@@ -68,7 +68,7 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
             assertEq(user.stakedRealmPoints, user2Rp);
         }
 
-        // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
 
         function testDistribution0_T26() public {
 
@@ -256,7 +256,7 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
             */
         }
 
-        // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
         
         // distribution 1 started@T21: state not updated
         function testDistribution1_T26() public {
@@ -437,7 +437,25 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
         assertEq(vaultAccount.totalClaimedRewards, 0);
     }
 
-// state transition
+// ---------------- other checks ----------------
+
+    function testCanEndDistributionWhileDistributionInProgress_T26() public {
+        
+        DataTypes.Distribution memory distribution = pool.getUpdatedDistribution(1);
+
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit DistributionEnded(1, block.timestamp, distribution.totalEmitted);
+
+            pool.endDistribution(1);
+        vm.stopPrank();
+
+        DataTypes.Distribution memory distributionAfter = pool.getUpdatedDistribution(1);
+        assertEq(distributionAfter.endTime, block.timestamp);
+        assertEq(distributionAfter.totalEmitted, distribution.totalEmitted);
+    }
+
+// ---------------- state transition ----------------
 
     function testCannotMigrateRpFromNonExistentVault_T26() public {
         vm.startPrank(user1);

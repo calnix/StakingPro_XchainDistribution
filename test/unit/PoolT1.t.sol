@@ -304,6 +304,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         assertEq(vaultAfter.stakedRealmPoints, initialStakedPoints + realmPointsAmount);
         assertEq(vaultAfter.boostedRealmPoints, boostedAmount);
     }
+    
 }
 
 

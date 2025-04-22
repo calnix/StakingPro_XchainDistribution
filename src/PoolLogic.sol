@@ -1335,6 +1335,14 @@ library PoolLogic {
         return (vaultAccount, distribution);
     }
 
+    function viewDistributionIndex(
+        DataTypes.Distribution memory distribution, 
+        uint256 totalBoostedRealmPoints, 
+        uint256 totalBoostedStakedTokens
+    ) external view returns (DataTypes.Distribution memory) {
+        return _viewDistributionIndex(distribution, totalBoostedRealmPoints, totalBoostedStakedTokens);
+    }
+
     function _viewDistributionIndex(
         DataTypes.Distribution memory distribution, 
         uint256 totalBoostedRealmPoints, 

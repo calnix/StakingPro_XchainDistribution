@@ -406,6 +406,15 @@ contract StateT16_BothUsersStakeAgainTest is StateT16_BothUsersStakeAgain {
         pool.claimRewards(vaultId1, 1);
     }
 
+    function testCanEndDistributionBeforeDistributionStarts_T16() public {
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit DistributionEnded(1, block.timestamp, 0);
+            
+            pool.endDistribution(1);
+        vm.stopPrank();
+    }
+
 // ---------------- state transition: PoolT21 [creationNfts] ----------------
 
     function testUserCannotUpdateCreationNfts_T16(uint256 newAmount) public {

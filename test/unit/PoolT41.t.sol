@@ -749,30 +749,24 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         assertEq(pool.getVault(vaultId1).realmPointsFeeFactor, realmPointsFeeFactor1);
     }
 
+    function testCannotSetRewardsVaultIfActiveDistribution() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.ActiveTokenDistributions.selector);
+            pool.setRewardsVault(address(rewardsVault));
+        vm.stopPrank();
+    }
+    
+    
 // ---- state transition: for PoolT46p_EndDistribution.t.sol ----
 
-    function testUserCannotEndDistribution() public {
+    function testUserCannotEndDistribution_T41() public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.endDistribution(1);
         vm.stopPrank();
     }
 
-    function testOperatorCannotEndDistribution0() public {
-        vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidDistributionId.selector);
-            pool.endDistribution(0);
-        vm.stopPrank();
-    }
-
-    function testOperatorCannotEndNonExistentDistribution() public {
-        vm.startPrank(operator);
-            vm.expectRevert(Errors.NonExistentDistribution.selector);
-            pool.endDistribution(99);
-        vm.stopPrank();
-    }
-
-    function testOperatorCannotEndAlreadyEndedDistribution() public {
+    function testOperatorCannotEndAlreadyEndedDistribution_T41() public {
         // Warp to after distribution end time
         vm.warp(distribution1_T41.endTime + 1);
         
@@ -782,15 +776,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         vm.stopPrank();
     }
 
-    function testCannotSetRewardsVaultIfActiveDistribution() public {
-        vm.startPrank(operator);
-            vm.expectRevert(Errors.ActiveTokenDistributions.selector);
-            pool.setRewardsVault(address(rewardsVault));
-        vm.stopPrank();
-    }
-    
-
-    function testOperatorCanEndDistribution() public {
+    function testOperatorCanEndDistribution_T41() public {
 
         // get totalRequired on rewards vault contract
         DataTypes.Distribution memory distributionInitial = getDistribution(1);
@@ -804,7 +790,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
             vm.expectEmit(true, true, true, true);
             emit DistributionEnded(1, block.timestamp, distribution1_T41.totalEmitted);
             
-            // Expect rewards vault call
+            // Expect rewards vault call with totalEmitted as the new totalRequired
             vm.expectCall(address(pool.REWARDS_VAULT()), abi.encodeCall(IRewardsVault.endDistribution, (1, distribution1_T41.totalEmitted)));
             
             pool.endDistribution(1);
@@ -818,10 +804,10 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         assertEq(distribution.manuallyEnded, 1);
         assertEq(distribution.endTime, block.timestamp);
         
-        // Check rewards vault contract was updated correctly
+        // Check rewards vault contract was updated correctly - totalRequired should be updated to match totalEmitted
         (, , uint256 totalRequired, , ) = rewardsVault.distributions(1);    
-        assertEq(totalRequired, distribution.totalEmitted);
-        assertNotEq(totalRequired, totalRequiredInitial);
+        assertEq(totalRequired, distribution.totalEmitted, "RewardsVault totalRequired should match distribution.totalEmitted");
+        assertNotEq(totalRequired, totalRequiredInitial, "RewardsVault totalRequired should be different from initial value");
     }
 
 

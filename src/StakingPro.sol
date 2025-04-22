@@ -1293,11 +1293,13 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     function getActiveDistributionsLength() external view returns (uint256) {
         return activeDistributions.length;
     }
-
+    
+    // to help with returning nested array: uint256[] creationTokenIds
     function getVault(bytes32 vaultId) external view returns (DataTypes.Vault memory) { 
         return vaults[vaultId];
     }
-
+    
+    // to help with returning nested array: uint256[] tokenIds
     function getUser(address user, bytes32 vaultId) external view returns (DataTypes.User memory) { 
         return users[user][vaultId];
     }
@@ -1322,4 +1324,62 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         return totalUnclaimedRewards;
     }
 
+
+    function getUpdatedDistribution(uint256 distributionId) external view returns (DataTypes.Distribution memory) {
+
+        // get latest distributionIndex, if not already updated
+        DataTypes.Distribution memory distribution = PoolLogic.viewDistributionIndex(
+            distributions[distributionId], 
+            totalBoostedRealmPoints, 
+            totalBoostedStakedTokens
+        );
+
+        return distribution;
+    }
+
+    function getUpdatedVaultAccount(bytes32 vaultId, uint256 distributionId) external view 
+        returns (DataTypes.VaultAccount memory, DataTypes.Distribution memory) {
+        
+        DataTypes.UpdateAccountsIndexesParams memory params;
+            params.vaultId = vaultId;
+            params.totalBoostedRealmPoints = totalBoostedRealmPoints;
+            params.totalBoostedStakedTokens = totalBoostedStakedTokens;
+
+        (
+            DataTypes.VaultAccount memory vaultAccount, 
+            DataTypes.Distribution memory distribution
+        ) 
+            = PoolLogic.viewVaultAccount(
+                vaults[vaultId], 
+                vaultAccounts[vaultId][distributionId], 
+                distributions[distributionId], 
+                params);
+
+        return (vaultAccount, distribution);
+    }
+
+    function getUpdatedUserAccount(address user, bytes32 vaultId, uint256 distributionId) external view 
+        returns (DataTypes.UserAccount memory, DataTypes.VaultAccount memory, DataTypes.Distribution memory) {
+
+            DataTypes.UpdateAccountsIndexesParams memory params;
+                params.user = user;
+                params.vaultId = vaultId;
+                params.totalBoostedRealmPoints = totalBoostedRealmPoints;
+                params.totalBoostedStakedTokens = totalBoostedStakedTokens;
+
+            (
+                DataTypes.UserAccount memory userAccount, 
+                DataTypes.VaultAccount memory vaultAccount, 
+                DataTypes.Distribution memory distribution
+            ) 
+                = PoolLogic.viewUserAccount(
+                    users[user][vaultId], 
+                    userAccounts[user][vaultId][distributionId], 
+                    vaults[vaultId], 
+                    vaultAccounts[vaultId][distributionId],
+                    distributions[distributionId], 
+                    params);
+
+            return (userAccount, vaultAccount, distribution);
+    }
 }

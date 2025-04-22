@@ -440,4 +440,47 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
         assertEq(distributionAfter.endTime, distributionBefore.endTime);
         assertEq(distributionAfter.emissionPerSecond, distributionBefore.emissionPerSecond);
     }
+
+    function testCanEndDistributionWhenNotStarted() public {
+        // Setup a distribution first
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = block.timestamp + 100;
+        uint256 distributionEndTime = distributionStartTime + 1000;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = bytes32(uint256(uint160(address(rewardsToken1))));
+        
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit DistributionCreated(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision);
+
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+
+        // assert distribution was setup
+        DataTypes.Distribution memory distribution = getDistribution(distributionId);
+        assertEq(distribution.distributionId, distributionId);
+        assertEq(distribution.startTime, distributionStartTime);
+        assertEq(distribution.endTime, distributionEndTime);
+        assertEq(distribution.lastUpdateTimeStamp, distributionStartTime);
+        assertEq(distribution.emissionPerSecond, emissionPerSecond);
+        assertEq(distribution.TOKEN_PRECISION, tokenPrecision);
+        assertEq(distribution.manuallyEnded, 0);
+        
+
+        // End the distribution 
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit DistributionEnded(distributionId, block.timestamp, distribution.totalEmitted);
+
+            pool.endDistribution(distributionId);
+        vm.stopPrank();
+
+        // assert distribution was ended
+        DataTypes.Distribution memory distributionAfter = getDistribution(distributionId);
+        assertEq(distributionAfter.endTime, block.timestamp, "Distribution end time should be set to current block timestamp");
+        assertEq(distributionAfter.lastUpdateTimeStamp, block.timestamp, "Last update timestamp should be set to current block timestamp");
+        assertEq(distributionAfter.totalEmitted, 0, "Total emitted should be zero for distribution that never started");
+        assertEq(distributionAfter.manuallyEnded, 1, "Distribution should be marked as manually ended");
+    }
 }

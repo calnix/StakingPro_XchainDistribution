@@ -89,5 +89,5 @@ contract StateT86471_ContractSetEndTimeTest is StateT86471_ContractSetEndTime {
             pool.updateDistribution(distributionId, newStartTime, 0, 0);
         vm.stopPrank();
     }
-    
+
 }
