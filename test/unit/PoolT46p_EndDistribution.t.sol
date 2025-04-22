@@ -3,7 +3,29 @@ pragma solidity ^0.8.26;
 
 import "./PoolT41.t.sol";
 
-abstract contract StateT46_EndDistribution is StateT41_User2StakesToVault2 {
+abstract contract StateT41_EndDistribution is StateT41_User2StakesToVault2 {
+
+    function setUp() public virtual override {
+        super.setUp();
+
+        // changed
+        vm.startPrank(operator);
+            pool.endDistribution(1);
+        vm.stopPrank();
+    }
+}
+
+contract StateT46_EndDistributionTest is StateT41_EndDistribution {
+
+    function testCannotPopDistributionIfEndedButNotUpdated_T46p() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.DistributionNotUpdated.selector);
+            pool.popEndedDistribution(1);
+        vm.stopPrank();
+    }
+}
+
+abstract contract StateT46_UpdateEndedDistribution is StateT41_EndDistribution {
 
     // for reference
     DataTypes.Vault vault1_T46; 
@@ -42,12 +64,6 @@ abstract contract StateT46_EndDistribution is StateT41_User2StakesToVault2 {
     uint256 user2BalanceAfter;
 
     function setUp() public virtual override {
-        super.setUp();
-
-        // changed
-        vm.startPrank(operator);
-            pool.endDistribution(1);
-        vm.stopPrank();
 
         // snapshot T41 rewards before triggering update:
         user1Vault1ClaimableAtT41ViewFn = pool.getClaimableRewards(user1, vaultId1, 1);
@@ -151,7 +167,7 @@ abstract contract StateT46_EndDistribution is StateT41_User2StakesToVault2 {
     no rewards accrued from T41 - T46
  */
 
-contract StateT46_EndDistributionTest is StateT46_EndDistribution {
+contract StateT46_UpdateEndedDistributionTest is StateT46_UpdateEndedDistribution {
 
     function testDistribution1EndedSuccessfully_T46p() public {
         DataTypes.Distribution memory distribution = getDistribution(1);
@@ -621,7 +637,28 @@ contract StateT46_EndDistributionTest is StateT46_EndDistribution {
 
 // ---- state transition: pop distribution ----
 
-    function testCanPopEndedDistribution() public {
+    function testCannotPopDistribution0_T46p() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidDistributionId.selector);
+            pool.popEndedDistribution(0);
+        vm.stopPrank();
+    }
+
+    function testUserCannotPopEndedDistribution_T46p() public {
+        vm.startPrank(user1);
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
+            pool.popEndedDistribution(1);
+        vm.stopPrank();
+    }
+
+    function testCannotPopNonExistentDistribution_T46p() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.NonExistentDistribution.selector);
+            pool.popEndedDistribution(100);
+        vm.stopPrank();
+    }
+
+    function testCanPopEndedDistribution_T46p() public {
         // Check before popping
         uint256 beforePopping = pool.getActiveDistributionsLength();
         assertEq(beforePopping, 2);
@@ -644,7 +681,7 @@ contract StateT46_EndDistributionTest is StateT46_EndDistribution {
     }
 }
 
-abstract contract PoolT46p_PopDistribution is StateT46_EndDistribution {
+abstract contract StateT46p_PopDistribution is StateT46_UpdateEndedDistribution {
 
     function setUp() public virtual override {
         super.setUp();
@@ -655,7 +692,7 @@ abstract contract PoolT46p_PopDistribution is StateT46_EndDistribution {
     }
 }
 
-contract PoolT46p_PopDistributionTest is PoolT46p_PopDistribution {
+contract PoolT46p_PopDistributionTest is StateT46p_PopDistribution {
 
     function testCannotPopPoppedDistribution() public {
         vm.startPrank(operator);

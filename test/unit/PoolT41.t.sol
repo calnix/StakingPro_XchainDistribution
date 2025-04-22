@@ -776,6 +776,13 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         vm.stopPrank();
     }
 
+    function testOperatorCannotPopUnendedDistribution_T41() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.DistributionNotEnded.selector);
+            pool.popEndedDistribution(1);
+        vm.stopPrank();
+    }
+
     function testOperatorCanEndDistribution_T41() public {
 
         // get totalRequired on rewards vault contract

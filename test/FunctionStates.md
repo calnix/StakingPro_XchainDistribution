@@ -488,7 +488,40 @@ Scenario: Both D0 & D1 have started, Contract End Time set
 
 ## popEndedDistribution
 
+### Contract States:
 
+- (+) Contract not started                                | testCanPopEndedDistributionWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotPopEndedDistributionWhenPaused
+- (+) Contract under maintenance                          | testCanPopEndedDistributionWhenInMaintenanceMode
+- (-) Contract ended (should revert)                      | testCannotPopEndedDistributionAfterContractEnded
+
+testCannotPopDistribution0_T46p
+testUserCannotPopEndedDistribution_T46p
+testCannotPopNonExistentDistribution_T46p
+testOperatorCannotPopUnendedDistribution_T41
+### Distribution States:
+
+- (-) No distributions to pop (empty array, should revert) | testCannotPopFromEmptyEndedDistributionsArray
+
+- (-) Distribution not ended (should revert)              | testCannotPopActiveDistribution
+- (+) Single ended distribution to pop                    | testCanPopSingleEndedDistribution
+- (+) Multiple ended distributions to pop                 | testCanPopMultipleEndedDistributions
+- (+) Pop specific distribution by index                  | testCanPopSpecificEndedDistributionByIndex
+- (-) Invalid index (out of bounds, should revert)        | testCannotPopWithInvalidIndex
+
+### Authorization:
+
+- (-) Users cannot pop ended distribution (revert)        | testUserCannotPopEndedDistribution
+- (+) Operator can pop ended distribution                 | testOperatorCanPopEndedDistribution
+
+### State Updates:
+
+- (+) Popping updates endedDistributions array correctly  | testPopEndedDistributionUpdatesArrayCorrectly
+- (+) Popping maintains array order correctly             | testPopEndedDistributionMaintainsArrayOrder
+- (+) Popping last element works correctly                | testPopLastEndedDistributionWorks
+
+
+## 
 ## updateNftMultiplier
 
 Contract states:

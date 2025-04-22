@@ -289,6 +289,30 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         assertEq(distributionAfter.totalEmitted, updatedDistribution.totalEmitted);
     }
 
+    function testCanPopEndedDistributionWhenInMaintenanceMode() public {
+        uint256 distributionId = 1;
+
+        // end distribution
+        vm.startPrank(operator);
+            pool.endDistribution(distributionId);
+        vm.stopPrank();
+
+        DataTypes.Distribution memory distributionBefore = getDistribution(distributionId);
+        assertEq(distributionBefore.endTime, block.timestamp);
+        assertEq(distributionBefore.manuallyEnded, 1);
+        assertEq(pool.getActiveDistributionsLength(), 2);
+
+        // pop distribution
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit DistributionPopped(distributionId);
+            pool.popEndedDistribution(distributionId);
+        vm.stopPrank();
+
+        // verify distribution was popped
+        assertEq(pool.getActiveDistributionsLength(), 1);
+    }
+
 
 // ---- state transition ----
     function testOperatorCanUpdateDistributions() public {

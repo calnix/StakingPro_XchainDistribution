@@ -229,4 +229,11 @@ contract StateT86472_ContractEndedTest is StateT86472_ContractEnded {
             pool.endDistribution(1);
         vm.stopPrank();
     }
+
+    function testCannotPopEndedDistributionAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.popEndedDistribution(1);
+        vm.stopPrank();
+    }
 }   
