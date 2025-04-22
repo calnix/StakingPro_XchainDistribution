@@ -451,7 +451,7 @@ Scenario: Both D0 & D1 have started, Contract End Time set
 ### D1 (Distribution 1) Update Attempts:
 
 - (-) Cannot update endTime beyond contract end time      | testCannotExtendD1EndTimeBeyondContractEndTime_T86471p
-- (+) Can update endTime within contract end time         | testCanUpdateD1EndTimeWithinContractEndTime_T86471p
+- (+) Can update endTime within contract end time         | testCanUpdateD1EndTimeWithinContractEndTime_T86466
 - (+) Can update emissionPerSecond                        | testCanUpdateD1EmissionRateWithEndTimeSet_T86471p
 - (+) Can update both valid endTime and emissionPerSecond | testCanUpdateD1ValidEndTimeAndEmissionRate_T86471p
 
@@ -486,7 +486,8 @@ Scenario: Both D0 & D1 have started, Contract End Time set
 - (+) Ending updates totalEmitted correctly               | testEndDistributionUpdatesTotalEmittedCorrectly
 - (+) Ending updates RewardsVault state correctly         | testEndDistributionUpdatesRewardsVaultState
 
-##
+## popEndedDistribution
+
 
 ## updateNftMultiplier
 

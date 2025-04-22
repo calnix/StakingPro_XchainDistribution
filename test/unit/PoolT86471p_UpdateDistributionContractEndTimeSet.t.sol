@@ -129,34 +129,6 @@ contract StateT86471_ContractSetEndTimeTest is StateT86471_ContractSetEndTime {
         vm.stopPrank();
     }
 
-    function testCanUpdateD1EndTimeWithinContractEndTime_T86471p() public {
-        uint256 newEndTime = pool.endTime();
-        
-        uint256 distributionId = 1;
-        
-        // Get distribution before update
-        DataTypes.Distribution memory distributionBefore = getDistribution(distributionId);
-        assertNotEq(distributionBefore.endTime, newEndTime);
-
-        // can update D1 endTime within contract endTime
-        vm.startPrank(operator);
-            vm.expectEmit(true, true, true, true);
-            emit DistributionUpdated(distributionId, distributionBefore.startTime, newEndTime, distributionBefore.emissionPerSecond);
-
-            pool.updateDistribution(distributionId, 0, newEndTime, 0);
-        vm.stopPrank();
-
-        // get distribution after
-        DataTypes.Distribution memory distributionAfter = getDistribution(distributionId);
-        
-        // Verify endTime was updated
-        assertEq(distributionAfter.endTime, newEndTime);
-
-        // Verify other fields remain unchanged
-        assertEq(distributionAfter.startTime, distributionBefore.startTime);
-        assertEq(distributionAfter.emissionPerSecond, distributionBefore.emissionPerSecond);
-    }
-
     function testCanUpdateD1EmissionRateWithEndTimeSet_T86471p() public {
         uint256 distributionId = 1;
         

@@ -185,6 +185,7 @@ contract StateT46_EndDistributionTest is StateT46_EndDistribution {
         vm.stopPrank();
         assertEq(getDistribution(distributionId).manuallyEnded, 1, "distribution manually ended mismatch");
 
+        vm.warp(block.timestamp - 1);
         // end distribution
         vm.startPrank(operator);
             vm.expectRevert(Errors.DistributionManuallyEnded.selector);

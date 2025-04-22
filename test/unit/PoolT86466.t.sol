@@ -92,6 +92,37 @@ contract StateT86466_User2UnstakedFromVault2Test is StateT86466_User2UnstakedFro
         vm.stopPrank();
     }
 
+    function testCanUpdateD1EndTimeWithinContractEndTime_T86466() public {
+        // set end Time
+        vm.startPrank(operator);
+            pool.setEndTime(block.timestamp + 10);
+        vm.stopPrank();
+
+        uint256 distributionId = 1;
+        uint256 newEndTime = block.timestamp + 2;
+                
+        // Get distribution before update
+        DataTypes.Distribution memory distributionBefore = getDistribution(distributionId);
+
+        // can update D1 endTime within contract endTime
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit DistributionUpdated(distributionId, distributionBefore.startTime, newEndTime, distributionBefore.emissionPerSecond);
+
+            pool.updateDistribution(distributionId, 0, newEndTime, 0);
+        vm.stopPrank();
+
+        // get distribution after
+        DataTypes.Distribution memory distributionAfter = getDistribution(distributionId);
+        
+        // Verify endTime was updated
+        assertEq(distributionAfter.endTime, newEndTime);
+
+        // Verify other fields remain unchanged
+        assertEq(distributionAfter.startTime, distributionBefore.startTime);
+        assertEq(distributionAfter.emissionPerSecond, distributionBefore.emissionPerSecond);
+    }
+
     // transition
     function testSetContractEndTime() public {
         // get initial endTime
