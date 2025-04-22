@@ -872,7 +872,8 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
         // end distribution
         distribution.manuallyEnded = 1;
-        distribution.endTime = block.timestamp;
+        // distributions that have not started yet, will not have lastUpdateTimestamp be updated in executeUpdateDistributionIndex
+        distribution.endTime = distribution.lastUpdateTimeStamp = block.timestamp; 
 
         // update storage   
         distributions[distributionId] = distribution;

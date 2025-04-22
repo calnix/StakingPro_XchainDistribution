@@ -539,28 +539,24 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
             bytes32 tokenAddress = bytes32(uint256(uint160(address(rewardsToken1))));
             
             vm.startPrank(operator);
-                vm.expectEmit(true, true, true, true);
-                emit DistributionCreated(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision);
-
                 pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
             vm.stopPrank();
 
-            assertEq(pool.getActiveDistributionsLength(), 2);
-
             // assert distribution was setup
             DataTypes.Distribution memory distribution = getDistribution(distributionId);
-            assertEq(distribution.distributionId, distributionId);
             assertEq(distribution.startTime, distributionStartTime);
             assertEq(distribution.endTime, distributionEndTime);
             assertEq(distribution.lastUpdateTimeStamp, distributionStartTime);
-            assertEq(distribution.emissionPerSecond, emissionPerSecond);
-            assertEq(distribution.TOKEN_PRECISION, tokenPrecision);
             assertEq(distribution.manuallyEnded, 0);
         
-        vm.warp(distributionStartTime); 
+            vm.startPrank(operator);                
+                pool.endDistribution(distributionId);
+            vm.stopPrank();
+            
+            // assert distribution was ended but not popped
+            assertEq(pool.getActiveDistributionsLength(), 2);
 
         vm.startPrank(operator);
-            vm.expectRevert(Errors.DistributionNotEnded.selector);
             pool.popEndedDistribution(distributionId);
         vm.stopPrank();
 

@@ -423,36 +423,37 @@ contract StateT46p_MaintenanceMode_UpdateDistributionsTest is StateT46p_Maintena
         bytes32[] memory vaultIds = new bytes32[](1);
         vaultIds[0] = vaultId1;
         
-        // update again: should skip
-        vm.startPrank(operator);
-            pool.disableMaintenance();
-            pool.updateAllVaultAccounts(vaultIds, distributionId);
-        vm.stopPrank();
+        // setup: end vault
+            // exit maintenance
+            vm.startPrank(operator);
+                pool.disableMaintenance();
+            vm.stopPrank();
 
-        //end vault  
-        vm.startPrank(user1);
-            pool.activateCooldown(vaultId1);
-        vm.stopPrank();
+            // activateCooldown
+            vm.startPrank(user1);
+                pool.activateCooldown(vaultId1);
+            vm.stopPrank();
 
-        // get vault before
-        DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
+            // get vault before
+            DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
 
-        vm.warp(vaultBefore.endTime);
+            vm.warp(vaultBefore.endTime);
 
-        //update vault
-        vm.startPrank(operator);
-            pool.endVaults(vaultIds);
-        vm.stopPrank();
+            //end vault
+            vm.startPrank(operator);
+                pool.endVaults(vaultIds);
+            vm.stopPrank();
 
-        // get vault after
-        DataTypes.Vault memory vaultAfter = pool.getVault(vaultId1);
+            // get vault after
+            DataTypes.Vault memory vaultAfter = pool.getVault(vaultId1);
 
-        // verify vault was removed
-        assertEq(vaultAfter.removed, 1);
+            // verify vault was removed
+            assertEq(vaultAfter.removed, 1);
 
         // update again: should skip
         vm.startPrank(operator);
             pool.enableMaintenance();
+
             vm.record();
             pool.updateAllVaultAccounts(vaultIds, distributionId);
         vm.stopPrank();
