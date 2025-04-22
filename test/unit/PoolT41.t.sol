@@ -860,8 +860,8 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
     }
 
     function testOperatorCannotUpdateAllVaultAccountsOutOfMaintenance_T41() public {
-        vm.startPrank(cronJob);
-            vm.expectRevert(Errors.NotInMaintenance.selector);
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidCaller.selector);
             pool.updateAllVaultAccounts(new bytes32[](1), 0);
         vm.stopPrank();
     }

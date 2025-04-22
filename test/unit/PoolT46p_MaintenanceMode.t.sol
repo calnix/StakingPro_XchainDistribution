@@ -452,6 +452,7 @@ contract StateT46p_MaintenanceMode_UpdateDistributionsTest is StateT46p_Maintena
 
         // update again: should skip
         vm.startPrank(operator);
+            pool.enableMaintenance();
             vm.record();
             pool.updateAllVaultAccounts(vaultIds, distributionId);
         vm.stopPrank();

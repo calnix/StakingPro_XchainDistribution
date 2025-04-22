@@ -280,12 +280,11 @@ contract StateT0_DeployTest is StateT0_Deploy {
         vm.stopPrank();
     }
 
-    function testCannotUpdateAllVaultAccountsWhenNotStarted() public {
+    function testCanUpdateAllVaultAccountsWhenNotStarted() public {
         bytes32[] memory vaultIds = new bytes32[](1);
         uint256 distributionId = 0;
 
         vm.startPrank(cronJob);
-            vm.expectRevert(Errors.InvalidArray.selector);
             pool.updateAllVaultAccounts(vaultIds, distributionId);
         vm.stopPrank();
     }

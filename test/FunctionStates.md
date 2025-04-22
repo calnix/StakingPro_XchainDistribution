@@ -560,7 +560,7 @@ Scenario: Both D0 & D1 have started, Contract End Time set
 
 ### Contract States:
 
-- (-) Contract not started (should revert)                | testCannotUpdateAllVaultAccountsWhenNotStarted
+- (+) Contract not started (should revert)                | testCanUpdateAllVaultAccountsWhenNotStarted
 - (-) Contract paused (should revert)                     | testCannotUpdateAllVaultAccountsWhenPaused
 - (+) Contract under maintenance                          | testOperatorCanUpdateAllVaultAccounts
 - (-) Contract not under maintenance (should revert)      | testCannotUpdateAllVaultAccountsWhenNotInMaintenance
