@@ -508,7 +508,83 @@ Scenario: Both D0 & D1 have started, Contract End Time set
 - (-) Users cannot pop ended distribution (should revert)    | testUserCannotPopEndedDistribution_T46p
 - (+) Operator can pop ended distribution                    | testCanPopEndedDistribution_T46p
 
-## 
+# Maintenance Mode
+
+- PoolT46p_MaintenanceMode.t.sol
+
+## enableMaintenance
+
+### Contract States:
+
+- (+) Contract not started                                | testCanEnableMaintenanceWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotEnableMaintenanceWhenPaused
+- (+) Contract not under maintenance                      | testOperatorCanEnableMaintenanceMode_T41
+- (-) Contract already under maintenance (should revert)  | testOperatorCannotEnableMaintenanceWhenAlreadyInMaintenance_T46p
+- (-) Contract ended (should revert)                      | testCannotEnableMaintenanceAfterContractEnded
+
+### Authorization:
+
+- (-) Users cannot enable maintenance (should revert)     | testUserCannotEnableMaintenanceMode_T41
+- (+) Operator can enable maintenance                     | testOperatorCanEnableMaintenanceMode_T41
+
+## disableMaintenance
+
+### Contract States:
+
+- (+) Contract not started                                | testCanDisableMaintenanceWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotDisableMaintenanceWhenPaused
+- (-) Contract not under maintenance (should revert)      | testOperatorCannotDisableMaintenanceModeWhenNotInMaintenance_T41
+- (-) Contract ended (should revert)                      | testCannotDisableMaintenanceAfterContractEnded
+
+### Authorization:
+
+- (-) Users cannot disable maintenance (should revert)    | testUserCannotDisableMaintenanceMode_T46p
+- (+) Operator can disable maintenance                    | testOperatorCanDisableMaintenanceMode_T46p
+
+## updateActiveDistributions
+
+### Contract States:
+
+- (+) Contract not started                                | testCanUpdateActiveDistributionsWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotUpdateActiveDistributionsWhenPaused
+- (+) Contract under maintenance                          | testOperatorCanUpdateDistributions
+- (-) Contract not under maintenance (should revert)      | testCannotUpdateActiveDistributionsWhenNotInMaintenance_T41
+- (-) Contract ended (should revert)                      | testCannotUpdateActiveDistributionsAfterContractEnded
+
+### Authorization:
+
+- (-) Users cannot update active distributions (revert)   | testUserCannotUpdateActiveDistributions_T46p
+- (+) Operator can update active distributions            | testOperatorCanUpdateDistributions
+
+## updateAllVaultAccounts
+
+### Contract States:
+
+- (-) Contract not started (should revert)                | testCannotUpdateAllVaultAccountsWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotUpdateAllVaultAccountsWhenPaused
+- (+) Contract under maintenance                          | testOperatorCanUpdateAllVaultAccounts
+- (-) Contract not under maintenance (should revert)      | testCannotUpdateAllVaultAccountsWhenNotInMaintenance
+- (-) Contract ended (should revert)                      | testCannotUpdateAllVaultAccountsAfterContractEnded
+
+### Authorization:
+
+- (+) CRON_JOB role can update vault accounts when not in maintenance       | testCRONJOBCanUpdateAllVaultAccountsOutOfMaintenance_T41
+- (-) Operator cannot update vault accounts when not in maintenance (revert)| testOperatorCannotUpdateAllVaultAccountsOutOfMaintenance_T41
+- (-) CRON_JOB role cannot update vault accounts in maintenance (revert)    | testCRONJOBCannotUpdateAllVaultAccountsInMaintenance
+- (-) Users cannot update all vault accounts (revert)                       | testUserCannotUpdateAllVaultAccounts
+- (+) Operator can update all vault accounts                                | testOperatorCanUpdateAllVaultAccounts
+
+### Functionality:
+
+- (+) Updates all vault accounts with latest distribution data            | testOperatorCanUpdateAllVaultAccounts
+- (+) Works with multiple vaults                                          | testOperatorCanUpdateAllVaultAccounts
+- (-) Empty vault array reverts with InvalidArray                         | testUpdateAllVaultAccounts_InvalidArray
+- (-) Cannot update accounts when distribution hasn't started (revert)    | testCannotUpdateAllVaultAccounts_DistributionNotStarted_T11
+- (+) Skips accounts that are already updated                             | testUpdateAllVaultAccounts_Skip_AccountAlreadyUpdated
+- (+) Skips vaults that have been removed                                 | testUpdateAllVaultAccounts_Skip_VaultRemoved
+- (+) Skips vaults with zero boosted balance                              | testUpdateAllVaultAccounts_Skip_ZeroBoostedBalance
+- (+) Repeated calls to updateAllVaultAccounts have no effect             | testRepeatedCallOfUpdateAllVaultAccountsIsImmaterial
+
 ## updateNftMultiplier
 
 Contract states:

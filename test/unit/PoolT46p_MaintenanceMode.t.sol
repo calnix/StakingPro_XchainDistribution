@@ -313,20 +313,30 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
         assertEq(pool.getActiveDistributionsLength(), 1);
     }
 
+    function testOperatorCannotEnableMaintenanceWhenAlreadyInMaintenance_T46p() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InMaintenance.selector);
+            pool.enableMaintenance();
+        vm.stopPrank();
+    }
+
 
 // ---- state transition ----
+
     function testOperatorCanUpdateDistributions() public {
         
         // check distributions before
         DataTypes.Distribution memory distribution0Before = getDistribution(0);
         DataTypes.Distribution memory distribution1Before = getDistribution(1);
         
-        vm.startPrank(operator);
-            vm.expectEmit(true, true, true, true);
-            uint256[] memory distributionIds = new uint256[](2);
+        uint256[] memory distributionIds = new uint256[](2);
             distributionIds[0] = 0;
             distributionIds[1] = 1;
+
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
             emit DistributionsUpdated(distributionIds);
+
             pool.updateActiveDistributions();
         vm.stopPrank();
 
@@ -355,6 +365,150 @@ abstract contract StateT46p_MaintenanceMode_UpdateDistributions is StateT46p_Mai
 }
 
 contract StateT46p_MaintenanceMode_UpdateDistributionsTest is StateT46p_MaintenanceMode_UpdateDistributions {
+
+    function testUserCannotUpdateAllVaultAccounts() public {
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.InvalidCaller.selector);
+            pool.updateAllVaultAccounts(new bytes32[](1), 0);
+        vm.stopPrank();
+    }
+
+    function testCRONJOBCannotUpdateAllVaultAccountsInMaintenance() public {
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId1;
+
+        vm.startPrank(cronJob);
+            vm.expectRevert(Errors.InvalidCaller.selector);
+            pool.updateAllVaultAccounts(vaultIds, 0);
+        vm.stopPrank();
+    }
+
+    function testUpdateAllVaultAccounts_InvalidArray() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidArray.selector);
+            pool.updateAllVaultAccounts(new bytes32[](0), 0);
+        vm.stopPrank();
+    }
+
+    // if(distribution.index == vaultAccount_.index) continue;
+    function testUpdateAllVaultAccounts_Skip_AccountAlreadyUpdated() public {
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId1;
+
+        uint256 distributionId = 0;
+
+        //update vault
+        vm.startPrank(operator);
+            pool.updateAllVaultAccounts(vaultIds, distributionId);
+        vm.stopPrank();
+
+        // update again: should skip. VaultAccountUpdated will not be emitted
+        vm.startPrank(operator);
+            
+            vm.record();
+            
+            pool.updateAllVaultAccounts(vaultIds, distributionId);
+        vm.stopPrank();
+
+        // check storage r/w calls
+        (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(pool));
+
+        // expect no writes
+        assertEq(writes.length, 0);
+    }
+
+    function testUpdateAllVaultAccounts_Skip_VaultRemoved() public {
+        uint256 distributionId = 0;
+
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId1;
+        
+        // update again: should skip
+        vm.startPrank(operator);
+            pool.disableMaintenance();
+            pool.updateAllVaultAccounts(vaultIds, distributionId);
+        vm.stopPrank();
+
+        //end vault  
+        vm.startPrank(user1);
+            pool.activateCooldown(vaultId1);
+        vm.stopPrank();
+
+        // get vault before
+        DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
+
+        vm.warp(vaultBefore.endTime);
+
+        //update vault
+        vm.startPrank(operator);
+            pool.endVaults(vaultIds);
+        vm.stopPrank();
+
+        // get vault after
+        DataTypes.Vault memory vaultAfter = pool.getVault(vaultId1);
+
+        // verify vault was removed
+        assertEq(vaultAfter.removed, 1);
+
+        // update again: should skip
+        vm.startPrank(operator);
+            vm.record();
+            pool.updateAllVaultAccounts(vaultIds, distributionId);
+        vm.stopPrank();
+
+        // check storage r/w calls
+        (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(pool));
+
+        // expect no writes
+        assertEq(writes.length, 0);
+    }
+
+    function testUpdateAllVaultAccounts_Skip_ZeroBoostedBalance() public {
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId1;
+
+        uint256 distributionId = 0;
+        
+        // get user1's vault assets
+        DataTypes.User memory user1Before = pool.getUser(user1, vaultId1);
+        DataTypes.User memory user2Before = pool.getUser(user2, vaultId1);
+
+        // disable maintenance: to allow unstaking
+        vm.startPrank(operator);
+            pool.disableMaintenance();
+        vm.stopPrank();
+
+        // unstake all tokens: user1
+        vm.startPrank(user1);
+            pool.unstake(vaultId1, user1Before.stakedTokens, new uint256[](0));
+        vm.stopPrank();        
+
+        // unstake all tokens: user2
+        vm.startPrank(user2);
+            pool.unstake(vaultId1, user2Before.stakedTokens, new uint256[](0));
+        vm.stopPrank();
+
+        // get user1's account after
+        DataTypes.User memory user1After = pool.getUser(user1, vaultId1);
+        DataTypes.User memory user2After = pool.getUser(user2, vaultId1);
+        assertEq(user1After.stakedTokens, 0);
+        assertEq(user2After.stakedTokens, 0);
+
+        // update vault
+        vm.startPrank(operator);
+            pool.enableMaintenance();
+
+            vm.record();
+            pool.updateAllVaultAccounts(vaultIds, distributionId);
+        vm.stopPrank();
+
+        // check storage r/w calls
+        (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(pool));
+
+        // expect no writes
+        assertEq(writes.length, 0);
+    }
+
 
     function testOperatorCanUpdateAllVaultAccounts() public {
         // check vaults before
@@ -740,14 +894,14 @@ abstract contract StateT46p_MaintenanceMode_UpdateBoostedBalances is StateT46p_M
 
 contract StateT46p_MaintenanceMode_UpdateBoostedBalancesTest is StateT46p_MaintenanceMode_UpdateBoostedBalances {
 
-    function testUserCannotDisableMaintenance() public {
+    function testUserCannotDisableMaintenanceMode_T46p() public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.disableMaintenance();
         vm.stopPrank();
     }
 
-    function testOperatorCanDisableMaintenance() public {
+    function testOperatorCanDisableMaintenanceMode_T46p() public {
         vm.startPrank(operator);
             vm.expectEmit(true, true, true, true);
             emit MaintenanceDisabled(block.timestamp);

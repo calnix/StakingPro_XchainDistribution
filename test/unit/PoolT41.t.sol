@@ -829,24 +829,49 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
 
 // ---- state transition: for PoolT46p_MaintenanceMode.t.sol ----
 
-    function testUserCannotEnableMaintenanceMode() public {
+    function testUserCannotEnableMaintenanceMode_T41() public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
             pool.enableMaintenance();
         vm.stopPrank();
     }
 
-    function testOperatorCannotDisableMaintenanceMode() public {
+    function testOperatorCannotDisableMaintenanceModeWhenNotInMaintenance_T41() public {
         vm.startPrank(operator);
             vm.expectRevert(Errors.NotInMaintenance.selector);
             pool.disableMaintenance();
         vm.stopPrank();
     }
 
-    function testOperatorCanEnableMaintenanceMode() public {
+    function testCannotUpdateActiveDistributionsWhenNotInMaintenance_T41() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.NotInMaintenance.selector);
+            pool.updateActiveDistributions();
+        vm.stopPrank();
+    }
+
+    function testCRONJOBCanUpdateAllVaultAccountsOutOfMaintenance_T41() public {
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId1;
+
+        vm.startPrank(cronJob);
+            pool.updateAllVaultAccounts(vaultIds, 0);
+        vm.stopPrank();
+    }
+
+    function testOperatorCannotUpdateAllVaultAccountsOutOfMaintenance_T41() public {
+        vm.startPrank(cronJob);
+            vm.expectRevert(Errors.NotInMaintenance.selector);
+            pool.updateAllVaultAccounts(new bytes32[](1), 0);
+        vm.stopPrank();
+    }
+
+
+    function testOperatorCanEnableMaintenanceMode_T41() public {
         vm.startPrank(operator);
             vm.expectEmit(true, true, true, true);
             emit MaintenanceEnabled(block.timestamp);
+
             pool.enableMaintenance();
         vm.stopPrank();
 

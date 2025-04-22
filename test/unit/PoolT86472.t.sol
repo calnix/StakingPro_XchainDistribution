@@ -168,7 +168,7 @@ contract StateT86472_ContractEndedTest is StateT86472_ContractEnded {
         vm.stopPrank();
     }
 
-    function testCannotUpdateActiveDistributionsAfterContractEnded() public {
+    function testCannotUpdateActiveMaxDistributionsAfterContractEnded() public {
         vm.startPrank(operator);
             vm.expectRevert(Errors.StakingEnded.selector);
             pool.updateMaxActiveDistributions(1);
@@ -234,6 +234,34 @@ contract StateT86472_ContractEndedTest is StateT86472_ContractEnded {
         vm.startPrank(operator);
             vm.expectRevert(Errors.StakingEnded.selector);
             pool.popEndedDistribution(1);
+        vm.stopPrank();
+    }
+
+    function testCannotEnableMaintenanceAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.enableMaintenance();
+        vm.stopPrank();
+    }
+
+    function testCannotDisableMaintenanceAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.disableMaintenance();
+        vm.stopPrank();
+    }
+
+    function testCannotUpdateActiveDistributionsAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.updateActiveDistributions();
+        vm.stopPrank();
+    }
+
+    function testCannotUpdateAllVaultAccountsAfterContractEnded() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.updateAllVaultAccounts(new bytes32[](1), 0);
         vm.stopPrank();
     }
 }   

@@ -166,4 +166,16 @@ contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
         uint256 updatedMaxActive = pool.MAX_ACTIVE_DISTRIBUTIONS();
         assertEq(updatedMaxActive, newMaxActive);
     }
+
+    function testCannotUpdateAllVaultAccounts_DistributionNotStarted_T11() public {
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId1;
+
+        vm.startPrank(cronJob);
+            vm.expectRevert(Errors.DistributionNotStarted.selector);
+            pool.updateAllVaultAccounts(vaultIds, 1);
+        vm.stopPrank();
+    }
+    
+    
 }

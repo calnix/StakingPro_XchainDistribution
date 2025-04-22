@@ -165,7 +165,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
         assertNotEq(initialRewardsVault, updatedRewardsVault);
     }
 
-    function testCanUpdateActiveDistributionsWhenNotStarted() public {
+    function testCanUpdateMaxActiveDistributionsWhenNotStarted() public {
         // Check initial value
         uint256 initialMaxActive = pool.MAX_ACTIVE_DISTRIBUTIONS();
         uint256 newMaxActive = 1;
@@ -242,6 +242,52 @@ contract StateT0_DeployTest is StateT0_Deploy {
         vm.stopPrank();
 
         assertEq(pool.VAULT_COOLDOWN_DURATION(), newVaultCooldown);
+    }
+
+    function testCanEnableMaintenanceWhenNotStarted() public {
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit MaintenanceEnabled(block.timestamp);
+
+            pool.enableMaintenance();
+        vm.stopPrank();
+
+        assertEq(pool.isUnderMaintenance(), 1);
+    }
+
+    function testCanDisableMaintenanceWhenNotStarted() public {
+
+        vm.startPrank(operator);
+            pool.enableMaintenance();
+        vm.stopPrank();
+
+        assertEq(pool.isUnderMaintenance(), 1);
+
+        vm.startPrank(operator);
+            vm.expectEmit(true, true, true, true);
+            emit MaintenanceDisabled(block.timestamp);
+
+            pool.disableMaintenance();
+        vm.stopPrank();
+
+        assertEq(pool.isUnderMaintenance(), 0);
+    }
+
+    function testCanUpdateActiveDistributionsWhenNotStarted() public {
+        vm.startPrank(operator);
+            pool.enableMaintenance();
+            pool.updateActiveDistributions();
+        vm.stopPrank();
+    }
+
+    function testCannotUpdateAllVaultAccountsWhenNotStarted() public {
+        bytes32[] memory vaultIds = new bytes32[](1);
+        uint256 distributionId = 0;
+
+        vm.startPrank(cronJob);
+            vm.expectRevert(Errors.InvalidArray.selector);
+            pool.updateAllVaultAccounts(vaultIds, distributionId);
+        vm.stopPrank();
     }
 
     function testCanUpdateNftMultiplierWhenNotStarted() public {
@@ -515,7 +561,7 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
         vm.warp(distributionStartTime); 
 
         vm.startPrank(operator);
-            vm.expectRevert(Errors.InvalidDistributionId.selector);
+            vm.expectRevert(Errors.DistributionNotEnded.selector);
             pool.popEndedDistribution(distributionId);
         vm.stopPrank();
 

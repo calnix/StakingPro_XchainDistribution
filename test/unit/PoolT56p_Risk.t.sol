@@ -127,7 +127,7 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         pool.setRewardsVault(address(123));
     }
     
-    function testCannotUpdateActiveDistributionsWhenPaused() public {
+    function testCannotUpdateActiveMaxDistributionsWhenPaused() public {
         vm.prank(operator);
         vm.expectRevert(Pausable.EnforcedPause.selector);
         pool.updateMaxActiveDistributions(1);
@@ -185,6 +185,30 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         vm.prank(operator);
         vm.expectRevert(Pausable.EnforcedPause.selector);
         pool.popEndedDistribution(0);
+    }
+
+    function testCannotEnableMaintenanceWhenPaused() public {
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.enableMaintenance();
+    }
+
+    function testCannotDisableMaintenanceWhenPaused() public {
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.disableMaintenance();
+    }
+
+    function testCannotUpdateActiveDistributionsWhenPaused() public {
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.updateActiveDistributions();
+    }
+
+    function testCannotUpdateAllVaultAccountsWhenPaused() public {
+        vm.prank(operator);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        pool.updateAllVaultAccounts(new bytes32[](1), 0);
     }
 }
 
