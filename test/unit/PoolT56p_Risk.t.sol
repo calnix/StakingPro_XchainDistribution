@@ -18,14 +18,14 @@ abstract contract StateT56p_Paused is StateT51_BothVaultsFeesUpdated {
 
 contract StateT56p_PausedTest is StateT56p_Paused {
 
-    function testUserCannotUnpausePool() public {
+    function testUserCannotUnpausePool_T56p() public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.DEFAULT_ADMIN_ROLE()));
             pool.unpause();
         vm.stopPrank();
     }
     
-    function testAdminCanUnpausePool() public {
+    function testAdminCanUnpausePool_T56p() public {
         vm.startPrank(owner);
             pool.unpause();
         vm.stopPrank();
@@ -33,17 +33,7 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         assertEq(pool.paused(), false, "pool not unpaused");
     }
 
-    function testAdminCanFreezePool() public {
-        vm.startPrank(owner);
-            vm.expectEmit(true, true, true, true);
-            emit PoolFrozen(block.timestamp);
-            pool.freeze();
-        vm.stopPrank();
-
-        assertEq(pool.isFrozen(), 1, "pool not frozen");
-    }
-
-
+// ------ user fns ------
     function testCannotCreateVaultWhenPaused() public {
         vm.prank(user1);
         vm.expectRevert(Pausable.EnforcedPause.selector);
@@ -210,6 +200,57 @@ contract StateT56p_PausedTest is StateT56p_Paused {
         vm.expectRevert(Pausable.EnforcedPause.selector);
         pool.updateAllVaultAccounts(new bytes32[](1), 0);
     }
+
+    function testCannotUpdateNftMultiplierWhenPausedInMaintenance() public {
+
+        // unpause to enter maintenance; then pause
+        vm.startPrank(owner);
+            pool.unpause();
+            pool.enableMaintenance();
+            pool.pause();
+        vm.stopPrank();
+
+        // paused in maintenance
+        vm.startPrank(operator);
+            vm.expectRevert(Pausable.EnforcedPause.selector);
+            pool.updateNftMultiplier(100);
+        vm.stopPrank();
+    }
+
+    function testCannotUpdateBoostedBalancesWhenPausedInMaintenance() public {
+        // unpause to enter maintenance; then pause
+        vm.startPrank(owner);
+            pool.unpause();
+            pool.enableMaintenance();
+            pool.pause();
+        vm.stopPrank();
+
+        // paused in maintenance
+        vm.startPrank(operator);
+            vm.expectRevert(Pausable.EnforcedPause.selector);
+            pool.updateBoostedBalances(new bytes32[](1));
+        vm.stopPrank();
+    }
+
+// ------ transition ------
+    
+    function testUserCannotFreezePool_T56p() public {
+        vm.startPrank(user1);
+            vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, pool.DEFAULT_ADMIN_ROLE()));
+            pool.freeze();
+        vm.stopPrank();
+    }
+
+    function testAdminCanFreezePool_T56p() public {
+        vm.startPrank(owner);
+            vm.expectEmit(true, true, true, true);
+            emit PoolFrozen(block.timestamp);
+            pool.freeze();
+        vm.stopPrank();
+
+        assertEq(pool.isFrozen(), 1, "pool not frozen");
+    }
+
 }
 
 abstract contract StateT56p_Frozen is StateT56p_Paused {
@@ -225,7 +266,14 @@ abstract contract StateT56p_Frozen is StateT56p_Paused {
 
 contract StateT56p_FrozenTest is StateT56p_Frozen {
 
-    function testAdminCannotUnpausePool() public {
+    function testAdminCannotPausePoolIfFrozen_T56p() public {
+        vm.startPrank(owner);
+            vm.expectRevert(abi.encodeWithSelector(Errors.IsFrozen.selector));
+            pool.pause();
+        vm.stopPrank();
+    }
+
+    function testAdminCannotUnpausePoolIfFrozen_T56p() public {
         vm.startPrank(owner);
             vm.expectRevert(abi.encodeWithSelector(Errors.IsFrozen.selector));
             pool.unpause();
@@ -233,7 +281,7 @@ contract StateT56p_FrozenTest is StateT56p_Frozen {
     }
     
 
-    function testUserCanEmergencyExit() public {
+    function testUserCanEmergencyExit_T56p() public {
         bytes32[] memory vaultIds = new bytes32[](1);
         vaultIds[0] = vaultId1;
 

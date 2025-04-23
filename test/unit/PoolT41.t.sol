@@ -866,6 +866,15 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         vm.stopPrank();
     }
 
+    function testCannotUpdateBoostedBalancesOutOfMaintenance() public {
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId1;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.NotInMaintenance.selector);
+            pool.updateBoostedBalances(vaultIds);
+        vm.stopPrank();
+    }
 
     function testOperatorCanEnableMaintenanceMode_T41() public {
         vm.startPrank(operator);

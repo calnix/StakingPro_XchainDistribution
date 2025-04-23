@@ -527,7 +527,6 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
         assertEq(distributionAfter.totalEmitted, 0, "Total emitted should be zero for distribution that never started");
         assertEq(distributionAfter.manuallyEnded, 1, "Distribution should be marked as manually ended");
     }
-
     
     function testCanPopEndedDistributionWhenNotStarted() public {
             // Setup a distribution first
@@ -566,5 +565,22 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
 
         // assert distribution was popped
         assertEq(pool.getActiveDistributionsLength(), 1);
+    }
+
+    function testCanUpdateNftMultiplierWhenNotStarted() public {
+        vm.startPrank(operator);
+            pool.enableMaintenance();
+            pool.updateNftMultiplier(100);
+        vm.stopPrank();
+    }
+
+    function testCanUpdateBoostedBalancesWhenNotStarted() public {
+        
+        vm.startPrank(operator);
+            pool.enableMaintenance();
+
+            vm.expectRevert(Errors.InvalidArray.selector);
+            pool.updateBoostedBalances(new bytes32[](0));
+        vm.stopPrank();
     }
 }

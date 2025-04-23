@@ -588,11 +588,58 @@ Scenario: Both D0 & D1 have started, Contract End Time set
 ## updateNftMultiplier
 
 Contract states:
+
 - (+) Contract not started                                | testCanUpdateNftMultiplierWhenNotStarted
-- (-) Contract paused (should revert)                     | testCannotUpdateNftMultiplierWhenPaused
+- (-) Contract paused (should revert)                     | testCannotUpdateNftMultiplierWhenPausedInMaintenance
 - (+) Contract under maintenance                          | testCanUpdateNftMultiplierWhenInMaintenanceMode
 - (-) Contract ended (should revert)                      | testCannotUpdateNftMultiplierAfterContractEnded
 
 - (-) Users cannot update NFT multiplier (revert)         | testUserCannotUpdateNftMultiplier_T46p
 - (-) Cannot set NFT multiplier to zero (revert)          | testCannotSetNftMultiplierToZero_T46p
-- (+) Operator can update NFT multiplier                  | testOperatorCanUpdateNftMultiplier_T46p
+- (+) Operator can update NFT multiplier                  | testCanUpdateNftMultiplierWhenInMaintenanceMode_T46p
+
+## updateBoostedBalances
+
+### Contract States:
+
+- (+) Contract not started (should revert)                | testCanUpdateBoostedBalancesWhenNotStarted
+- (-) Contract paused (should revert)                     | testCannotUpdateBoostedBalancesWhenPaused
+- (+) Contract under maintenance                          | testOperatorCanUpdateBoostedBalances
+- (-) Contract not under maintenance (should revert)      | testCannotUpdateBoostedBalancesOutOfMaintenance
+- (-) Contract ended (should revert)                      | testCannotUpdateBoostedBalancesAfterContractEnded
+
+### Authorization:
+
+- (-) Users cannot update boosted balances (revert)       | testUserCannotUpdateBoostedBalances_T46p
+- (+) Operator can update boosted balances                | testOperatorCanUpdateBoostedBalances_T46p
+
+### Functionality:
+
+- (-) Empty account array reverts with InvalidArray          | testUpdateBoostedBalances_InvalidArray_T46p
+- (-) Non-existent vault reverts with VaultNotFound          | testUpdateBoostedBalances_NonExistentVault_T46p
+- (+) Repeated calls to updateBoostedBalances have no effect | testRepeatedCallOfUpdateBoostedBalancesIsImmaterial_T46p
+
+# Risk
+
+## pause
+
+- testUserCannotPausePool_T51
+- testMonitorCanPausePool_T51
+- testAdminCannotPausePoolIfFrozen_T56p
+
+## unpause
+
+- testUserCannotUnpausePool_T56p
+- testAdminCanUnpausePool_T56p
+- testAdminCannotUnpausePoolIfFrozen_T56p
+
+## freeze
+
+- testCannotFreezeWhenNotPaused_T51
+- testAdminCanFreezePool_T56p
+- testAdminCannotPausePoolIfFrozen_T56p
+- testAdminCannotUnpausePoolIfFrozen_T56p
+
+## emergencyExit
+
+- testUserCanEmergencyExit_T56p
