@@ -20,6 +20,7 @@ library Errors {
     // createVault
     error InvalidCreationNfts();
     error InvalidNfts();
+    error DuplicateIds();
     error MaximumFeeFactorExceeded();
     error NoActiveDistributions();
 

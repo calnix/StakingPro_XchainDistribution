@@ -5,17 +5,14 @@
 - Contract paused: PoolT56p_Risk
 - Contract under maintenance: PoolT46p_MaintenanceMode
 
-**TODO**
+**Check if repeating the exact same actions more than once and see if it breaks something.**
 
-Check if repeating the exact same actions more than once and see if it breaks something.
-
-- stakeNfts
-- stakeRp [same nonce]
-- claimRewards [no double claiming]  | testRepeatedClaimRewards_T56
-- createVault [w/ same nfts]
-- activateCooldown | testCannotActivateCooldownRepeatedly_T61
-- endVaults |
-
+- stakeNfts                           | testUserCannotStakeSameNftsTwice
+- stakeRp [same nonce]                | testUserCannotStakeRpTwiceWithSameNonce
+- claimRewards [no double claiming]   | testRepeatedClaimRewards_T56
+- createVault [w/ same nfts]          | testCannotCreateAnotherVaultWithLockedNfts
+- activateCooldown                    | testCannotActivateCooldownRepeatedly_T61
+- endVaults                           | testContinueEndVaultsIfVaultRemoved_T86461
 
 ## Pool Logic functions
 
@@ -356,9 +353,9 @@ Contract states:
 - (-) Users cannot setup distribution (revert)            | testUserCannotSetupDistribution_T0 & testUserCannotSetupDistribution_T6
 - (+) Operator can setup distribution                     | testOperatorCanSetupDistribution_T6
 
-TODO
+### x-chain distribution setup
 
-- x-chain distribution setup
+- RewardsVaultV2RemoteEVM.t.sol
 
 ## updateDistribution: PoolT16p_UpdateDistributionNotStarted.t.sol
 

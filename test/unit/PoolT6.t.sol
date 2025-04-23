@@ -48,6 +48,30 @@ abstract contract StateT6_User2StakeAssetsToVault1 is StateT1_User1StakeAssetsTo
 
 //note: 5 seconds delta. 5 ether of staking power emitted @1ether/second
 contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault1 {
+
+    function testUserCannotStakeSameNftsTwice() public {
+        uint256[] memory nftsToStake = new uint256[](2); 
+        nftsToStake[0] = user2NftsArray[0];
+        nftsToStake[1] = user2NftsArray[1];
+
+        vm.startPrank(user2);
+            vm.expectRevert();
+            pool.stakeNfts(vaultId1, nftsToStake);
+        vm.stopPrank();
+    }
+
+    function testUserCannotStakeRpTwiceWithSameNonce() public {
+        // User2 stakes half their RP
+        uint256 expiry = block.timestamp + 1 days;
+        uint256 nonce = 0;
+        bytes memory signature = generateSignature(user2, vaultId1, user2Rp/2, expiry, nonce);
+
+        vm.startPrank(user2);
+            vm.expectRevert(Errors.InvalidSignature.selector);
+            pool.stakeRealmPoints(vaultId1, user2Rp/2, expiry, signature);
+        vm.stopPrank();
+    }
+
 // ---------------- distribution 0 ----------------
 
     function testPool_T6() public {

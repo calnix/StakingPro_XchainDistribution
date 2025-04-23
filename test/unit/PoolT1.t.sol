@@ -34,6 +34,30 @@ contract StateT1_StartedTest is StateT1_Started {
         pool.stakeTokens(nonexistentVaultId, amount);
     }
 
+    // will revert on NFT_REGISTRY.recordStake()
+    function testCannotCreateVaultWithDuplicateNfts() public {
+        uint256[] memory duplicateNfts = new uint256[](5);
+        duplicateNfts[0] = user1NftsArray[0];
+        duplicateNfts[3] = user1NftsArray[3];
+        duplicateNfts[1] = user1NftsArray[1];   // dup
+        duplicateNfts[3] = user1NftsArray[3];
+        duplicateNfts[1] = user1NftsArray[1];   // dup
+
+        /**
+            we want to see that the dup check does a full cycle of all elements
+         */
+
+        uint256 nftFeeFactor = 1000;
+        uint256 creatorFeeFactor = 1000; 
+        uint256 realmPointsFeeFactor = 1000;
+
+        vm.startPrank(user1);    
+            vm.expectRevert(Errors.DuplicateIds.selector);    
+            pool.createVault(duplicateNfts, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
+        vm.stopPrank();
+    }
+    
+
     function testCreateVault() public {
         vm.prank(user1);
 
@@ -117,7 +141,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         vm.expectRevert(Errors.InvalidCreationNfts.selector);
         pool.createVault(invalidCreationNfts, 1000, 1000, 1000);
     }
-    
+
     function testCannotCreateVaultWithOthersNfts() public {
         vm.prank(user2);
 
@@ -330,8 +354,9 @@ abstract contract StateT1_User1StakeAssetsToVault1 is StateT1_CreateVault1 {
 }
 
 // accounts only exist for distribution 0
-contract StateT1_User1StakeAssetsToVault1Test is StateT1_User1StakeAssetsToVault1 {
+contract StateT1_User1StakeAssetsToVault1Test is StateT1_User1StakeAssetsToVault1 { 
 
+// pool + vaults
     function testPool_T1() public {
         
         // Check total staked assets
@@ -428,6 +453,8 @@ contract StateT1_User1StakeAssetsToVault1Test is StateT1_User1StakeAssetsToVault
         assertEq(userAccount.claimedRealmPointsRewards, 0);
         assertEq(userAccount.claimedCreatorRewards, 0);
     }
+
+// other fns
 
     function testCannotStakeAssignedNfts() public {
         vm.startPrank(user1);
