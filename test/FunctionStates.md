@@ -218,6 +218,8 @@ Vault states:
 
 **check that track assets in executeEndVaults() only executes once, on the final**
 
+# Operator
+
 ## stakeOnBehalfOf + executeStakeOnBehalfOf
 
 Contract states:
@@ -635,6 +637,7 @@ Contract states:
 
 ## freeze
 
+- testUserCannotFreezePool_T56p
 - testCannotFreezeWhenNotPaused_T51
 - testAdminCanFreezePool_T56p
 - testAdminCannotPausePoolIfFrozen_T56p

@@ -268,7 +268,7 @@ contract StateT56p_FrozenTest is StateT56p_Frozen {
 
     function testAdminCannotPausePoolIfFrozen_T56p() public {
         vm.startPrank(owner);
-            vm.expectRevert(abi.encodeWithSelector(Errors.IsFrozen.selector));
+            vm.expectRevert(Pausable.EnforcedPause.selector);
             pool.pause();
         vm.stopPrank();
     }

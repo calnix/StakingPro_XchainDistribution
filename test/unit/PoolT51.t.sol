@@ -970,7 +970,7 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
 
     function testCannotFreezeWhenNotPaused_T51() public {
         vm.startPrank(monitor);
-            vm.expectRevert(Pausable.EnforcedPause.selector);
+            vm.expectRevert(Pausable.ExpectedPause.selector);
             pool.freeze();
         vm.stopPrank();
     }
