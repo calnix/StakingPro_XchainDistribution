@@ -132,6 +132,7 @@ abstract contract StateT1_CreateVault1 is StateT1_Started {
 
 contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
 
+// createVault
     function testCannotCreateVaultInvalidCreationNfts() public {
         vm.prank(user1);
 
@@ -162,6 +163,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         pool.createVault(user1NftsArray, 1000, 1000, 1000);
     }
 
+// stakeTokens
     function testCannotStakeZeroTokens() public {
         vm.startPrank(user2);
         mocaToken.approve(address(pool), type(uint256).max);
@@ -171,6 +173,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         vm.stopPrank();
     }
 
+// stakeNfts
     function testCannotStakeZeroNfts() public {
         vm.startPrank(user1);
             vm.expectRevert(Errors.InvalidAmount.selector);
@@ -178,6 +181,21 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         vm.stopPrank();
     }
 
+    function testCannotStakeNftsWithDuplicateNfts() public {
+        uint256[] memory duplicateNfts = new uint256[](5);
+        duplicateNfts[0] = user1NftsArray[0];
+        duplicateNfts[3] = user1NftsArray[3];
+        duplicateNfts[1] = user1NftsArray[1];   // dup
+        duplicateNfts[3] = user1NftsArray[3];
+        duplicateNfts[1] = user1NftsArray[1];  // dup
+
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.DuplicateIds.selector);
+            pool.stakeNfts(vaultId1, duplicateNfts);
+        vm.stopPrank();
+    }
+
+// stakeRp
     function testCannotStakeRpExpiredSignature() public {
         vm.startPrank(user1);
             vm.expectRevert(Errors.SignatureExpired.selector);
@@ -218,6 +236,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         vm.stopPrank();
     }
 
+// (+) tests
     function testVault1CreatedCorrectly() public {
         DataTypes.Vault memory vault = pool.getVault(vaultId1);
         
@@ -470,7 +489,7 @@ contract StateT1_User1StakeAssetsToVault1Test is StateT1_User1StakeAssetsToVault
         vm.stopPrank();
     }
 
-    // transition fn: parallel test
+// state transition fn: parallel test
     function testOperatorCanUpdateMinimumRealmPoints() public {
         // lower minimum realm points
         uint256 originalMinimumRealmPoints = pool.MINIMUM_REALMPOINTS_REQUIRED();
