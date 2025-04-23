@@ -84,7 +84,7 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         vm.stopPrank();
     }
 
-    // ---------------- base assets ----------------
+// ---------------- base assets ----------------
 
     function testPool_T36() public {
         DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
@@ -167,7 +167,7 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
          not updated at T36. stale as per T31
     */
 
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
 
     // updated: T31-T36
     function testDistribution0_T36() public {
@@ -431,7 +431,7 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
         }
 
 
-    // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
     
     // STARTED AT T21
     function testDistribution1_T36() public {
@@ -656,7 +656,9 @@ contract StateT36_User2UnstakesFromVault1Test is StateT36_User2UnstakesFromVault
             //--------------------------------
             
         }
-        
+
+// --------------- state transition: T41 ----------------
+ 
  /*   
     // connector: TODO
     function testUser2CanStakeToVault2() public {

@@ -34,6 +34,30 @@ contract StateT1_StartedTest is StateT1_Started {
         pool.stakeTokens(nonexistentVaultId, amount);
     }
 
+    // will revert on NFT_REGISTRY.recordStake()
+    function testCannotCreateVaultWithDuplicateNfts() public {
+        uint256[] memory duplicateNfts = new uint256[](5);
+        duplicateNfts[0] = user1NftsArray[0];
+        duplicateNfts[3] = user1NftsArray[3];
+        duplicateNfts[1] = user1NftsArray[1];   // dup
+        duplicateNfts[3] = user1NftsArray[3];
+        duplicateNfts[1] = user1NftsArray[1];   // dup
+
+        /**
+            we want to see that the dup check does a full cycle of all elements
+         */
+
+        uint256 nftFeeFactor = 1000;
+        uint256 creatorFeeFactor = 1000; 
+        uint256 realmPointsFeeFactor = 1000;
+
+        vm.startPrank(user1);    
+            vm.expectRevert("Nft is staked");    
+            pool.createVault(duplicateNfts, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
+        vm.stopPrank();
+    }
+    
+
     function testCreateVault() public {
         vm.prank(user1);
 
@@ -108,6 +132,7 @@ abstract contract StateT1_CreateVault1 is StateT1_Started {
 
 contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
 
+// createVault
     function testCannotCreateVaultInvalidCreationNfts() public {
         vm.prank(user1);
 
@@ -117,7 +142,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         vm.expectRevert(Errors.InvalidCreationNfts.selector);
         pool.createVault(invalidCreationNfts, 1000, 1000, 1000);
     }
-    
+
     function testCannotCreateVaultWithOthersNfts() public {
         vm.prank(user2);
 
@@ -138,6 +163,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         pool.createVault(user1NftsArray, 1000, 1000, 1000);
     }
 
+// stakeTokens
     function testCannotStakeZeroTokens() public {
         vm.startPrank(user2);
         mocaToken.approve(address(pool), type(uint256).max);
@@ -147,6 +173,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         vm.stopPrank();
     }
 
+// stakeNfts
     function testCannotStakeZeroNfts() public {
         vm.startPrank(user1);
             vm.expectRevert(Errors.InvalidAmount.selector);
@@ -154,6 +181,21 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         vm.stopPrank();
     }
 
+    function testCannotStakeNftsWithDuplicateNfts() public {
+        uint256[] memory duplicateNfts = new uint256[](5);
+        duplicateNfts[0] = user1NftsArray[0];
+        duplicateNfts[3] = user1NftsArray[3];
+        duplicateNfts[1] = user1NftsArray[1];   // dup
+        duplicateNfts[3] = user1NftsArray[3];
+        duplicateNfts[1] = user1NftsArray[1];  // dup
+
+        vm.startPrank(user1);
+            vm.expectRevert(NftRegistry.NftIsStaked.selector);
+            pool.stakeNfts(vaultId1, duplicateNfts);
+        vm.stopPrank();
+    }
+
+// stakeRp
     function testCannotStakeRpExpiredSignature() public {
         vm.startPrank(user1);
             vm.expectRevert(Errors.SignatureExpired.selector);
@@ -194,6 +236,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         vm.stopPrank();
     }
 
+// (+) tests
     function testVault1CreatedCorrectly() public {
         DataTypes.Vault memory vault = pool.getVault(vaultId1);
         
@@ -330,8 +373,9 @@ abstract contract StateT1_User1StakeAssetsToVault1 is StateT1_CreateVault1 {
 }
 
 // accounts only exist for distribution 0
-contract StateT1_User1StakeAssetsToVault1Test is StateT1_User1StakeAssetsToVault1 {
+contract StateT1_User1StakeAssetsToVault1Test is StateT1_User1StakeAssetsToVault1 { 
 
+// pool + vaults
     function testPool_T1() public {
         
         // Check total staked assets
@@ -429,6 +473,8 @@ contract StateT1_User1StakeAssetsToVault1Test is StateT1_User1StakeAssetsToVault
         assertEq(userAccount.claimedCreatorRewards, 0);
     }
 
+// other fns
+
     function testCannotStakeAssignedNfts() public {
         vm.startPrank(user1);
             vm.expectRevert();
@@ -443,7 +489,7 @@ contract StateT1_User1StakeAssetsToVault1Test is StateT1_User1StakeAssetsToVault
         vm.stopPrank();
     }
 
-    // transition fn: parallel test
+// state transition fn: parallel test
     function testOperatorCanUpdateMinimumRealmPoints() public {
         // lower minimum realm points
         uint256 originalMinimumRealmPoints = pool.MINIMUM_REALMPOINTS_REQUIRED();

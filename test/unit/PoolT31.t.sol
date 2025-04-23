@@ -719,11 +719,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         assertEq(claimableRewards, userAccount.accStakingRewards + userAccount.accNftStakingRewards + userAccount.accRealmPointsRewards, "viewFn accountState mismatch");
     }
 
-// ---------------- others ----------------
-
-    // TODO connector fns
-    // 1. user2 cannot unstake nfts not present within vault1
-    // 2. user2 can unstake the correct nfts from vault1
+// ---------------- state transition ----------------
 
     function testCannotUnstakeZero_T31() public {
         vm.startPrank(user2);
@@ -738,7 +734,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
             pool.unstake(vaultId1, user2Moca + 1, new uint256[](0));
         vm.stopPrank();
     }
-    
+
     function testCannotUnstakeMoreNftsThanStaked_T31() public {
         uint256[] memory nftsToUnstake = new uint256[](6);
         nftsToUnstake[0] = user2NftsArray[0];
@@ -755,6 +751,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         vm.stopPrank();
     }
 
+    // user did not stake; cannot unstake
     function testCannotUnstakeNftsNotStaked_T31() public {
         vm.startPrank(user3);
             vm.expectRevert(Errors.InvalidAmount.selector);
@@ -762,6 +759,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         vm.stopPrank();
     }
 
+    // user staked; cannot unstake incorrect nfts
     function testCannotUnstakeIncorrectNfts_T31() public {
         vm.startPrank(user2);
             vm.expectRevert();
@@ -769,12 +767,182 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         vm.stopPrank();
     }
 
+    // user staked; canot unstake another's nfts
     function testCannotUnstakeNftsStakedByOtherUser_T31() public {
-        vm.startPrank(user3);
-            vm.expectRevert(Errors.InvalidAmount.selector);
+        uint256[] memory nftsToUnstake = new uint256[](2);
+        nftsToUnstake[0] = user1NftsArray[0];
+        nftsToUnstake[1] = user1NftsArray[1];
 
-            pool.unstake(vaultId1, 0, new uint256[](2));
+        // panic: array out-of-bounds access (0x32)
+        vm.startPrank(user2);
+            vm.expectRevert();
+
+            pool.unstake(vaultId1, 0, nftsToUnstake);
         vm.stopPrank();
+    }
+    
+    function testCannotUnstakeDuplicateNfts_T31() public {
+        uint256[] memory nftsToUnstake = new uint256[](3);
+        nftsToUnstake[0] = user2NftsArray[0];
+        nftsToUnstake[1] = user2NftsArray[1];
+        nftsToUnstake[0] = user2NftsArray[0];
+
+        // panic: array out-of-bounds access
+        vm.startPrank(user2);
+            vm.expectRevert();
+            pool.unstake(vaultId1, 0, nftsToUnstake);
+        vm.stopPrank();
+    }
+
+    // user unstakes nfts followed by tokens
+    function testUser2UnstakesNftsFollowedByTokens_NonAtomic_T31() public {
+
+        // vault state before unstake
+        DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
+        DataTypes.User memory user2VaultBefore = pool.getUser(user2, vaultId1);
+        
+        // pool state before unstake
+        uint256 poolNftsBefore = pool.totalStakedNfts();
+        uint256 poolTokensBefore = pool.totalStakedTokens();
+        uint256 poolRpBefore = pool.totalStakedRealmPoints();
+        uint256 poolBoostedTokensBefore = pool.totalBoostedStakedTokens(); // 2.1e20
+        uint256 poolBoostedRpBefore = pool.totalBoostedRealmPoints();      // 1.9e21
+        
+        // token balances
+        uint256 user2TokenBalanceBefore = mocaToken.balanceOf(user2);
+
+            // user2 unstakes first 2 NFTs 
+            uint256[] memory nftsToUnstake = new uint256[](2);
+            nftsToUnstake[0] = user2NftsArray[0];
+            nftsToUnstake[1] = user2NftsArray[1];
+
+            // Calculate boost factor reduction
+            uint256 boostFactorReduction = 2 * pool.NFT_MULTIPLIER();
+
+            // Calculate the boosted token delta from nft unstaking
+            uint256 tokenBoostedDelta_1 = (vaultBefore.stakedTokens * boostFactorReduction) / Constants.PRECISION_BASE;
+            // Calculate the boosted realm points delta from nft unstaking
+            uint256 totalBoostedRealmPointsDelta = (vaultBefore.stakedRealmPoints * boostFactorReduction) / Constants.PRECISION_BASE;
+            
+            // Calculate interim boost factor and boosted values
+            uint256 expectedInterimBoostFactor = Constants.PRECISION_BASE + ((vaultBefore.stakedNfts - 2) * pool.NFT_MULTIPLIER());
+            uint256 expectedInterimBoostedTokens = (vaultBefore.stakedTokens * expectedInterimBoostFactor) / Constants.PRECISION_BASE;
+            uint256 expectedInterimBoostedRp = (vaultBefore.stakedRealmPoints * expectedInterimBoostFactor) / Constants.PRECISION_BASE;
+
+
+        // 1. unstake nfts
+        vm.startPrank(user2);
+            pool.unstake(vaultId1, 0, nftsToUnstake);
+        vm.stopPrank();
+
+            // Check interim state after unstaking NFTs but before unstaking tokens
+            DataTypes.Vault memory vaultAfterNfts = pool.getVault(vaultId1);
+            uint256 poolBoostedTokensAfterNfts = pool.totalBoostedStakedTokens(); // 2.1e20
+            uint256 poolBoostedRpAfterNfts = pool.totalBoostedRealmPoints();      // 1.9e21
+
+            // Check NFTs were removed correctly
+            assertEq(vaultAfterNfts.stakedNfts, vaultBefore.stakedNfts - 2, "Vault NFTs not reduced correctly after unstake");
+            assertEq(pool.totalStakedNfts(), poolNftsBefore - 2, "Pool NFTs not reduced correctly after unstake");
+            
+            // Check boost factor was updated correctly
+            assertEq(vaultAfterNfts.totalBoostFactor, expectedInterimBoostFactor, "Vault boost factor not updated correctly after NFT unstake");
+            // Check boosted tokens were updated correctly
+            assertEq(vaultAfterNfts.boostedStakedTokens, expectedInterimBoostedTokens, "Vault boosted tokens not updated correctly after NFT unstake");
+            // Check boosted realm points were updated correctly
+            assertEq(vaultAfterNfts.boostedRealmPoints, expectedInterimBoostedRp, "Vault boosted RP not updated correctly after NFT unstake");
+            
+            // Check global boosted values were updated correctly
+            assertEq(poolBoostedTokensAfterNfts, poolBoostedTokensBefore - tokenBoostedDelta_1, "Pool boosted tokens not updated correctly after NFT unstake");
+            assertEq(poolBoostedRpAfterNfts, poolBoostedRpBefore - totalBoostedRealmPointsDelta, "Pool boosted RP not updated correctly after NFT unstake");
+
+            // Check pool balances unchanged
+            assertEq(pool.totalStakedTokens(), poolTokensBefore, "Pool tokens not unchanged");
+            assertEq(pool.totalStakedRealmPoints(), poolRpBefore, "Pool RP not unchanged");
+
+
+        // user2 unstakes tokens
+        uint256 tokenAmount = user2Moca/2;
+
+        // Calculate the boosted token delta from token unstaking
+        uint256 tokenBoostedDelta_2 = (tokenAmount * vaultAfterNfts.totalBoostFactor) / Constants.PRECISION_BASE;
+        
+
+        // 2. unstake tokens
+        vm.startPrank(user2);
+            pool.unstake(vaultId1, tokenAmount, new uint256[](0));
+        vm.stopPrank();
+
+
+            // check token balances
+            uint256 user2TokenBalanceAfter = mocaToken.balanceOf(user2);
+            assertEq(user2TokenBalanceAfter, user2TokenBalanceBefore + tokenAmount, "user2 token balance mismatch");
+
+            // Check vault balances updated
+            DataTypes.Vault memory vaultAfter = pool.getVault(vaultId1);
+            assertEq(vaultAfter.stakedTokens, vaultAfterNfts.stakedTokens - tokenAmount, "Vault tokens not reduced correctly");
+            assertEq(vaultAfter.stakedNfts, vaultAfterNfts.stakedNfts, "Vault NFTs should be unchanged");
+
+            // Check pool balances updated
+            assertEq(pool.totalStakedTokens(), poolTokensBefore - tokenAmount, "Pool tokens not reduced correctly");
+            assertEq(pool.totalStakedRealmPoints(), poolRpBefore, "Pool RP not unchanged");
+
+            // vault boosted values
+            assertEq(vaultAfter.boostedStakedTokens, vaultAfterNfts.boostedStakedTokens - tokenBoostedDelta_2, "Vault boosted tokens not updated correctly");
+            
+            // pool boosted values
+            assertEq(pool.totalBoostedStakedTokens(), poolBoostedTokensAfterNfts - tokenBoostedDelta_2, "Pool boosted tokens not updated correctly");
+    }
+
+    // user only unstakes tokens
+    function testUser2UnstakesAllTokens_T31() public {
+
+            // vault state before unstake
+            DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
+            DataTypes.User memory user2VaultBefore = pool.getUser(user2, vaultId1);
+            
+            // pool state before unstake
+            uint256 poolNftsBefore = pool.totalStakedNfts();
+            uint256 poolTokensBefore = pool.totalStakedTokens();
+            uint256 poolRpBefore = pool.totalStakedRealmPoints();
+            uint256 poolBoostedTokensBefore = pool.totalBoostedStakedTokens(); // 2.1e20
+            uint256 poolBoostedRpBefore = pool.totalBoostedRealmPoints();      // 1.9e21
+            
+            // token balances
+            uint256 user2TokenBalanceBefore = mocaToken.balanceOf(user2);
+
+
+        // user2 unstakes tokens
+        uint256 tokenAmount = user2Moca;
+        // Calculate the boosted token delta from token unstaking
+        uint256 tokenBoostedDelta = (tokenAmount * vaultBefore.totalBoostFactor) / Constants.PRECISION_BASE;
+        
+
+        // unstake tokens
+        vm.startPrank(user2);
+            pool.unstake(vaultId1, tokenAmount, new uint256[](0));
+        vm.stopPrank();
+
+        // check token balances
+        uint256 user2TokenBalanceAfter = mocaToken.balanceOf(user2);
+        assertEq(user2TokenBalanceAfter, user2TokenBalanceBefore + tokenAmount, "user2 token balance mismatch");
+
+        // check user balances updated
+        DataTypes.User memory user2VaultAfter = pool.getUser(user2, vaultId1);
+        assertEq(user2VaultAfter.stakedTokens, 0, "user2 vault tokens not reduced correctly");
+
+        // Check vault balances updated
+        DataTypes.Vault memory vaultAfter = pool.getVault(vaultId1);
+        assertEq(vaultAfter.stakedTokens, vaultBefore.stakedTokens - tokenAmount, "Vault tokens not reduced correctly");
+
+        // Check pool balances updated
+        assertEq(pool.totalStakedNfts(), poolNftsBefore, "Pool NFTs not unchanged");
+        assertEq(pool.totalStakedTokens(), poolTokensBefore - tokenAmount, "Pool tokens not reduced correctly");
+
+        // Check boosted balances updated
+        assertEq(vaultAfter.boostedStakedTokens, vaultBefore.boostedStakedTokens - tokenBoostedDelta, "Vault boosted tokens not updated correctly");
+        
+        // Check pool boosted values updated
+        assertEq(pool.totalBoostedStakedTokens(), poolBoostedTokensBefore - tokenBoostedDelta, "Pool boosted tokens not updated correctly");
     }
 
     // user2 unstakes half their tokens and 2 nfts, from vault1
