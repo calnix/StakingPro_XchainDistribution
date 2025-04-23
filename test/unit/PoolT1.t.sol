@@ -52,7 +52,7 @@ contract StateT1_StartedTest is StateT1_Started {
         uint256 realmPointsFeeFactor = 1000;
 
         vm.startPrank(user1);    
-            vm.expectRevert(Errors.DuplicateIds.selector);    
+            vm.expectRevert("Nft is staked");    
             pool.createVault(duplicateNfts, creatorFeeFactor, nftFeeFactor, realmPointsFeeFactor);
         vm.stopPrank();
     }
@@ -190,7 +190,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         duplicateNfts[1] = user1NftsArray[1];  // dup
 
         vm.startPrank(user1);
-            vm.expectRevert(Errors.DuplicateIds.selector);
+            vm.expectRevert(NftRegistry.NftIsStaked.selector);
             pool.stakeNfts(vaultId1, duplicateNfts);
         vm.stopPrank();
     }

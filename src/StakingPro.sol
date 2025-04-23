@@ -165,9 +165,8 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     function createVault(uint256[] calldata tokenIds, uint256 creatorFeeFactor, uint256 nftFeeFactor, uint256 realmPointsFeeFactor) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance {
         if(activeDistributions.length == 0) revert Errors.NoActiveDistributions();
 
-        // duplicate check
-        uint256 incomingNfts = _checkDuplicateElements(tokenIds);
         // must commit unstaked NFTs to create vaults: these do not count towards stakedNFTs
+        uint256 incomingNfts = tokenIds.length;
         if(incomingNfts != CREATION_NFTS_REQUIRED) revert Errors.InvalidCreationNfts(); // incomingNfts can be 0, if CREATION_NFTS_REQUIRED == 0
 
         //note: MOCA stakers must receive at least 50% of rewards
@@ -254,9 +253,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param tokenIds Array of NFT token IDs to stake
      */
     function stakeNfts(bytes32 vaultId, uint256[] calldata tokenIds) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance {
-
-        // duplicate check
-        uint256 incomingNfts = _checkDuplicateElements(tokenIds);
+        uint256 incomingNfts = tokenIds.length;
         if(incomingNfts == 0) revert Errors.InvalidAmount();
 
         // revert if any NFTs are not unassigned OR not owned by msg.sender
@@ -1224,24 +1221,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     ///@dev Generate a vaultId. keccak256 is cheaper than using a counter with a SSTORE, even accounting for eventual collision retries.
     function _generateVaultId(uint256 salt, address user) internal view returns (bytes32) {
         return bytes32(keccak256(abi.encode(user, block.timestamp, salt)));
-    }
-
-    // duplicate check
-    function _checkDuplicateElements(uint256[] memory tokenIds) internal pure returns(uint256) {
-        uint256 incomingNfts = tokenIds.length;
-
-        if(incomingNfts > 1) {
-            for(uint256 i; i < incomingNfts; ++i) {
-                for(uint256 j; j < incomingNfts; ++j) {
-                   
-                    if(i == j) continue; // comparing same ele
-                   
-                    if(tokenIds[i] == tokenIds[j]) revert Errors.DuplicateIds();
-                }
-            }
-        }
-
-        return incomingNfts;
     }
 
     /*//////////////////////////////////////////////////////////////
