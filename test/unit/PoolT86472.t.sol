@@ -264,4 +264,14 @@ contract StateT86472_ContractEndedTest is StateT86472_ContractEnded {
             pool.updateAllVaultAccounts(new bytes32[](1), 0);
         vm.stopPrank();
     }
+
+    function testCannotUpdateBoostedBalancesAfterContractEnded() public {
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId1;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.updateBoostedBalances(vaultIds);
+        vm.stopPrank();
+    }
 }   

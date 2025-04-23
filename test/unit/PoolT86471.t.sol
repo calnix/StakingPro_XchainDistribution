@@ -90,4 +90,20 @@ contract StateT86471_ContractSetEndTimeTest is StateT86471_ContractSetEndTime {
         vm.stopPrank();
     }
 
+    
+    function testCannotUpdateNftMultiplierAfterContractEnded() public {
+        // enter maintenance before contract ends
+        vm.startPrank(owner);
+            pool.enableMaintenance();
+        vm.stopPrank();
+
+        vm.warp(pool.endTime() + 1);
+
+        // contract ended, in maintenance state
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.StakingEnded.selector);
+            pool.updateNftMultiplier(100);
+        vm.stopPrank();
+    }
+
 }

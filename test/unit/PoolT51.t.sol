@@ -957,8 +957,9 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
     }
 
 
-// ---- state transition: PoolT56p_Risk.t.sol  ----
-    function testUserCannotPausePool() public {
+// --------------- state transition: PoolT56p_Risk.t.sol  ---------------
+    
+    function testUserCannotPausePool_T51() public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.MONITOR_ROLE));
             pool.pause();
@@ -967,7 +968,14 @@ contract StateT51_BothVaultsFeesUpdatedTest is StateT51_BothVaultsFeesUpdated {
         assertEq(pool.paused(), false, "pool not paused");
     }
 
-    function testMonitorCanPausePool() public {
+    function testCannotFreezeWhenNotPaused_T51() public {
+        vm.startPrank(monitor);
+            vm.expectRevert(Pausable.ExpectedPause.selector);
+            pool.freeze();
+        vm.stopPrank();
+    }
+
+    function testMonitorCanPausePool_T51() public {
         vm.startPrank(monitor);
             pool.pause();
         vm.stopPrank();

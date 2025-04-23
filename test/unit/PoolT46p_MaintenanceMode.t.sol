@@ -785,7 +785,8 @@ contract StateT46p_MaintenanceMode_VaultAccountsUpdatedTest is StateT46p_Mainten
         vm.stopPrank();
     }
 
-    function testOperatorCanUpdateNftMultiplier_T46p() public {
+    // transition
+    function testCanUpdateNftMultiplierWhenInMaintenanceMode_T46p() public {
         uint256 oldNftMultiplier = pool.NFT_MULTIPLIER();
         uint256 newNftMultiplier = oldNftMultiplier * 2;
 
@@ -794,6 +795,8 @@ contract StateT46p_MaintenanceMode_VaultAccountsUpdatedTest is StateT46p_Mainten
             emit NftMultiplierUpdated(oldNftMultiplier, newNftMultiplier);
             pool.updateNftMultiplier(newNftMultiplier);
         vm.stopPrank();
+
+        assertEq(newNftMultiplier, pool.NFT_MULTIPLIER());
     }
 }
 
@@ -821,7 +824,7 @@ contract StateT46p_MaintenanceMode_NftMultiplierUpdatedTest is StateT46p_Mainten
         assertEq(pool.NFT_MULTIPLIER(), newNftMultiplier, "nft multiplier not updated");
     }
 
-    function testUserCannotUpdateBoostedBalances() public {
+    function testUserCannotUpdateBoostedBalances_T46p() public {
         bytes32[] memory vaultIds = new bytes32[](2);   
         vaultIds[0] = vaultId1;
         vaultIds[1] = vaultId2;
@@ -832,8 +835,25 @@ contract StateT46p_MaintenanceMode_NftMultiplierUpdatedTest is StateT46p_Mainten
         vm.stopPrank();
     }
 
+    function testUpdateBoostedBalances_InvalidArray_T46p() public {
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidArray.selector);
+            pool.updateBoostedBalances(new bytes32[](0));
+        vm.stopPrank();
+    }
+
+    function testUpdateBoostedBalances_NonExistentVault_T46p() public {
+        bytes32[] memory vaultIds = new bytes32[](2);   
+        vaultIds[0] = generateVaultId(10, user1);
+        
+        vm.startPrank(operator);
+            vm.expectPartialRevert(Errors.NonExistentVault.selector);
+            pool.updateBoostedBalances(vaultIds);
+        vm.stopPrank();
+    }
+
     //oldMultiplier: 1000, newMultiplier: 2000
-    function testOperatorCanUpdateBoostedBalances() public {
+    function testOperatorCanUpdateBoostedBalances_T46p() public {
         bytes32[] memory vaultIds = new bytes32[](2);   
         vaultIds[0] = vaultId1;
         vaultIds[1] = vaultId2;
@@ -895,6 +915,38 @@ abstract contract StateT46p_MaintenanceMode_UpdateBoostedBalances is StateT46p_M
 
 
 contract StateT46p_MaintenanceMode_UpdateBoostedBalancesTest is StateT46p_MaintenanceMode_UpdateBoostedBalances {
+
+    function testRepeatedCallOfUpdateBoostedBalancesIsImmaterial_T46p() public {
+        bytes32[] memory vaultIds = new bytes32[](2);   
+        vaultIds[0] = vaultId1;
+        vaultIds[1] = vaultId2;
+
+        // Get values before the repeated call
+        DataTypes.Vault memory vault1Before = pool.getVault(vaultId1);
+        DataTypes.Vault memory vault2Before = pool.getVault(vaultId2);
+        uint256 totalBoostedRpBefore = pool.totalBoostedRealmPoints();
+        uint256 totalBoostedTokensBefore = pool.totalBoostedStakedTokens();
+
+        vm.startPrank(operator);
+            pool.updateBoostedBalances(vaultIds);
+        vm.stopPrank();
+
+        // Get values after the repeated call
+        DataTypes.Vault memory vault1After = pool.getVault(vaultId1);
+        DataTypes.Vault memory vault2After = pool.getVault(vaultId2);
+        uint256 totalBoostedRpAfter = pool.totalBoostedRealmPoints();
+        uint256 totalBoostedTokensAfter = pool.totalBoostedStakedTokens();
+
+        // Verify that vault boosted values did not change
+        assertEq(vault1After.boostedRealmPoints, vault1Before.boostedRealmPoints, "vault1 boosted realm points should not change");
+        assertEq(vault1After.boostedStakedTokens, vault1Before.boostedStakedTokens, "vault1 boosted staked tokens should not change");
+        assertEq(vault2After.boostedRealmPoints, vault2Before.boostedRealmPoints, "vault2 boosted realm points should not change");
+        assertEq(vault2After.boostedStakedTokens, vault2Before.boostedStakedTokens, "vault2 boosted staked tokens should not change");
+
+        // Verify that global boosted values did not change
+        assertEq(totalBoostedRpAfter, totalBoostedRpBefore, "total boosted realm points should not change");
+        assertEq(totalBoostedTokensAfter, totalBoostedTokensBefore, "total boosted staked tokens should not change");
+    }
 
     function testUserCannotDisableMaintenanceMode_T46p() public {
         vm.startPrank(user1);
