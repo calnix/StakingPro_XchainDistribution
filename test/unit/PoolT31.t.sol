@@ -738,7 +738,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
             pool.unstake(vaultId1, user2Moca + 1, new uint256[](0));
         vm.stopPrank();
     }
-    
+
     function testCannotUnstakeMoreNftsThanStaked_T31() public {
         uint256[] memory nftsToUnstake = new uint256[](6);
         nftsToUnstake[0] = user2NftsArray[0];
@@ -755,6 +755,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         vm.stopPrank();
     }
 
+    // user did not stake; cannot unstake
     function testCannotUnstakeNftsNotStaked_T31() public {
         vm.startPrank(user3);
             vm.expectRevert(Errors.InvalidAmount.selector);
@@ -762,6 +763,7 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         vm.stopPrank();
     }
 
+    // user staked; cannot unstake incorrect nfts
     function testCannotUnstakeIncorrectNfts_T31() public {
         vm.startPrank(user2);
             vm.expectRevert();
@@ -769,11 +771,28 @@ contract StateT31_User2MigrateRpToVault2Test is StateT31_User2MigrateRpToVault2 
         vm.stopPrank();
     }
 
+    // user staked; canot unstake another's nfts
     function testCannotUnstakeNftsStakedByOtherUser_T31() public {
-        vm.startPrank(user3);
+        uint256[] memory nftsToUnstake = new uint256[](2);
+        nftsToUnstake[0] = user1NftsArray[0];
+        nftsToUnstake[1] = user1NftsArray[1];
+
+        vm.startPrank(user2);
             vm.expectRevert(Errors.InvalidAmount.selector);
 
-            pool.unstake(vaultId1, 0, new uint256[](2));
+            pool.unstake(vaultId1, 0, nftsToUnstake);
+        vm.stopPrank();
+    }
+    
+    function testCannotUnstakeDuplicateNfts_T31() public {
+        uint256[] memory nftsToUnstake = new uint256[](2);
+        nftsToUnstake[0] = user2NftsArray[0];
+        nftsToUnstake[1] = user2NftsArray[1];
+        nftsToUnstake[0] = user2NftsArray[0];
+
+        vm.startPrank(user2);
+            vm.expectRevert();
+            pool.unstake(vaultId1, 0, nftsToUnstake);
         vm.stopPrank();
     }
 
