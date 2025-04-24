@@ -782,6 +782,11 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             // LZ sanity checks
             if(dstEid == 0) revert Errors.InvalidDstEid();
             if(tokenAddress == bytes32(0)) revert Errors.InvalidTokenAddress();
+
+        } else{
+            
+            // D0: endTime is 0
+            distributionEndTime = 0;
         }
 
         // lazy load startTime, instead of entire struct

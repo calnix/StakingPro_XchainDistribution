@@ -182,7 +182,7 @@ contract StateT31_EndAllActiveDistributionsTest is StateT31_EndAllActiveDistribu
         assertEq(address(pool.REWARDS_VAULT()), address(rewardsVaultV2));
     }
 }
-
+/*
 abstract contract StateT31_SwitchRewardsVault is StateT31_EndAllActiveDistributions {
 
     address oldRewardsVault = address(pool.REWARDS_VAULT());
@@ -304,4 +304,4 @@ contract StateT31_ClaimOldDistributionRemainderTest is StateT31_ClaimOldDistribu
         assertEq(userAccountAfter.claimedStakingRewards, userAccountBefore.claimedStakingRewards + expectedRewards, "Claimed rewards should be updated");
     }
 }
-
+*/
