@@ -49,7 +49,7 @@ abstract contract StateT11_Distribution1Created is StateT6_User2StakeAssetsToVau
 // TODO
 contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
 
-    function testCannotSetupDistributionIdDistributionAlreadySetup_T11() public {
+    function test_CannotSetupDistribution_DistributionIdAlreadySetup_T11() public {
         uint256 distributionId = 1;
         uint256 distributionStartTime = 21;
         uint256 distributionEndTime = 21 + 2 days;
@@ -63,6 +63,17 @@ contract StateT11_Distribution1CreatedTest is StateT11_Distribution1Created {
         vm.stopPrank();
     }
 
+    function test_CannotUpdateDistribution_StartTimeBeforeContractStartTime_T11() public {
+        uint256 distributionId = 1;
+        uint256 newStartTime = pool.startTime();
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidStartTime.selector);
+            pool.updateDistribution(distributionId, newStartTime, 0, 0);
+        vm.stopPrank();
+    }
+
+    
     function testCannotSetRewardsVaultWhenTokenDistributionExists_T11() public {
         vm.startPrank(operator);
             vm.expectRevert(Errors.ActiveTokenDistributions.selector);

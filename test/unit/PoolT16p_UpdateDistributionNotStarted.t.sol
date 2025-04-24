@@ -54,7 +54,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     }
 
     // new startTime must be greater than current
-    function test_StartTimeModification_NewStartTimeMustBeGreaterThanCurrent_T16p() public {
+    function test_StartTimeModification_NewStartTimeMustBeGreaterThanNow_T16p() public {
         uint256 distributionId = 1;
         uint256 newStartTime = block.timestamp - 1;
 
@@ -65,7 +65,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     }
     
     // can update if not started
-    function test_StartTimeModification_CanUpdateStartTimeIfNotStarted_T16p() public {
+    function test_StartTimeModification_CanUpdateToFutureStartTime_IfNotStarted_T16p() public {
         uint256 distributionId = 1;
         uint256 newStartTime = block.timestamp + 1;
         

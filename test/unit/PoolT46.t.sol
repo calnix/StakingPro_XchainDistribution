@@ -883,5 +883,18 @@ contract StateT46_BothVaultsFeesUpdatedTest is StateT46_BothVaultsFeesUpdated {
             assertEq(claimableRewards, expectedClaimableRewards, "claimableRewards mismatch"); 
         }
 
-// ------ STATE TRANSITION TESTS  ------
+// ------ state transition: PoolT46p_EndDistribution.t.sol  ------
+
+    function test_CannotEndDistribution_IfDistributionEndTimePassed_T46p() public {
+        // get D1 endTime
+        DataTypes.Distribution memory distribution = getDistribution(1);
+
+        vm.warp(distribution.endTime + 1);
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.DistributionEnded.selector);
+            pool.endDistribution(1);
+        vm.stopPrank();
+    }
+    
 }

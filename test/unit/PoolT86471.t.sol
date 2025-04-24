@@ -17,6 +17,21 @@ abstract contract StateT86471_ContractSetEndTime is StateT86466_User2UnstakedFro
 
 contract StateT86471_ContractSetEndTimeTest is StateT86471_ContractSetEndTime {
 
+    function testEndTimeSetForD0_T86471() public {
+        assertEq(pool.endTime(), 86471);
+
+        // get D0 distribution
+        DataTypes.Distribution memory distribution = getDistribution(0);
+        assertEq(pool.endTime(), distribution.endTime);
+    }
+
+    function testEndTimeSetForD1_T86471() public {
+        // get D1 distribution
+        DataTypes.Distribution memory distribution = getDistribution(1);
+        assertEq(pool.endTime(), distribution.endTime);
+    }
+
+
     function testCannotRepeatSetEndTimeBeforeContractEnded() public {
         // Get initial end time
         uint256 initialEndTime = pool.endTime();

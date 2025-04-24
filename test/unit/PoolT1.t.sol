@@ -15,6 +15,16 @@ abstract contract StateT1_Started is StateT0_DeployAndSetupStakingPower {
 
 contract StateT1_StartedTest is StateT1_Started {
 
+    function testDistributionStarted_CannotUpdateStartTime_T1() public {
+        uint256 distributionId = 0;
+        uint256 distributionStartTime = 100;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.DistributionStarted.selector);
+            pool.updateDistribution(distributionId, distributionStartTime, 0, 0);
+        vm.stopPrank();
+    }
+
     function testCannotStakeNftsToNonexistentVault() public {
         vm.prank(user2);
         bytes32 nonexistentVaultId = bytes32(uint256(1));

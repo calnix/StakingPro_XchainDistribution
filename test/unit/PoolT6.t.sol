@@ -275,7 +275,7 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
         assertEq(rewards, 0);
     }
 
-//----- state transition: PoolT11.t.sol
+// ---------------- state transition: PoolT11.t.sol ----------------
 
     function testCannotSetupDistributionExceedsMaxActiveDistributions_T6() public {
         // distribution params
@@ -376,6 +376,22 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
         vm.stopPrank();
     }   
 
+    function testCannotSetupTokenDistributionIfEmissionPerSecondRebasedIsZero_T6() public {
+        // distribution params  
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = block.timestamp;
+        uint256 distributionEndTime = block.timestamp + 1 days;
+        uint256 emissionPerSecond = 1;
+        uint256 tokenPrecision = 1E19;
+        bytes32 tokenAddress = 0x00;
+        
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.RebasedEmissionRateIsZero.selector);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+    }
+
+
     function testUserCannotSetupDistribution_T6() public {
         // distribution params  
         uint256 distributionId = 1;
@@ -451,7 +467,7 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
         assertEq(totalDeposited, 0);
     }
 
-//----- state transition: PoolT6p_updateMinimumRp.t.sol
+// ---------------- state transition: PoolT6p_updateMinimumRp.t.sol ----------------
 
     function testUserCannotUpdateMinimumRealmPoints_T6() public {
         vm.startPrank(user1);

@@ -338,6 +338,20 @@ contract StateT0_DeployTest is StateT0_Deploy {
             pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
         vm.stopPrank();
     }
+/*
+    function testCanSetupD0WithNonZeroEndTime_T0() public {
+        uint256 distributionId = 0;
+        uint256 distributionStartTime = 1;
+        uint256 distributionEndTime = 100;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = 0x00;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.InvalidDistributionEndTime.selector);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+    }*/
 
     function testCannotSetupDistributionWithZeroTokenPrecision_T0() public {
         uint256 distributionId = 0;
@@ -351,7 +365,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
             vm.expectRevert(Errors.ZeroTokenPrecision.selector);
             pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
         vm.stopPrank();
-    }
+    }   
     
     function testCannotSetupDistributionWithZeroEmissionRate_T0() public {
         uint256 distributionId = 0;
@@ -380,6 +394,7 @@ contract StateT0_DeployTest is StateT0_Deploy {
             pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
         vm.stopPrank();
     }
+
 
     function testOperatorCanSetupDistributionWhenNotStarted_T0() public {
         uint256 distributionId = 0;
@@ -438,6 +453,19 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
         stuff you can can w/ distribvution, but before setup
     */
 
+    function testCannotSetupDistributionIdDistributionAlreadySetup_T0() public {
+        uint256 distributionId = 0;
+        uint256 distributionStartTime = 1;
+        uint256 distributionEndTime = 0;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.DistributionAlreadySetup.selector);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, "");
+        vm.stopPrank();
+    }
+
     function testCannotUpdateDistributionWithNullInputs_T0() public {
         uint256 distributionId = 0;
 
@@ -458,7 +486,9 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
         vm.stopPrank();
     }
 
-    function testCanUpdateDistributionWhenContractNotStarted_T0() public {
+    // contract not started
+    // D0 not started
+    function testCanUpdateD0StartTimeWhenNotStarted_ContractNotStarted_T0() public {
         // staking power
         uint256 distributionId = 0;
         DataTypes.Distribution memory distributionBefore = getDistribution(distributionId);
@@ -484,6 +514,18 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
         assertEq(distributionAfter.endTime, distributionBefore.endTime);
         assertEq(distributionAfter.emissionPerSecond, distributionBefore.emissionPerSecond);
     }
+
+    function testCannotUpdateDistribution_EmissionPerSecondRebased_MustBeNonZero_T0() public {
+        uint256 distributionId = 0;
+        uint256 newEmissionPerSecond = 1;
+
+        vm.startPrank(operator);
+            vm.expectRevert(Errors.RebasedEmissionRateIsZero.selector);
+            pool.updateDistribution(distributionId, 0, 0, newEmissionPerSecond);
+        vm.stopPrank();
+    }
+
+
 
     function testCanEndDistributionWhenNotStarted() public {
             // Setup a distribution first

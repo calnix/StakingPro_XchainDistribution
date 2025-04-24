@@ -130,30 +130,38 @@ contract StateT86466_User2UnstakedFromVault2Test is StateT86466_User2UnstakedFro
         assertEq(initialEndTime, 0);
 
         // get initial distribution endTimes
-        uint256[] memory initialDistributionEndTimes = new uint256[](pool.getActiveDistributionsLength());
-        for(uint256 i; i < pool.getActiveDistributionsLength(); ++i) {
-            DataTypes.Distribution memory distribution = getDistribution(i);
+        uint256 numOfActiveDistributions = pool.getActiveDistributionsLength();
+        uint256[] memory initialDistributionEndTimes = new uint256[](numOfActiveDistributions);
+        
+        for(uint256 i; i < numOfActiveDistributions; ++i) {
+            uint256 distributionId = pool.activeDistributions(i);
+            DataTypes.Distribution memory distribution = getDistribution(distributionId);
             initialDistributionEndTimes[i] = distribution.endTime;
         }
 
-        uint256 newEndTime = block.timestamp + 5;
+        uint256 contractEndTime = block.timestamp + 5;
         
         // set new endTime
         vm.startPrank(operator);
             vm.expectEmit(true, true, true, true);
-            emit StakingEndTimeSet(newEndTime);
-            pool.setEndTime(newEndTime);
+            emit StakingEndTimeSet(contractEndTime);
+            pool.setEndTime(contractEndTime);
         vm.stopPrank();
 
         // check that endTime is set
-        assertEq(pool.endTime(), newEndTime);
+        assertEq(pool.endTime(), contractEndTime);
 
         // check that distribution endTimes are updated
-        for(uint256 i; i < pool.getActiveDistributionsLength(); ++i) {
-            DataTypes.Distribution memory distribution = getDistribution(i);
+        for(uint256 i; i < numOfActiveDistributions; ++i) {
+            uint256 distributionId = pool.activeDistributions(i);
+            DataTypes.Distribution memory distributionAfter = getDistribution(distributionId);
 
-            assertEq(distribution.endTime, newEndTime, "Distribution endTime not updated");
+            assertEq(distributionAfter.endTime, contractEndTime, "Distribution endTime not updated");
         }
+
+        /**
+            D1 ends at 172821. (> 86471)
+         */
     }
 
 }
