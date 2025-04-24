@@ -198,7 +198,7 @@ abstract contract StateT31_SwitchRewardsVault is StateT31_EndAllActiveDistributi
 
 contract StateT31_SwitchRewardsVaultTest is StateT31_SwitchRewardsVault {
 
-    function test_SwitchRewardsVault() public {
+    function test_NewRewardsVaultIsSet() public {
         // check that new rewards vault is set
         assertEq(address(pool.REWARDS_VAULT()), address(rewardsVaultV2));
 
