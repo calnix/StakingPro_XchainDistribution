@@ -144,9 +144,46 @@ contract StateT31_CheckClaimableRewardsTest is StateT31_CheckClaimableRewards {
 
 
     }
+
+    function testCannotSwitchRewardsVault() public {
+        vm.startPrank(owner);
+            vm.expectRevert(abi.encodeWithSelector(Errors.ActiveTokenDistributions.selector));
+            pool.setRewardsVault(address(rewardsVaultV2));
+        vm.stopPrank();
+    }
 }
 
-abstract contract StateT31_SwitchRewardsVault is StateT31_CheckClaimableRewards {
+abstract contract StateT31_EndAllActiveDistributions is StateT31_CheckClaimableRewards {
+
+    function setUp() public virtual override {
+        super.setUp();
+
+        vm.startPrank(operator);
+            pool.endDistribution(1);
+            pool.endDistribution(2);
+            pool.popEndedDistribution(1);
+            pool.popEndedDistribution(2);
+        vm.stopPrank();
+    }
+}
+
+contract StateT31_EndAllActiveDistributionsTest is StateT31_EndAllActiveDistributions {
+
+    function test_EndAllActiveDistributions() public {
+        // only D0 active
+        assertEq(pool.getActiveDistributionsLength(), 1);
+    }
+    
+    function testCanSwitchRewardsVault() public {
+        vm.startPrank(owner);
+            pool.setRewardsVault(address(rewardsVaultV2));
+        vm.stopPrank();
+
+        assertEq(address(pool.REWARDS_VAULT()), address(rewardsVaultV2));
+    }
+}
+
+abstract contract StateT31_SwitchRewardsVault is StateT31_EndAllActiveDistributions {
 
     address oldRewardsVault = address(pool.REWARDS_VAULT());
 
