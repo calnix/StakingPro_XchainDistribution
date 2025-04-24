@@ -765,9 +765,8 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
         // contract endTime check
         if(endTime > 0){
-            // newEndTime must be <= endTime
+            // distribution start and end times must be <= endTime
             if(distributionEndTime > endTime) revert Errors.InvalidEndTime();
-            // newStartTime must be <= endTime
             if(distributionStartTime > endTime) revert Errors.InvalidStartTime();
         }
 
