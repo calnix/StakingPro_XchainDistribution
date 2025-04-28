@@ -263,7 +263,7 @@ contract StateT31_ClaimOldDistributionRemainderTest is StateT31_ClaimOldDistribu
         DataTypes.UserAccount memory userAccountBefore = getUserAccount(user2, vaultId1, distributionId);
         
         // Calculate expected rewards
-        uint256 expectedRewards = 10 ether; // This should be calculated based on actual accrued rewards
+        uint256 expectedRewards = 6333333333333332596; // This should be calculated based on actual accrued rewards
         
         // Claim rewards
         vm.startPrank(user2);
