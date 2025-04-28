@@ -48,7 +48,7 @@ abstract contract StateT86466_SetupD2D4 is StateT86466_User2UnstakedFromVault2 {
 
         // end D3
         vm.startPrank(operator);
-            pool.endDistribution(3);
+            pool.endDistributionManually(3);
         vm.stopPrank();
     }
 }

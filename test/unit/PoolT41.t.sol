@@ -762,7 +762,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
     function testUserCannotEndDistribution_T41() public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, Constants.OPERATOR_ROLE));
-            pool.endDistribution(1);
+            pool.endDistributionManually(1);
         vm.stopPrank();
     }
 
@@ -772,7 +772,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
         
         vm.startPrank(operator);
             vm.expectRevert(Errors.DistributionEnded.selector);
-            pool.endDistribution(1);
+            pool.endDistributionManually(1);
         vm.stopPrank();
     }
 
@@ -809,7 +809,7 @@ contract StateT41_User2StakesToVault2Test is StateT41_User2StakesToVault2 {
             // Expect rewards vault call with totalEmitted as the new totalRequired
             vm.expectCall(address(pool.REWARDS_VAULT()), abi.encodeCall(IRewardsVault.endDistribution, (1, distribution1_T41.totalEmitted)));
             
-            pool.endDistribution(1);
+            pool.endDistributionManually(1);
         vm.stopPrank();
 
         // check pool: distribution does not get removed from activeDistributions array

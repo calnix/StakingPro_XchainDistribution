@@ -411,7 +411,7 @@ contract StateT16_BothUsersStakeAgainTest is StateT16_BothUsersStakeAgain {
             vm.expectEmit(true, true, true, true);
             emit DistributionEnded(1, block.timestamp, 0);
             
-            pool.endDistribution(1);
+            pool.endDistributionManually(1);
         vm.stopPrank();
     }
 

@@ -447,7 +447,7 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
             vm.expectEmit(true, true, true, true);
             emit DistributionEnded(1, block.timestamp, distribution.totalEmitted);
 
-            pool.endDistribution(1);
+            pool.endDistributionManually(1);
         vm.stopPrank();
 
         DataTypes.Distribution memory distributionAfter = pool.getUpdatedDistribution(1);

@@ -893,7 +893,7 @@ contract StateT46_BothVaultsFeesUpdatedTest is StateT46_BothVaultsFeesUpdated {
 
         vm.startPrank(operator);
             vm.expectRevert(Errors.DistributionEnded.selector);
-            pool.endDistribution(1);
+            pool.endDistributionManually(1);
         vm.stopPrank();
     }
     

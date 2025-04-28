@@ -168,7 +168,7 @@ contract StateT56p_PausedTest is StateT56p_Paused {
     function testCannotEndDistributionWhenPaused() public {
         vm.prank(operator);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        pool.endDistribution(1);
+        pool.endDistributionManually(1);
     }
 
     function testCannotPopEndedDistributionWhenPaused() public {

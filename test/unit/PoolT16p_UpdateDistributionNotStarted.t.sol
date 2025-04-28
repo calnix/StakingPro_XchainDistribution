@@ -30,7 +30,7 @@ contract StateT16p_UpdateDistributionNotStartedTest is StateT16p_UpdateDistribut
     function testCannotUpdateEndedDistribution_T16p() public {
         // update to force D1 to end
         vm.startPrank(operator);
-            pool.endDistribution(1);
+            pool.endDistributionManually(1);
         vm.stopPrank();
 
         // try to update

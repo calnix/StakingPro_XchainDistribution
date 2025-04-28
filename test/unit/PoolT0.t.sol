@@ -582,7 +582,7 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
             vm.expectEmit(true, true, true, true);
             emit DistributionEnded(distributionId, block.timestamp, distribution.totalEmitted);
 
-            pool.endDistribution(distributionId);
+            pool.endDistributionManually(distributionId);
         vm.stopPrank();
 
         // assert distribution was ended
@@ -614,7 +614,7 @@ contract StateT0_DeployAndSetupStakingPowerTest is StateT0_DeployAndSetupStaking
             assertEq(distribution.manuallyEnded, 0);
         
             vm.startPrank(operator);                
-                pool.endDistribution(distributionId);
+                pool.endDistributionManually(distributionId);
             vm.stopPrank();
             
             // assert distribution was ended but not popped

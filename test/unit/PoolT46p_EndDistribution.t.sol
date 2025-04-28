@@ -10,7 +10,7 @@ abstract contract StateT41_EndDistribution is StateT41_User2StakesToVault2 {
 
         // changed
         vm.startPrank(operator);
-            pool.endDistribution(1);
+            pool.endDistributionManually(1);
         vm.stopPrank();
     }
 }
@@ -169,7 +169,7 @@ contract StateT46_UpdateEndedDistributionTest is StateT46_UpdateEndedDistributio
     function testCannotEndAlreadyEndedDistribution_T46p() public {
         vm.startPrank(operator);
             vm.expectRevert(Errors.DistributionEnded.selector);
-            pool.endDistribution(1);
+            pool.endDistributionManually(1);
         vm.stopPrank();
     }
 
@@ -188,7 +188,7 @@ contract StateT46_UpdateEndedDistributionTest is StateT46_UpdateEndedDistributio
 
         // end distribution
         vm.startPrank(operator);
-            pool.endDistribution(distributionId);
+            pool.endDistributionManually(distributionId);
         vm.stopPrank();
         assertEq(getDistribution(distributionId).manuallyEnded, 1, "distribution manually ended mismatch");
 
@@ -196,21 +196,21 @@ contract StateT46_UpdateEndedDistributionTest is StateT46_UpdateEndedDistributio
         // end distribution
         vm.startPrank(operator);
             vm.expectRevert(Errors.DistributionManuallyEnded.selector);
-            pool.endDistribution(distributionId);
+            pool.endDistributionManually(distributionId);
         vm.stopPrank();
     }
 
     function testCannotEndDistribution0_T46p() public {
         vm.startPrank(operator);
             vm.expectRevert(Errors.InvalidDistributionId.selector);
-            pool.endDistribution(0);
+            pool.endDistributionManually(0);
         vm.stopPrank();
     }
 
     function testCannotEndNonExistentDistribution_T46p() public {
         vm.startPrank(operator);
             vm.expectRevert(Errors.NonExistentDistribution.selector);
-            pool.endDistribution(3);
+            pool.endDistributionManually(3);
         vm.stopPrank();
     }
 

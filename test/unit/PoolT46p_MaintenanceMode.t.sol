@@ -128,7 +128,7 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
 
         // assume stakingPro only has 1 active distribution: D0
         vm.startPrank(operator);
-            pool.endDistribution(1);
+            pool.endDistributionManually(1);
             pool.popEndedDistribution(1);
         vm.stopPrank();
 
@@ -279,7 +279,7 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
             vm.expectEmit(true, true, true, true);
             emit DistributionEnded(distributionId, block.timestamp, updatedDistribution.totalEmitted);
 
-            pool.endDistribution(distributionId);
+            pool.endDistributionManually(distributionId);
         vm.stopPrank();
 
         // Get distribution after end
@@ -294,7 +294,7 @@ contract StateT46p_MaintenanceModeTest is StateT46p_MaintenanceMode {
 
         // end distribution
         vm.startPrank(operator);
-            pool.endDistribution(distributionId);
+            pool.endDistributionManually(distributionId);
         vm.stopPrank();
 
         DataTypes.Distribution memory distributionBefore = getDistribution(distributionId);

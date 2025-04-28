@@ -139,8 +139,8 @@ abstract contract StateT31_EndAllActiveDistributions is StateT31_CheckClaimableR
         super.setUp();
 
         vm.startPrank(operator);
-            pool.endDistribution(1);
-            pool.endDistribution(2);
+            pool.endDistributionManually(1);
+            pool.endDistributionManually(2);
             pool.popEndedDistribution(1);
             pool.popEndedDistribution(2);
         vm.stopPrank();
