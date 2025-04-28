@@ -163,6 +163,7 @@ contract StateT46_UpdateEndedDistributionTest is StateT46_UpdateEndedDistributio
     function testDistribution1EndedSuccessfully_T46p() public {
         DataTypes.Distribution memory distribution = getDistribution(1);
         assertEq(distribution.endTime, 41, "distribution end time mismatch");
+        assertEq(distribution.lastUpdateTimeStamp, 41, "distribution lastUpdateTimeStamp mismatch");
         assertEq(distribution.manuallyEnded, 1, "distribution manually ended mismatch");
     }
 

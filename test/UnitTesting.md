@@ -239,6 +239,8 @@ Vault states:
 
 ## setEndTime
 
+- PoolT86466p_DX_SetEndTime.t.sol
+
 Contract states:
 (-) Contract paused (should revert)    | testCannotSetEndTimeWhenPaused
 (+) Contract under maintenance         | testCanSetEndTimeWhenInMaintenanceMode
@@ -454,7 +456,7 @@ Scenario: Both D0 & D1 have started, Contract End Time set
 - (+) Can update emissionPerSecond                        | testCanUpdateD1EmissionRateWithEndTimeSet_T86471p
 - (+) Can update both valid endTime and emissionPerSecond | testCanUpdateD1ValidEndTimeAndEmissionRate_T86471p
 
-## endDistribution
+## endDistributionManually
 
 - PoolT46p_EndDistribution.t.sol
 - [PoolT41_EndDistribution Section: line 752](../test/unit/PoolT41.t.sol)
