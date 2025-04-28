@@ -185,7 +185,7 @@ contract StateT31_EndAllActiveDistributionsTest is StateT31_EndAllActiveDistribu
 
 abstract contract StateT31_SwitchRewardsVault is StateT31_EndAllActiveDistributions {
 
-    address oldRewardsVault = address(pool.REWARDS_VAULT());
+    //address oldRewardsVault = address(pool.REWARDS_VAULT());
 
     function setUp() public virtual override {
         super.setUp();
@@ -203,13 +203,13 @@ contract StateT31_SwitchRewardsVaultTest is StateT31_SwitchRewardsVault {
         assertEq(address(pool.REWARDS_VAULT()), address(rewardsVaultV2));
 
         // check that old rewards vault is not set
-        assertNotEq(address(pool.REWARDS_VAULT()), oldRewardsVault);
+        assertNotEq(address(pool.REWARDS_VAULT()), address(rewardsVault));
     }
 
     function test_BypassUpdateOfNewRewardsVault_OldDistributions() public {
         // grant POOL ROLE to some other address
         vm.startPrank(owner);
-            pool.grantRole(Constants.POOL_ROLE, deployer);
+            rewardsVaultV2.grantRole(Constants.POOL_ROLE, deployer);
         vm.stopPrank();
 
         // CALC. TOTAL REQUIRED
@@ -229,6 +229,7 @@ contract StateT31_SwitchRewardsVaultTest is StateT31_SwitchRewardsVault {
         // deposit remainder of rewards
         uint256 remainder = totalRequired - 10 ether;
         vm.startPrank(depositor);
+            rewardsToken1.mint(depositor, remainder);
             rewardsToken1.approve(address(rewardsVaultV2), remainder);
             rewardsVaultV2.deposit(distributionId, remainder, depositor);
         vm.stopPrank();
@@ -240,9 +241,9 @@ abstract contract StateT31_ClaimOldDistributionRemainder is StateT31_SwitchRewar
     function setUp() public virtual override {
         super.setUp();
 
-            // grant POOL ROLE to some other address
+        // grant POOL ROLE to some other address
         vm.startPrank(owner);
-            pool.grantRole(Constants.POOL_ROLE, deployer);
+            rewardsVaultV2.grantRole(Constants.POOL_ROLE, deployer);
         vm.stopPrank();
 
         // CALC. TOTAL REQUIRED
@@ -262,6 +263,7 @@ abstract contract StateT31_ClaimOldDistributionRemainder is StateT31_SwitchRewar
         // deposit remainder of rewards
         uint256 remainder = totalRequired - 10 ether;
         vm.startPrank(depositor);
+            rewardsToken1.mint(depositor, remainder);
             rewardsToken1.approve(address(rewardsVaultV2), remainder);
             rewardsVaultV2.deposit(distributionId, remainder, depositor);
         vm.stopPrank();
