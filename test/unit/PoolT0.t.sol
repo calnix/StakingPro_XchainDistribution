@@ -395,6 +395,29 @@ contract StateT0_DeployTest is StateT0_Deploy {
         vm.stopPrank();
     }
 
+    function testCannotSetupD0WithNonZeroEndTime_T0() public {
+        uint256 distributionId = 0;
+        uint256 distributionStartTime = 1;
+        uint256 distributionEndTime = 100;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = 0x00;
+
+        vm.startPrank(operator);
+            pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+
+        // Check state after
+        assertEq(pool.getActiveDistributionsLength(), 1);
+        
+        DataTypes.Distribution memory distribution = getDistribution(distributionId);
+        assertEq(distribution.endTime, 0);
+        
+        assertEq(distribution.distributionId, distributionId);
+        assertEq(distribution.startTime, distributionStartTime);
+        assertEq(distribution.emissionPerSecond, emissionPerSecond);
+        assertEq(distribution.TOKEN_PRECISION, tokenPrecision);
+    }
 
     function testOperatorCanSetupDistributionWhenNotStarted_T0() public {
         uint256 distributionId = 0;
