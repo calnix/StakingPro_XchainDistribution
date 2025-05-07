@@ -979,10 +979,52 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         1. enableMaintenance
         2. updateActiveDistributions
         3. updateAllVaultAccounts
-        4. resetRealmPoints
-        5. incrementSeason
-        6. disableMaintenance
+        4. updateAllUserAccounts -- book rp related fees before resettinq
+        5. resetRealmPoints
+        6. incrementSeason
+        7. disableMaintenance
      */
+    
+    // need to update users that staked rp - to book rp related fees before resetting. other users do not need to be updated. 
+    function updateAllUserAccounts(uint256 distributionId, bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
+        // get num of users + sanity check
+        uint256 numOfUsers = userAddresses.length;
+        if(numOfUsers == 0) revert Errors.InvalidArray();
+
+        // get distribution + sanity check
+        DataTypes.Distribution storage distribution = distributions[distributionId];
+        if(distribution.startTime == 0) revert Errors.NonExistentDistribution();
+        
+        // distribution must have started: else no emissions, nothing pending to book
+        if(distribution.startTime > block.timestamp) revert Errors.DistributionNotStarted();
+
+        // get vault + sanity check
+        DataTypes.Vault storage vault = vaults[vaultId];
+        if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
+
+        // get vault account + sanity check
+        DataTypes.VaultAccount storage vaultAccount = vaultAccounts[vaultId][distributionId];
+        if(vaultAccount.startTime == 0) revert Errors.NonExistentVaultAccount(vaultId, distributionId);
+
+        // update user accounts
+        for(uint256 i; i < numOfUsers; ++i){
+            address userAddress = userAddresses[i];
+
+            // get user vault assets
+            DataTypes.User storage userVaultAssets = users[userAddress][vaultId];
+            if(userVaultAssets.stakedRealmPoints == 0) revert Errors.NoRpStaked();
+
+            // get user account + sanity check  
+            DataTypes.UserAccount memory userAccount = userAccounts[userAddress][vaultId][distributionId];
+
+
+            // update user account
+            userAccounts[userAddress][vaultId][distributionId] = Pool.executeUpdateUserAccount(vaultId, userAddress, userVaultAssets, userAccount, vault, vaultAccount, distribution);
+        }
+
+        emit UserAccountsUpdated(distributionId, vaultId, userAddresses);
+
+    }
 
 
     /**
