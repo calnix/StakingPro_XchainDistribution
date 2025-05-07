@@ -63,6 +63,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     uint256 public VAULT_COOLDOWN_DURATION;
     
     // signature params
+    uint256 public SEASON;
     address public immutable STORED_SIGNER;                 
     uint256 public MINIMUM_REALMPOINTS_REQUIRED;
 
@@ -292,19 +293,21 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param vaultId The ID of the vault to stake realm points into
      * @param amount The amount of realm points to stake
      * @param expiry The expiry timestamp of the signature
+     * @param season The season of the signature
      * @param signature The signature to verify
      * @custom:requirements
      * - Amount must be at least MINIMUM_REALMPOINTS_REQUIRED
      * - Signature must not be expired or already executed
      * - Signature must be valid and from the stored signer
+     * - Signature must be for the current season
      * - Contract must not be paused and staking must have started
      */
-    function stakeRealmPoints(bytes32 vaultId, uint256 amount, uint256 expiry, bytes calldata signature) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance {
+    function stakeRealmPoints(bytes32 vaultId, uint256 amount, uint256 expiry, uint256 season, bytes calldata signature) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance {
         if(expiry < block.timestamp) revert Errors.SignatureExpired();
         if(amount < MINIMUM_REALMPOINTS_REQUIRED) revert Errors.MinimumRealmPointsRequired();
 
         // verify signature
-        bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(Constants.TYPEHASH, msg.sender, vaultId, amount, expiry, userNonces[msg.sender])));
+        bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(Constants.TYPEHASH, msg.sender, vaultId, amount, expiry, season, userNonces[msg.sender])));
         
         address signer = ECDSA.recover(digest, signature);
         if(signer != STORED_SIGNER) revert Errors.InvalidSignature(); 
@@ -615,7 +618,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     /*//////////////////////////////////////////////////////////////
                             POOL MANAGEMENT
     //////////////////////////////////////////////////////////////*/
-    
+
     /**
      * @notice Sets the end time for the staking pool
      * @param endTime_ The new end time for the staking pool
@@ -940,16 +943,8 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     }
 
 
-//-----------------------------  NFT MULTIPLIER  ---------------------------------------------
-    
-    /**    
-        1. enableMaintenance
-        2. updateActiveDistributions
-        3. updateAllVaultAccounts
-        4. updateNftMultiplier
-        5. updateBoostedBalances
-        6. disableMaintenance
-     */
+//-----------------------------  MAINTENANCE: RP, NFT  ---------------------------------------------
+
 
     /*//////////////////////////////////////////////////////////////
                             MAINTENANCE
@@ -975,10 +970,105 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         emit MaintenanceDisabled(block.timestamp);
     }
 
+//-----------------------------  MAINTENANCE: RP  ---------------------------------------------------
+
+    
+    /*//////////////////////////////////////////////////////////////
+                            RESETTING RP 
+    //////////////////////////////////////////////////////////////*/
+
+
+    /**    
+        1. enableMaintenance
+        2. updateActiveDistributions
+        3. updateAllVaultAccounts
+        4. resetRealmPoints
+        5. incrementSeason
+        6. disableMaintenance
+     */
+
+
+    /**
+     * @notice Resets realm points for the current season for a specific vault and set of users
+     * @dev Loops through users for a specific vault to reset realm points
+     * @param vaultId The ID of the vault to reset realm points for
+     * @param userAddresses Array of user addresses whose realm points will be reset
+     */
+    function resetRealmPoints(bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
+        
+        // get num of users + sanity check
+        uint256 numOfUsers = userAddresses.length;
+        if(numOfUsers == 0) revert Errors.InvalidArray();
+
+        // get vault + sanity check
+        DataTypes.Vault storage vault = vaults[vaultId];
+        if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
+
+        // counters
+        uint256 baseRealmPointsSum;
+        uint256 boostedRealmPointsSum;
+
+        // loop thru all users against the same vault
+        for(uint256 i; i < numOfUsers; ++i){
+            address user = userAddresses[i];
+
+            // get user assets for specified vault
+            DataTypes.User storage userVaultAssets = users[user][vaultId];
+            
+            // increment counter
+            baseRealmPointsSum += userVaultAssets.stakedRealmPoints;
+            
+            // reset user's rp
+            delete userVaultAssets.stakedRealmPoints;
+        }
+
+        // calculate boosted rp
+        boostedRealmPointsSum += (baseRealmPointsSum * vault.totalBoostFactor) / Constants.PRECISION_BASE;
+
+
+        // decrement vault totals
+        vault.stakedRealmPoints -= baseRealmPointsSum;
+        vault.boostedRealmPoints -= boostedRealmPointsSum;
+
+
+        // decrement global totals
+        totalStakedRealmPoints -= baseRealmPointsSum;
+        totalBoostedRealmPoints -= boostedRealmPointsSum;
+
+        emit RealmPointsReset(vaultId, userAddresses, baseRealmPointsSum, boostedRealmPointsSum);
+    }
+
+
+    /**
+     * @notice Increments the season
+     */
+    function incrementSeason() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
+        if(totalBoostedRealmPoints > 0) revert Errors.RpNotResetCorrectly();
+        if(totalBoostedStakedTokens > 0) revert Errors.RpNotResetCorrectly();
+
+        ++SEASON;
+
+        emit SeasonIncremented(SEASON);
+    }
+
+
+//-----------------------------  MAINTENANCE: NFT  ---------------------------------------------
+
 
     /*//////////////////////////////////////////////////////////////
                             NFT MULTIPLIER
     //////////////////////////////////////////////////////////////*/
+
+
+    /**    
+        1. enableMaintenance
+        2. updateActiveDistributions
+        3. updateAllVaultAccounts
+        4. updateNftMultiplier
+        5. updateBoostedBalances
+        6. disableMaintenance
+     */
+     
 
     /**
      * @notice Updates active distribution indexes

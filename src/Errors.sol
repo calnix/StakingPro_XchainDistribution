@@ -89,6 +89,9 @@ library Errors {
     // updateNftMultiplier
     error InvalidMultiplier();
 
+    // incrementSeason
+    error RpNotResetCorrectly();
+
     // freeze
     error IsFrozen();
     error NotFrozen();

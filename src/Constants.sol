@@ -27,7 +27,7 @@ library Constants {
     uint256 public constant PRECISION_BASE = 10_000;   // feeFactors & nft multiplier expressed in 2dp precision (XX.yy)
 
     // signature params
-    bytes32 public constant TYPEHASH = keccak256("StakeRealmPoints(address user,bytes32 vaultId,uint256 amount,uint256 expiry,uint256 nonce)");
+    bytes32 public constant TYPEHASH = keccak256("StakeRealmPoints(address user,bytes32 vaultId,uint256 amount,uint256 expiry,uint256 season,uint256 nonce)");
 
 
 

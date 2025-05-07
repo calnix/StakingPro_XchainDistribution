@@ -48,6 +48,12 @@ event VaultsEnded(bytes32[] vaultIds, uint256 vaultsNotEnded);
 // stakeOnBehalfOf
 event StakedOnBehalfOf(address[] users, bytes32[] vaultIds, uint256[] amounts);
 
+// resetRealmPoints
+event RealmPointsReset(bytes32 indexed vaultId, address[] users, uint256 baseRealmPointsSum, uint256 boostedRealmPointsSum);
+
+// incrementSeason
+event SeasonIncremented(uint256 newSeason);
+
 // popEndedDistribution
 event DistributionPopped(uint256 indexed distributionId);
 
