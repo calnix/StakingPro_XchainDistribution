@@ -699,6 +699,18 @@ library PoolLogic {
         return newTotalRequired;
     }
 
+    function executeUpdateDistributionIndex(
+        DataTypes.Distribution memory distribution,
+        uint256 totalBoostedRealmPoints,
+        uint256 totalBoostedStakedTokens
+    ) external returns(DataTypes.Distribution memory) {
+
+        // update distribution index
+        distribution = _updateDistributionIndex(distribution, totalBoostedRealmPoints, totalBoostedStakedTokens);
+
+        return distribution;
+    }
+
     function executeUpdateVaultsAndAccounts(
         mapping(bytes32 vaultId => DataTypes.Vault vault) storage vaults,
         mapping(bytes32 vaultId => mapping(uint256 distributionId => DataTypes.VaultAccount vaultAccount)) storage vaultAccounts,
@@ -748,16 +760,27 @@ library PoolLogic {
         }
     }
 
-    function executeUpdateDistributionIndex(
-        DataTypes.Distribution memory distribution,
-        uint256 totalBoostedRealmPoints,
-        uint256 totalBoostedStakedTokens
-    ) external returns(DataTypes.Distribution memory) {
+    function executeUpdateUserAccount(
+        bytes32 vaultId,
+        address userAddress,
+        uint256 distributionId,
+        DataTypes.User memory user,
+        DataTypes.UserAccount memory userAccount,
+        DataTypes.VaultAccount memory vaultAccount
+    ) external returns(DataTypes.UserAccount memory) {
 
-        // update distribution index
-        distribution = _updateDistributionIndex(distribution, totalBoostedRealmPoints, totalBoostedStakedTokens);
 
-        return distribution;
+        // calculate accruals
+        (
+            DataTypes.UserAccount memory userAccount, 
+            uint256 accruedStakingRewards, 
+            uint256 accNftStakingRewards, 
+            uint256 accRealmPointsRewards
+        ) = _calculateUserAccruals(user, userAccount, vaultAccount);
+
+        emit UserAccountUpdated(userAddress, vaultId, distributionId, accruedStakingRewards, accNftStakingRewards, accRealmPointsRewards);
+
+        return userAccount;
     }
 
     function viewClaimRewards(        
@@ -1044,7 +1067,27 @@ library PoolLogic {
         
         // get updated vaultAccount and distribution
         (vaultAccount, distribution) = _updateVaultAccount(vault, vaultAccount, distribution, params);
-        
+
+        // calculate accruals
+        (
+            DataTypes.UserAccount memory userAccount, 
+            accruedStakingRewards, 
+            accNftStakingRewards, 
+            accRealmPointsRewards
+        ) = _calculateUserAccruals(user, userAccount, vaultAccount);
+
+
+        emit UserAccountUpdated(params.user, params.vaultId, distribution.distributionId, accruedStakingRewards, accNftStakingRewards, accRealmPointsRewards);
+
+        return (userAccount, vaultAccount, distribution);
+    }
+
+    function _calculateUserAccruals(
+        DataTypes.User memory user,
+        DataTypes.UserAccount memory userAccount,
+        DataTypes.VaultAccount memory vaultAccount
+    ) internal pure returns (DataTypes.UserAccount memory, uint256, uint256, uint256) {
+
         // index in 1E18 precision
         uint256 newUserIndex = vaultAccount.rewardsAccPerUnitStaked;
         
@@ -1086,9 +1129,7 @@ library PoolLogic {
         userAccount.nftIndex = vaultAccount.nftIndex;
         userAccount.rpIndex = vaultAccount.rpIndex;
 
-        emit UserAccountUpdated(params.user, params.vaultId, distribution.distributionId, accruedStakingRewards, accNftStakingRewards, accRealmPointsRewards);
-
-        return (userAccount, vaultAccount, distribution);
+        return (userAccount, accruedStakingRewards, accNftStakingRewards, accRealmPointsRewards);
     }
 
     /// called prior to affecting any state change to a user
