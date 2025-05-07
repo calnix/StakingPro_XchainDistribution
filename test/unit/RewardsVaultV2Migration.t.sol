@@ -27,6 +27,14 @@ abstract contract StateT26_D2Created is StateT21_CreationNftsUpdated {
             pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
         vm.stopPrank();
 
+        uint256 totalRequired = (distributionEndTime - distributionStartTime) * emissionPerSecond;
+
+        // mint rewards
+        vm.startPrank(depositor);
+            rewardsToken2.mint(depositor, totalRequired);
+            rewardsToken2.approve(address(rewardsVault), totalRequired);
+            rewardsVault.deposit(distributionId, totalRequired, depositor);
+        vm.stopPrank();
     }
 }
 
@@ -60,7 +68,7 @@ abstract contract StateT31_CheckClaimableRewards is StateT26_D2Created {
             pool.disableMaintenance();
         vm.stopPrank();
         
-        // update distributions and vaults
+        // update vaults
         vm.startPrank(cronJob);
             pool.updateAllVaultAccounts(vaultIds, 0);
             pool.updateAllVaultAccounts(vaultIds, 1);
@@ -122,6 +130,7 @@ contract StateT31_CheckClaimableRewardsTest is StateT31_CheckClaimableRewards {
         // check that user2's vault1 account accrued rewards; > 0
         (DataTypes.UserAccount memory userAccount, , ) = pool.getUpdatedUserAccount(user2, vaultId, distributionId);
         assertEq(userAccount.accStakingRewards, expectedMocaTokenStakingRewards, "userAccount.accStakingRewards does not match expected value");
+        assertEq(userAccount.accStakingRewards, 2333333333333333200);
     }
 
     // CANNOT SWITCH REWARDS VAULT: active distributions
@@ -133,10 +142,19 @@ contract StateT31_CheckClaimableRewardsTest is StateT31_CheckClaimableRewards {
     }
 }
 
-abstract contract StateT31_EndAllActiveDistributions is StateT31_CheckClaimableRewards {
+// claim, warp, end distributions
+abstract contract StateT36_EndAllActiveDistributions is StateT31_CheckClaimableRewards {
 
     function setUp() public virtual override {
         super.setUp();
+
+        vm.startPrank(user2);
+            pool.claimRewards(vaultId1, 1);
+            pool.claimRewards(vaultId1, 2);
+        vm.stopPrank();
+
+        // 5 more ticks of emissions
+        vm.warp(36);
 
         vm.startPrank(operator);
             pool.endDistributionManually(1);
@@ -147,7 +165,7 @@ abstract contract StateT31_EndAllActiveDistributions is StateT31_CheckClaimableR
     }
 }
 
-contract StateT31_EndAllActiveDistributionsTest is StateT31_EndAllActiveDistributions {
+contract StateT36_EndAllActiveDistributionsTest is StateT36_EndAllActiveDistributions {
 
     function test_EndAllActiveDistributions() public {
         // only D0 active
@@ -163,7 +181,7 @@ contract StateT31_EndAllActiveDistributionsTest is StateT31_EndAllActiveDistribu
     }
 }
 
-abstract contract StateT31_SwitchRewardsVault is StateT31_EndAllActiveDistributions {
+abstract contract StateT36_SwitchRewardsVault is StateT36_EndAllActiveDistributions {
 
     //address oldRewardsVault = address(pool.REWARDS_VAULT());
 
@@ -176,7 +194,7 @@ abstract contract StateT31_SwitchRewardsVault is StateT31_EndAllActiveDistributi
     }
 }
 
-contract StateT31_SwitchRewardsVaultTest is StateT31_SwitchRewardsVault {
+contract StateT36_SwitchRewardsVaultTest is StateT36_SwitchRewardsVault {
 
     function test_NewRewardsVaultIsSet() public {
         // check that new rewards vault is set
@@ -216,7 +234,9 @@ contract StateT31_SwitchRewardsVaultTest is StateT31_SwitchRewardsVault {
     }
 }
 
-abstract contract StateT31_ClaimOldDistributionRemainder is StateT31_SwitchRewardsVault {
+
+// note: when bypassing to setup old distribution, none of the input checks would be applied
+abstract contract StateT36_ClaimOldDistributionRemainder is StateT36_SwitchRewardsVault {
 
     function setUp() public virtual override {
         super.setUp();
@@ -233,15 +253,17 @@ abstract contract StateT31_ClaimOldDistributionRemainder is StateT31_SwitchRewar
         uint256 emissionPerSecond = 1 ether;
         uint256 tokenPrecision = 1E18;
         bytes32 tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken1));
-        uint256 totalRequired = 2 days * emissionPerSecond;
+
+        // original total required
+        uint256 originalTotalRequired = 2 days * emissionPerSecond;
+        uint256 remainder = originalTotalRequired - 10 ether;
 
         // update distribution
         vm.startPrank(deployer);
-            rewardsVaultV2.setupDistribution(distributionId, dstEid, tokenAddress, totalRequired);
+            rewardsVaultV2.setupDistribution(distributionId, dstEid, tokenAddress, remainder);
         vm.stopPrank();
 
         // deposit remainder of rewards
-        uint256 remainder = totalRequired - 10 ether;
         vm.startPrank(depositor);
             rewardsToken1.mint(depositor, remainder);
             rewardsToken1.approve(address(rewardsVaultV2), remainder);
@@ -250,40 +272,47 @@ abstract contract StateT31_ClaimOldDistributionRemainder is StateT31_SwitchRewar
     }
 }
 
-contract StateT31_ClaimOldDistributionRemainderTest is StateT31_ClaimOldDistributionRemainder {
+contract StateT36_ClaimOldDistributionRemainderTest is StateT36_ClaimOldDistributionRemainder {
 
-    function test_ClaimOldDistributionRemainder() public {
+    function test_ClaimOldDistributionRemainder_D1() public {
         uint256 distributionId = 1;
+        bytes32 vaultId = vaultId1;
         
         // Check initial balances
         uint256 initialBalance = rewardsToken1.balanceOf(user2);
         uint256 initialVaultBalance = rewardsToken1.balanceOf(address(rewardsVaultV2));
         
         // Get user account before claiming
-        DataTypes.UserAccount memory userAccountBefore = getUserAccount(user2, vaultId1, distributionId);
+        (DataTypes.UserAccount memory userAccountBefore, , ) = pool.getUpdatedUserAccount(user2, vaultId, distributionId);
         
         // Calculate expected rewards
-        uint256 expectedRewards = 6333333333333332596; // This should be calculated based on actual accrued rewards
-        
+        uint256 totalAccruedRewards = userAccountBefore.accStakingRewards + userAccountBefore.accNftStakingRewards + userAccountBefore.accRealmPointsRewards; 
+        uint256 totalClaimedRewards = userAccountBefore.claimedStakingRewards + userAccountBefore.claimedNftRewards + userAccountBefore.claimedRealmPointsRewards;
+        uint256 expectedRewards = totalAccruedRewards - totalClaimedRewards;
+        console.log("expectedRewards", expectedRewards);
+
         // Claim rewards
         vm.startPrank(user2);
             vm.expectEmit(true, true, true, true);
-            emit RewardsClaimed(distributionId, vaultId1, user2, expectedRewards);
+            emit RewardsClaimed(distributionId, vaultId, user2, expectedRewards);
             
-            pool.claimRewards(vaultId1, distributionId);
+            pool.claimRewards(vaultId, distributionId);
         vm.stopPrank();
         
         // Check balances after claiming
         uint256 finalBalance = rewardsToken1.balanceOf(user2);
         uint256 finalVaultBalance = rewardsToken1.balanceOf(address(rewardsVaultV2));
         
-        // Get user account after claiming
-        DataTypes.UserAccount memory userAccountAfter = getUserAccount(user2, vaultId1, distributionId);
-        
-        // Verify rewards were claimed correctly
+        // check token transfers
         assertEq(finalBalance, initialBalance + expectedRewards, "User balance should increase by claimed rewards");
         assertEq(finalVaultBalance, initialVaultBalance - expectedRewards, "Vault balance should decrease by claimed rewards");
-        assertEq(userAccountAfter.claimedStakingRewards, userAccountBefore.claimedStakingRewards + expectedRewards, "Claimed rewards should be updated");
+        
+        // Get user account after claiming
+        DataTypes.UserAccount memory userAccountAfter = getUserAccount(user2, vaultId, distributionId);
+        
+        // check that claimed rewards are updated
+        uint256 totalClaimedRewardsAfter = userAccountAfter.claimedStakingRewards + userAccountAfter.claimedNftRewards + userAccountAfter.claimedRealmPointsRewards;
+        assertEq(totalClaimedRewardsAfter, totalClaimedRewards + expectedRewards, "Claimed rewards should be updated");
     }
 }
 

@@ -1121,7 +1121,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
                             EMERGENCY EXIT
     //////////////////////////////////////////////////////////////*/
     
-    /** NOTE: MONITOR role or new role?
+    /** 
      * @notice Allows users to recover their principal assets when contract is frozen
      * @dev Rewards and fees are not withdrawn; indexes are not updated. Preserves state history at time of failure.
      * @param vaultIds Array of vault IDs to recover assets from

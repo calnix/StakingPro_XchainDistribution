@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
 
-import {StakingPro} from "../src/StakingPro.sol";
+import {StakingPro, Constants} from "../src/StakingPro.sol";
 import {RewardsVaultV1} from "../src/RewardsVaultV1.sol";
 import {NftRegistry} from "./../lib/NftLocker/src/NftRegistry.sol";
 
@@ -172,4 +172,22 @@ contract SetupD1 is Script, ContractAddresses {
     }
 }
 
-// forge script script/DeployTest.s.sol:SetupD1 --rpc-url base_sepolia --broadcast --verify -vvvvv --etherscan-api-key base_sepolia
+// forge script script/DeployTest.s.sol:SetupD1 --rpc-url base_sepolia --broadcast -vvvvv
+
+contract Roles is Script, ContractAddresses {
+
+    function run() public {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_TEST");
+        vm.startBroadcast(deployerPrivateKey);
+
+        address target = 0x800954e76c4F7Fc77c0cB7E4e8EDC3Ba2065518B;
+
+        pool.grantRole(Constants.OPERATOR_ROLE, target);
+        pool.grantRole(Constants.MONITOR_ROLE, target);
+        pool.grantRole(Constants.CRON_JOB_ROLE, target);
+
+        vm.stopBroadcast();
+    }
+}
+
+// forge script script/DeployTest.s.sol:Roles --rpc-url base_sepolia --broadcast -vvvvv
