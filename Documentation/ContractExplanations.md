@@ -961,6 +961,8 @@ We find these to be acceptable.
 
 # Maintenance Mode functions [To update: NFT_Multiplier]
 
+`OPERATOR_ROLE` is required to call the following functions:
+
     /**    
         1. enableMaintenance
         2. updateActiveDistributions
@@ -1055,6 +1057,74 @@ updateBoostedBalances(bytes32[] calldata vaultIds) external whenNotEnded whenNot
 - Also updates the global boosted balances, based on the delta of the update to vault's boosted balances
 
 **After cycling through all vaults, we should sanity check that the updated global boosted balances match up with the expected values. If they do not match up, we should end the contract and redeploy.**
+
+# Maintenance Mode functions [To reset RealmPoints]
+
+`OPERATOR_ROLE` is required to call the following functions:
+
+    /**    
+        1. enableMaintenance
+        2. updateActiveDistributions -- all active distributions
+        3. updateAllVaultAccounts -- all vaults w/ rp
+        4. updateAllUserAccounts -- book rp related fees before resetting
+        5. resetRealmPoints
+        6. incrementSeason
+        7. disableMaintenance
+     */
+
+1) Update all active distributions to current timestamp.
+
+- Some active distributions may have ended at this time.
+- Do not pop them; they should remain in activeDistributions array.
+
+This step creates a snapshot that freezes time. This allows us to update all vault and user accounts as though done instantaneously.
+
+- The period for which the contract is in maintenance mode is not lost.
+- Instead rewards for that period will be carried forward and booked outside of maintenance period
+- Rewards carried forward are booked on the basis that RealmPoints have been reset.
+
+**Note**
+
+- `updateActiveDistributions` should only be ran once, at the start.
+- Repeated updating of distribution data will move the snapshot forward; breaking the time freeze.
+
+**If `updateActiveDistributions` is called again, we must restarted the entire process with updating all vault accounts, as our reference point has changed.**
+**However, if `updateActiveDistributions` is called mid-way through resetting RP, the contract has been bricked and must be re-deployed.**
+
+2) For each vault, update its accounts, for each distribution.
+
+- only vaults that have RP staked need to have their accounts updated to account for D0 emissions and DX rp-related fees
+- however, there is no adverse outcome in updating vaults that do not have rp staked as well
+- so we do not block the update of those vaults - in the event it might be useful to simply update everything across the board.
+
+3) For each user that has RP staked, update their respective accounts, for each {vault, distribution}
+
+- only user accounts that are associated with vaults, in which user has RP staked need to be updated.
+- like vaultAccounts, we are permissive in allowing all user accounts to be updated just the same.
+
+4) resetRealmPoints
+
+- Once all vault and user accounts have been updated[and their rewards booked], RP can be reset.
+- Operation: cycle through vault by vault, resetting all the users associated with that vault in batches.
+
+Function loops through the provided array of users, obtaining the sum of rp staked, to decrement against vault and global values.
+Users' rp values are also reset.
+
+5) incrementSeason
+
+- Once Rp has been reset fully, Operator can incrementSeason
+- If either base Rp or boosted Rp is non-zero, function reverts.
+- This means there has been an irreversible error somewhere - contract has to redeployed.
+
+
+## Risk Management
+
+- The expectation is that there `OPERATOR_ROLE` is only assigned to the owner multiSig at rest.
+- When there is requirement to call these functions, the owner multiSig will assign and EOA address to the `OPERATOR_ROLE`.
+- This EOA address is expected to be a trusted address, and will be used to power a script that will call these functions.
+- Once the update process is complete, the EOA will renounce the OPERATOR_ROLE.
+- Owner multiSig will continue to hold the `MONITOR_ROLE`.
+
 
 # Risk Management functions
 
