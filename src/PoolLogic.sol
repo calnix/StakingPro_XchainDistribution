@@ -1071,9 +1071,9 @@ library PoolLogic {
         // calculate accruals
         (
             DataTypes.UserAccount memory userAccount, 
-            accruedStakingRewards, 
-            accNftStakingRewards, 
-            accRealmPointsRewards
+            uint256 accruedStakingRewards, 
+            uint256 accNftStakingRewards, 
+            uint256 accRealmPointsRewards
         ) = _calculateUserAccruals(user, userAccount, vaultAccount);
 
 

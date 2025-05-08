@@ -63,7 +63,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     uint256 public VAULT_COOLDOWN_DURATION;
     
     // signature params
-    uint256 public SEASON;
+    uint256 public CURRENT_SEASON;
     address public immutable STORED_SIGNER;                 
     uint256 public MINIMUM_REALMPOINTS_REQUIRED;
 
@@ -293,7 +293,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param vaultId The ID of the vault to stake realm points into
      * @param amount The amount of realm points to stake
      * @param expiry The expiry timestamp of the signature
-     * @param season The season of the signature
      * @param signature The signature to verify
      * @custom:requirements
      * - Amount must be at least MINIMUM_REALMPOINTS_REQUIRED
@@ -302,12 +301,12 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * - Signature must be for the current season
      * - Contract must not be paused and staking must have started
      */
-    function stakeRealmPoints(bytes32 vaultId, uint256 amount, uint256 expiry, uint256 season, bytes calldata signature) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance {
+    function stakeRealmPoints(bytes32 vaultId, uint256 amount, uint256 expiry, bytes calldata signature) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance {
         if(expiry < block.timestamp) revert Errors.SignatureExpired();
         if(amount < MINIMUM_REALMPOINTS_REQUIRED) revert Errors.MinimumRealmPointsRequired();
 
         // verify signature
-        bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(Constants.TYPEHASH, msg.sender, vaultId, amount, expiry, season, userNonces[msg.sender])));
+        bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(Constants.TYPEHASH, msg.sender, vaultId, amount, expiry, CURRENT_SEASON, userNonces[msg.sender])));
         
         address signer = ECDSA.recover(digest, signature);
         if(signer != STORED_SIGNER) revert Errors.InvalidSignature(); 
@@ -980,34 +979,39 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
     /**    
         1. enableMaintenance
-        2. updateActiveDistributions
-        3. updateAllVaultAccounts
-        4. updateAllUserAccounts -- book rp related fees before resettinq
+        2. updateActiveDistributions -- all active distributions
+        3. updateAllVaultAccounts -- all vaults w/ rp
+        4. updateAllUserAccounts -- book rp related fees before resetting
         5. resetRealmPoints
         6. incrementSeason
         7. disableMaintenance
      */
     
-    // need to update users that staked rp - to book rp related fees before resetting. other users do not need to be updated. 
+    /**
+     * @notice Updates user accounts
+     * @dev Only users who have staked RP need to be updated; other users don't require updates
+     * @param distributionId The ID of the distribution to update accounts for
+     * @param vaultId The ID of the vault related to the user accounts
+     * @param userAddresses Array of user addresses whose accounts will be updated
+     */
     function updateAllUserAccounts(uint256 distributionId, bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
         // get num of users + sanity check
         uint256 numOfUsers = userAddresses.length;
         if(numOfUsers == 0) revert Errors.InvalidArray();
 
-        // get distribution + sanity check
+        // get distribution + sanity check: distribution must have started [and therefore exists]
         DataTypes.Distribution storage distribution = distributions[distributionId];
-        if(distribution.startTime == 0) revert Errors.NonExistentDistribution();
-        
-        // distribution must have started: else no emissions, nothing pending to book
-        if(distribution.startTime > block.timestamp) revert Errors.DistributionNotStarted();
+        if(distribution.startTime > block.timestamp) revert Errors.DistributionNotStarted();        // if not started: no emissions, nothing pending to book
 
-        // get vault + sanity check
+        // get vault + sanity check: vault must exist
         DataTypes.Vault storage vault = vaults[vaultId];
         if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
 
-        // get vault account + sanity check
+        // if vault has no rp staked, it is not affected, whether if its D0 emissions or DX rp fees
+        //if(vault.stakedRealmPoints == 0) revert Errors.NoRpStaked(); note: not blocking this, as its better to be more permissive
+
+        // get vault account 
         DataTypes.VaultAccount storage vaultAccount = vaultAccounts[vaultId][distributionId];
-        if(vaultAccount.startTime == 0) revert Errors.NonExistentVaultAccount(vaultId, distributionId);
 
         // update user accounts
         for(uint256 i; i < numOfUsers; ++i){
@@ -1015,18 +1019,17 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
             // get user vault assets
             DataTypes.User storage userVaultAssets = users[userAddress][vaultId];
-            if(userVaultAssets.stakedRealmPoints == 0) revert Errors.NoRpStaked();
+            //if(userVaultAssets.stakedRealmPoints == 0) revert Errors.NoRpStaked(); note: not blocking this, as its better to be more permissive
 
             // get user account + sanity check  
             DataTypes.UserAccount memory userAccount = userAccounts[userAddress][vaultId][distributionId];
 
 
             // update user account
-            userAccounts[userAddress][vaultId][distributionId] = Pool.executeUpdateUserAccount(vaultId, userAddress, userVaultAssets, userAccount, vault, vaultAccount, distribution);
+            userAccounts[userAddress][vaultId][distributionId] = PoolLogic.executeUpdateUserAccount(vaultId, userAddress, distributionId, userVaultAssets, userAccount, vaultAccount);
         }
 
         emit UserAccountsUpdated(distributionId, vaultId, userAddresses);
-
     }
 
 
@@ -1088,9 +1091,9 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(totalBoostedRealmPoints > 0) revert Errors.RpNotResetCorrectly();
         if(totalBoostedStakedTokens > 0) revert Errors.RpNotResetCorrectly();
 
-        ++SEASON;
+        ++CURRENT_SEASON;
 
-        emit SeasonIncremented(SEASON);
+        emit SeasonIncremented(CURRENT_SEASON);
     }
 
 
