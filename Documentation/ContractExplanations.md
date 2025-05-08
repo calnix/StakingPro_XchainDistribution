@@ -959,36 +959,13 @@ We opt for the alternative solution: Off-chain cron job
 
 We find these to be acceptable.
 
-# Maintenance Mode functions [To update: NFT_Multiplier]
+# Maintenance Mode Overview
 
-`OPERATOR_ROLE` is required to call the following functions:
+`OPERATOR_ROLE` is required to call maintenance mode functions.
 
-    /**    
-        1. enableMaintenance
-        2. updateActiveDistributions
-        3. updateAllVaultAccounts
-        4. updateNftMultiplier
-        5. updateBoostedBalances
-        6. disableMaintenance
-     */
+The following functions are relevant to both updating NFT_Multiplier and resetting RP.
+Following sections walkthrough the process for each.
 
-- First we update all active distributions to current timestamp.
-- Relative to the snapshot, we update each vault's account, for each distribution.
-- Regardless how long the updateAllVaultAccounts takes, we will not update the distribution data again.
-- Since vault accounts accruals are calculated relative to the distribution indexes (i.e. delta btw v.Index and d.Index), there will not be any drift, due to time passing.
-- Essentially, we are taking a snapshot of the distribution data at the start of the maintenance mode, and updating the vault accounts relative to this snapshot.
-- Regardless how long updating all the vault accounts takes, the snapshot remains constant, so effectively we are updating everything to the same timestamp.
-- Whatever time the update process takes, distributions will be next updated to book this period and its rewards, under the updated boosted balances.
-
-**This is important to note that if `updateActiveDistributions` is called again, we must restarted the entire process with updating all vault accounts, as our reference point has changed.**
-
-## Risk Management
-
-- The expectation is that there `OPERATOR_ROLE` is only assigned to the owner multiSig at rest.
-- When there is requirement to call these functions, the owner multiSig will assign and EOA address to the `OPERATOR_ROLE`.
-- This EOA address is expected to be a trusted address, and will be used to power a script that will call these functions.
-- Once the update process is complete, the EOA will renounce the OPERATOR_ROLE.
-- Owner multiSig will continue to hold the `MONITOR_ROLE`.
 
 ## enableMaintenance
 
@@ -1038,6 +1015,39 @@ updateActiveDistributions() external whenNotEnded whenNotPaused whenUnderMainten
 - Operator must be careful to ensure that distributionIds are specified comprehensively, covering both active and recently popped distributions.
 - This ensures all rewards are properly calculated and booked
 
+## Risk Management
+
+- The `OPERATOR_ROLE` is only assigned to the owner multiSig on deployment.
+- When there is need to call these functions, the owner multiSig will assign the `OPERATOR_ROLE` to an EOA address.
+- This EOA address is expected to be a trusted address, and will be used to power a script that will call these functions.
+- Once the update process is complete, the EOA is expected to renounce the `OPERATOR_ROLE`.
+- Owner multiSig will continue to hold the `OPERATOR_ROLE`.
+
+The EOA should not be allowed to hang on to the `OPERATOR_ROLE`, as it could get exploited and brick the contract by incorrectly updating params.
+
+# Maintenance Mode: NFT_Multiplier
+
+`OPERATOR_ROLE` is required to call the following functions:
+
+    /**    
+        1. enableMaintenance
+        2. updateActiveDistributions
+        3. updateAllVaultAccounts
+        4. updateNftMultiplier
+        5. updateBoostedBalances
+        6. disableMaintenance
+     */
+
+- First we update all active distributions to current timestamp.
+- Relative to the snapshot, we update each vault's account, for each distribution.
+- Regardless how long the updateAllVaultAccounts takes, we will not update the distribution data again.
+- Since vault accounts accruals are calculated relative to the distribution indexes (i.e. delta btw v.Index and d.Index), there will not be any drift, due to time passing.
+- Essentially, we are taking a snapshot of the distribution data at the start of the maintenance mode, and updating the vault accounts relative to this snapshot.
+- Regardless how long updating all the vault accounts takes, the snapshot remains constant, so effectively we are updating everything to the same timestamp.
+- Whatever time the update process takes, distributions will be next updated to book this period and its rewards, under the updated boosted balances.
+
+**This is important to note that if `updateActiveDistributions` is called again, we must restarted the entire process with updating all vault accounts, as our reference point has changed.**
+
 ## updateNftMultiplier
 
 ```solidity
@@ -1058,7 +1068,7 @@ updateBoostedBalances(bytes32[] calldata vaultIds) external whenNotEnded whenNot
 
 **After cycling through all vaults, we should sanity check that the updated global boosted balances match up with the expected values. If they do not match up, we should end the contract and redeploy.**
 
-# Maintenance Mode functions [To reset RealmPoints]
+# Maintenance Mode: Reset RealmPoints
 
 `OPERATOR_ROLE` is required to call the following functions:
 
@@ -1115,15 +1125,6 @@ Users' rp values are also reset.
 - Once Rp has been reset fully, Operator can incrementSeason
 - If either base Rp or boosted Rp is non-zero, function reverts.
 - This means there has been an irreversible error somewhere - contract has to redeployed.
-
-
-## Risk Management
-
-- The expectation is that there `OPERATOR_ROLE` is only assigned to the owner multiSig at rest.
-- When there is requirement to call these functions, the owner multiSig will assign and EOA address to the `OPERATOR_ROLE`.
-- This EOA address is expected to be a trusted address, and will be used to power a script that will call these functions.
-- Once the update process is complete, the EOA will renounce the OPERATOR_ROLE.
-- Owner multiSig will continue to hold the `MONITOR_ROLE`.
 
 
 # Risk Management functions
