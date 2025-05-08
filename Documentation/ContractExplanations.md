@@ -966,7 +966,6 @@ We find these to be acceptable.
 The following functions are relevant to both updating NFT_Multiplier and resetting RP.
 Following sections walkthrough the process for each.
 
-
 ## enableMaintenance
 
 ```solidity
@@ -1107,12 +1106,20 @@ This step creates a snapshot that freezes time. This allows us to update all vau
 - however, there is no adverse outcome in updating vaults that do not have rp staked as well
 - so we do not block the update of those vaults - in the event it might be useful to simply update everything across the board.
 
-3) For each user that has RP staked, update their respective accounts, for each {vault, distribution}
+## 3) For each user that has RP staked, update their respective accounts, for each {vault, distribution}
+
+```solidity
+function updateAllUserAccounts(uint256 distributionId, bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE)
+```
 
 - only user accounts that are associated with vaults, in which user has RP staked need to be updated.
 - like vaultAccounts, we are permissive in allowing all user accounts to be updated just the same.
 
-4) resetRealmPoints
+## 4) resetRealmPoints
+
+```solidity
+function resetRealmPoints(bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE)
+```
 
 - Once all vault and user accounts have been updated[and their rewards booked], RP can be reset.
 - Operation: cycle through vault by vault, resetting all the users associated with that vault in batches.
@@ -1120,7 +1127,11 @@ This step creates a snapshot that freezes time. This allows us to update all vau
 Function loops through the provided array of users, obtaining the sum of rp staked, to decrement against vault and global values.
 Users' rp values are also reset.
 
-5) incrementSeason
+## 5) incrementSeason
+
+```solidity
+function incrementSeason() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) 
+```
 
 - Once Rp has been reset fully, Operator can incrementSeason
 - If either base Rp or boosted Rp is non-zero, function reverts.
