@@ -29,7 +29,7 @@ abstract contract StateT16_BothUsersStakeAgain is StateT11_Distribution1Created 
             // Stake remaining RP
             uint256 expiry = block.timestamp + 1 days;
             uint256 nonce = 1;
-            bytes memory signature = generateSignature(user1, vaultId1, user1Rp/2, expiry, nonce);
+            bytes memory signature = generateSignature(user1, vaultId1, user1Rp/2, expiry, pool.CURRENT_SEASON(), nonce);
             pool.stakeRealmPoints(vaultId1, user1Rp/2, expiry, signature);
 
         vm.stopPrank();
@@ -50,7 +50,7 @@ abstract contract StateT16_BothUsersStakeAgain is StateT11_Distribution1Created 
             // Stake remaining RP
             expiry = block.timestamp + 1 days;
             nonce = 1;
-            signature = generateSignature(user2, vaultId1, user2Rp/2, expiry, nonce);
+            signature = generateSignature(user2, vaultId1, user2Rp/2, expiry, pool.CURRENT_SEASON(), nonce);
             pool.stakeRealmPoints(vaultId1, user2Rp/2, expiry, signature);
 
         vm.stopPrank();

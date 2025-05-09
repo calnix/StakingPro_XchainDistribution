@@ -168,7 +168,7 @@ abstract contract TestingHarness is Test {
         vm.stopPrank();
     }
 
-    function generateSignature(address user, bytes32 vaultId, uint256 amount, uint256 expiry, uint256 nonce) public returns (bytes memory) {
+    function generateSignature(address user, bytes32 vaultId, uint256 amount, uint256 expiry, uint256 season, uint256 nonce) public returns (bytes memory) {
         // Pack the struct data
         bytes32 structHash = keccak256(
             abi.encode(
@@ -177,6 +177,7 @@ abstract contract TestingHarness is Test {
                 vaultId,
                 amount,
                 expiry,
+                season,
                 nonce
             )
         );

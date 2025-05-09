@@ -334,7 +334,7 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         uint256 realmPointsAmount = 1000 ether;
         uint256 expiry = block.timestamp + 1 days;
         uint256 nonce = 0;
-        bytes memory signature = generateSignature(user2, vaultId1, realmPointsAmount, expiry, nonce);
+        bytes memory signature = generateSignature(user2, vaultId1, realmPointsAmount, expiry, pool.CURRENT_SEASON(), nonce);
 
 
         // Get initial state
@@ -375,7 +375,7 @@ abstract contract StateT1_User1StakeAssetsToVault1 is StateT1_CreateVault1 {
         // User1 stakes half their RP
         uint256 expiry = block.timestamp + 1 days;
         uint256 nonce = 0;
-        bytes memory signature = generateSignature(user1, vaultId1, user1Rp/2, expiry, nonce);
+        bytes memory signature = generateSignature(user1, vaultId1, user1Rp/2, expiry, pool.CURRENT_SEASON(), nonce);
         pool.stakeRealmPoints(vaultId1, user1Rp/2, expiry, signature);
 
         vm.stopPrank();
