@@ -853,7 +853,7 @@ contract StateT51p_ResetRp_IncrementSeason_Test is StateT51p_ResetRp_IncrementSe
         // Create a signature from the previous season
         uint256 expiry = block.timestamp + 1 days;
         uint256 previousSeason = pool.CURRENT_SEASON() - 1;
-        uint256 nonce = 1;
+        uint256 nonce = pool.userNonces(user1);
         bytes memory signature = generateSignature(user1, vaultId1, user1Rp/2, expiry, previousSeason, nonce);
 
         // Attempt to stake RP with signature from previous season - should revert
@@ -873,7 +873,7 @@ contract StateT51p_ResetRp_IncrementSeason_Test is StateT51p_ResetRp_IncrementSe
         // Create a signature with the current season
         uint256 expiry = block.timestamp + 1 days;
         uint256 currentSeason = pool.CURRENT_SEASON();
-        uint256 nonce = 2;
+        uint256 nonce = pool.userNonces(user1);
         bytes memory signature = generateSignature(user1, vaultId1, user1Rp/2, expiry, currentSeason, nonce);
 
         // Get initial state
