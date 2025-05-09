@@ -94,8 +94,10 @@ event NftMultiplierUpdated(uint256 oldMultiplier, uint256 newMultiplier);
 // updateBoostedBalances
 event BoostedBalancesUpdated(bytes32[] vaultIds);
 
-// resetRealmPoints
-event RealmPointsReset(bytes32 indexed vaultId, address[] users, uint256 baseRealmPointsSum, uint256 boostedRealmPointsSum);
+// resetBaseRealmPoints
+event BaseRealmPointsReset(bytes32 indexed vaultId, address[] users, uint256 baseRealmPointsSum);
+// resetBoostedRealmPoints
+event BoostedRealmPointsReset(bytes32[] indexed vaultIds, uint256 boostedRealmPointsSum);
 // incrementSeason
 event SeasonIncremented(uint256 newSeason);
 

@@ -1036,7 +1036,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param vaultId The ID of the vault to reset realm points for
      * @param userAddresses Array of user addresses whose realm points will be reset
      */
-    function resetRealmPoints(bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
+    function resetBaseRealmPoints(bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
         
         // get num of users + sanity check
         uint256 numOfUsers = userAddresses.length;
@@ -1045,10 +1045,10 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // get vault + sanity check
         DataTypes.Vault storage vault = vaults[vaultId];
         if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
+        //if(vault.stakedRealmPoints == 0) revert Errors.NoRpStaked(); -- ?
 
         // counters
         uint256 baseRealmPointsSum;
-        uint256 boostedRealmPointsSum;
 
         // loop thru all users against the same vault
         for(uint256 i; i < numOfUsers; ++i){
@@ -1064,29 +1064,57 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             delete userVaultAssets.stakedRealmPoints;
         }
 
-        // calculate boosted rp
-        boostedRealmPointsSum += (baseRealmPointsSum * vault.totalBoostFactor) / Constants.PRECISION_BASE;
-
-
         // decrement vault totals
         vault.stakedRealmPoints -= baseRealmPointsSum;
-        vault.boostedRealmPoints -= boostedRealmPointsSum;
-
 
         // decrement global totals
         totalStakedRealmPoints -= baseRealmPointsSum;
-        totalBoostedRealmPoints -= boostedRealmPointsSum;
 
-        emit RealmPointsReset(vaultId, userAddresses, baseRealmPointsSum, boostedRealmPointsSum);
+        emit BaseRealmPointsReset(vaultId, userAddresses, baseRealmPointsSum);
     }
 
+    /**
+     * @notice Resets boosted realm points for specified vaults
+     * @dev Loops through specified vaults to reset boosted realm points
+     * @dev Expects that base realm points were reset prior to this 
+     * @param vaultIds Array of vault IDs to reset boosted realm points for
+     */
+    function resetBoostedRealmPoints(bytes32[] calldata vaultIds) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
+        if(totalStakedRealmPoints > 0) revert Errors.RpNotResetCorrectly();
+
+        // get num of vaults + sanity check
+        uint256 numOfVaults = vaultIds.length;
+        if(numOfVaults == 0) revert Errors.InvalidArray();
+
+        uint256 boostedRealmPointsSum;
+
+        // loop thru all vaults
+        for(uint256 i; i < numOfVaults; ++i){
+            bytes32 vaultId = vaultIds[i];
+
+            // get vault + sanity check
+            DataTypes.Vault storage vault = vaults[vaultId];
+            if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
+            
+            // redundancy check since totalStakedRealmPoints is already checked
+            if(vault.stakedRealmPoints > 0) revert Errors.RpNotResetCorrectly();
+
+            boostedRealmPointsSum += vault.boostedRealmPoints;
+            delete vault.boostedRealmPoints;
+        }
+
+        // decrement global totals
+        totalBoostedRealmPoints -= boostedRealmPointsSum;
+
+        emit BoostedRealmPointsReset(vaultIds, boostedRealmPointsSum);
+    }
 
     /**
      * @notice Increments the season
      */
     function incrementSeason() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
+        if(totalStakedRealmPoints > 0) revert Errors.RpNotResetCorrectly();
         if(totalBoostedRealmPoints > 0) revert Errors.RpNotResetCorrectly();
-        if(totalBoostedStakedTokens > 0) revert Errors.RpNotResetCorrectly();
 
         ++CURRENT_SEASON;
 

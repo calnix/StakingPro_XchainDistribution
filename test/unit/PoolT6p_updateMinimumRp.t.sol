@@ -29,7 +29,7 @@ contract StateT6_User2StakeAssetsToVault1_LowerMinimumRpTest is StateT6_User2Sta
         vm.startPrank(user2);
             uint256 expiry = block.timestamp + 1 days;
             uint256 nonce = 0;
-            bytes memory signature = generateSignature(user2, vaultId1, rpToStake, expiry, nonce);
+            bytes memory signature = generateSignature(user2, vaultId1, rpToStake, expiry, pool.CURRENT_SEASON(), nonce);
             
             vm.expectRevert(abi.encodeWithSelector(Errors.MinimumRealmPointsRequired.selector));
             pool.stakeRealmPoints(vaultId1, rpToStake, expiry, signature);
@@ -48,7 +48,7 @@ contract StateT6_User2StakeAssetsToVault1_LowerMinimumRpTest is StateT6_User2Sta
         vm.startPrank(user2);
             uint256 expiry = block.timestamp + 1 days;
             uint256 nonce = 0;  
-            bytes memory signature = generateSignature(user2, vaultId1, rpToStake, expiry, nonce);
+            bytes memory signature = generateSignature(user2, vaultId1, rpToStake, expiry, pool.CURRENT_SEASON(), nonce);
             pool.stakeRealmPoints(vaultId1, rpToStake, expiry, signature);
         vm.stopPrank();
 
@@ -115,7 +115,7 @@ contract StateT6_User2StakeAssetsToVault1_HigherMinimumRpTest is StateT6_User2St
         vm.startPrank(user2);
             uint256 expiry = block.timestamp + 1 days;
             uint256 nonce = 0;
-            bytes memory signature = generateSignature(user2, vaultId1, rpToStake, expiry, nonce);
+            bytes memory signature = generateSignature(user2, vaultId1, rpToStake, expiry, pool.CURRENT_SEASON(), nonce);
             
             vm.expectRevert(abi.encodeWithSelector(Errors.MinimumRealmPointsRequired.selector));
             pool.stakeRealmPoints(vaultId1, rpToStake, expiry, signature);
@@ -134,7 +134,7 @@ contract StateT6_User2StakeAssetsToVault1_HigherMinimumRpTest is StateT6_User2St
         vm.startPrank(user2);
             uint256 expiry = block.timestamp + 1 days;
             uint256 nonce = 0;  
-            bytes memory signature = generateSignature(user2, vaultId1, rpToStake, expiry, nonce);
+            bytes memory signature = generateSignature(user2, vaultId1, rpToStake, expiry, pool.CURRENT_SEASON(), nonce);
             pool.stakeRealmPoints(vaultId1, rpToStake, expiry, signature);
         vm.stopPrank();
 

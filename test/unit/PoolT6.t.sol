@@ -32,7 +32,7 @@ abstract contract StateT6_User2StakeAssetsToVault1 is StateT1_User1StakeAssetsTo
         // User2 stakes half their RP
         uint256 expiry = block.timestamp + 1 days;
         uint256 nonce = 0;
-        bytes memory signature = generateSignature(user2, vaultId1, user2Rp/2, expiry, nonce);
+        bytes memory signature = generateSignature(user2, vaultId1, user2Rp/2, expiry, pool.CURRENT_SEASON(), nonce);
         pool.stakeRealmPoints(vaultId1, user2Rp/2, expiry, signature);
 
         vm.stopPrank();
@@ -64,7 +64,7 @@ contract StateT6_User2StakeAssetsToVault1Test is StateT6_User2StakeAssetsToVault
         // User2 stakes half their RP
         uint256 expiry = block.timestamp + 1 days;
         uint256 nonce = 0;
-        bytes memory signature = generateSignature(user2, vaultId1, user2Rp/2, expiry, nonce);
+        bytes memory signature = generateSignature(user2, vaultId1, user2Rp/2, expiry, pool.CURRENT_SEASON(), nonce);
 
         vm.startPrank(user2);
             vm.expectRevert(Errors.InvalidSignature.selector);
