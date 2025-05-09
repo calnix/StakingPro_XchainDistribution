@@ -873,7 +873,7 @@ contract StateT51p_ResetRp_IncrementSeason_Test is StateT51p_ResetRp_IncrementSe
         // Create a signature with the current season
         uint256 expiry = block.timestamp + 1 days;
         uint256 currentSeason = pool.CURRENT_SEASON();
-        uint256 nonce = 1;
+        uint256 nonce = 2;
         bytes memory signature = generateSignature(user1, vaultId1, user1Rp/2, expiry, currentSeason, nonce);
 
         // Get initial state
