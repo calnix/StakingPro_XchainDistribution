@@ -812,7 +812,7 @@ abstract contract StateT51p_ResetRp_ResetBoostedRp is StateT51p_ResetRp_ResetBas
 contract StateT51p_ResetRp_ResetBoostedRp_Test is StateT51p_ResetRp_ResetBoostedRp {
 
     // transition
-    function testCanIncrementRpAfterResetRp() public {
+    function testCanIncrementSeason() public {
         // Assert global RP values are 0
         assertEq(pool.totalStakedRealmPoints(), 0, "totalStakedRealmPoints should be 0");
         assertEq(pool.totalBoostedRealmPoints(), 0, "totalBoostedRealmPoints should be 0");
@@ -834,7 +834,7 @@ contract StateT51p_ResetRp_ResetBoostedRp_Test is StateT51p_ResetRp_ResetBoosted
     }
 }
 
-abstract contract StateT51p_ResetRp_IncrementSeason is StateT51p_ResetRp_ResetBoostedRp_Test {
+abstract contract StateT51p_ResetRp_IncrementSeason is StateT51p_ResetRp_ResetBoostedRp {
 
     function setUp() public virtual override {
         super.setUp();
@@ -883,12 +883,11 @@ contract StateT51p_ResetRp_IncrementSeason_Test is StateT51p_ResetRp_IncrementSe
         // Calculate boosted amount
         uint256 boostedAmount = (user1Rp/2 * vaultBefore.totalBoostFactor) / 10000;
 
-        // Expect event with boosted amount
-        vm.expectEmit(true, true, true, true);
-        emit StakedRealmPoints(user1, vaultId1, user1Rp/2, boostedAmount);
-
         // Stake realm points with current season signature
         vm.startPrank(user1);
+            vm.expectEmit(true, true, true, true);
+            emit StakedRealmPoints(user1, vaultId1, user1Rp/2, boostedAmount);
+
             pool.stakeRealmPoints(vaultId1, user1Rp/2, expiry, signature);
         vm.stopPrank();
 
