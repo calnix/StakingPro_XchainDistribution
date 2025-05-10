@@ -703,6 +703,49 @@ contract StateT51p_ResetRp_VaultsAndUsersUpdated_Test is StateT51p_ResetRp_Vault
     // --------------- state transition  ---------------
 
     // --------------- reset rp ---------------
+    
+    function testCannotResetBoostedRp_BeforeResetRp() public {
+        bytes32[] memory vaultIds = new bytes32[](2);
+            vaultIds[0] = vaultId1;
+            vaultIds[1] = vaultId2;
+
+        vm.startPrank(owner);
+            vm.expectRevert(Errors.RpNotResetCorrectly.selector);
+            pool.resetBoostedRealmPoints(vaultIds);
+        vm.stopPrank();
+    }
+
+    function testCannotIncrementSeason_BaseRpNotReset() public {
+        vm.startPrank(owner);
+            vm.expectRevert(Errors.RpNotResetCorrectly.selector);
+            pool.incrementSeason();
+        vm.stopPrank();
+    }
+
+    function testCannotResetBaseRealmPoints_InvalidArray() public {
+        bytes32 vaultId = bytes32(uint256(0));
+
+        address[] memory userAddresses = new address[](1);
+            userAddresses[0] = user1;
+
+        vm.startPrank(owner);
+            vm.expectRevert(Errors.InvalidArray.selector);
+            pool.resetBaseRealmPoints(vaultId, userAddresses);
+        vm.stopPrank();
+    }
+
+    function testCannotResetBaseRealmPoints_NonExistentVault() public {
+        bytes32 vaultId = bytes32(uint256(0));
+
+        address[] memory userAddresses = new address[](1);
+            userAddresses[0] = user1;
+
+        vm.startPrank(owner);
+            vm.expectRevert(Errors.NonExistentVault.selector);
+            pool.resetBaseRealmPoints(vaultId, userAddresses);
+        vm.stopPrank();
+    }
+
     function testResetBaseRealmPoints_T51() public {
         // Store before values
         uint256 beforeUser1RP = pool.getUser(user1, vaultId1).stakedRealmPoints;
@@ -767,8 +810,48 @@ abstract contract StateT51p_ResetRp_ResetBaseRp is StateT51p_ResetRp_VaultsAndUs
 }
 
 contract StateT51p_ResetRp_ResetBaseRp_Test is StateT51p_ResetRp_ResetBaseRp {
+    using stdStorage for StdStorage;
 
+    function testCannotIncrementSeason_BoostedRpNotReset() public {
+        vm.startPrank(owner);
+            vm.expectRevert(Errors.RpNotResetCorrectly.selector);
+            pool.incrementSeason();
+        vm.stopPrank();
+    }
 
+    function testCannotResetBoostedRp_NonExistentVault() public {
+        bytes32[] memory vaultIds = new bytes32[](1);
+            vaultIds[0] = bytes32(uint256(0));
+
+        vm.startPrank(owner);
+            vm.expectRevert(Errors.NonExistentVault.selector);
+            pool.resetBoostedRealmPoints(vaultIds);
+        vm.stopPrank();
+    }
+
+    function testCannotResetBoostedRp_VaultHasRp() public {
+        // Modify storage to make vault1's stakedRealmPoints > 0
+        stdstore
+            .enable_packed_slots()
+            .target(address(pool))
+            .sig("vaults(bytes32)")
+            .with_key(vaultId1)
+            .depth(10)              // depth of .stakedRealmPoints
+            .checked_write(uint256(100 ether));
+
+        // check storage
+        assertEq(pool.getVault(vaultId1).stakedRealmPoints, 100 ether, "vault1 stakedRealmPoints should be 100 ether");
+        
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId1;
+        
+        vm.startPrank(owner);
+            vm.expectRevert(Errors.RpNotResetCorrectly.selector);
+            pool.resetBoostedRealmPoints(vaultIds);
+        vm.stopPrank();
+    }
+
+    // transition
     function testCanResetBoostedRp_T51() public {
         // Assert global base RP values are 0
         assertEq(pool.totalStakedRealmPoints(), 0, "totalStakedRealmPoints should be 0");
