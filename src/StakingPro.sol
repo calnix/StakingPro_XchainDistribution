@@ -1087,7 +1087,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @dev Expects that base realm points were reset prior to this 
      * @param vaultIds Array of vault IDs to reset boosted realm points for
      */
-    function resetBoostedRealmPoints() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
+    function resetTotalBoostedRealmPoints() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
         if(totalStakedRealmPoints > 0) revert Errors.RpNotResetCorrectly();
         delete totalBoostedRealmPoints;
         emit BoostedRealmPointsReset();
