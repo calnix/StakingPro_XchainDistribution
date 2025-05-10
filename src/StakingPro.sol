@@ -305,6 +305,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(expiry < block.timestamp) revert Errors.SignatureExpired();
         if(amount < MINIMUM_REALMPOINTS_REQUIRED) revert Errors.MinimumRealmPointsRequired();
 
+
         // verify signature
         bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(Constants.TYPEHASH, msg.sender, vaultId, amount, expiry, CURRENT_SEASON, userNonces[msg.sender])));
         
@@ -982,8 +983,8 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         2. updateActiveDistributions -- all active distributions
         3. updateAllVaultAccounts -- all vaults w/ rp
         4. updateAllUserAccounts -- book rp related fees before resetting
-        5. resetRealmPoints
-        6. resetBoostedRealmPoints
+        5. resetBaseRealmPoints
+        6. resetTotalBoostedRealmPoints
         7. incrementSeason
         8. disableMaintenance
      */
@@ -1060,7 +1061,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
             // get user assets for specified vault
             DataTypes.User storage userVaultAssets = users[user][vaultId];
-            
+
             // increment counter
             baseRealmPointsSum += userVaultAssets.stakedRealmPoints;
             
@@ -1085,10 +1086,9 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     }
 
     /**
-     * @notice Resets boosted realm points for specified vaults
-     * @dev Loops through specified vaults to reset boosted realm points
-     * @dev Expects that base realm points were reset prior to this 
-     * @param vaultIds Array of vault IDs to reset boosted realm points for
+     * @notice Resets totalBoostedRealmPoints - global total
+     * @dev This function should only be called after all base realm points have been reset
+     * @dev Verifies that totalStakedRealmPoints is zero before proceeding
      */
     function resetTotalBoostedRealmPoints() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
         if(totalStakedRealmPoints > 0) revert Errors.RpNotResetCorrectly();
@@ -1098,6 +1098,8 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
     /**
      * @notice Increments the season
+     * @dev This function should only be called after all realm points have been reset
+     * @dev Verifies that totalStakedRealmPoints and totalBoostedRealmPoints are zero before proceeding
      */
     function incrementSeason() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
         if(totalStakedRealmPoints > 0) revert Errors.RpNotResetCorrectly();

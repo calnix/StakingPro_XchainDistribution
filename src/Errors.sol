@@ -88,7 +88,8 @@ library Errors {
     error InvalidCaller();
     // updateNftMultiplier
     error InvalidMultiplier();
-
+    // resetBaseRealmPoints
+    error RpIndexMismatch();
     // incrementSeason
     error RpNotResetCorrectly();
 
