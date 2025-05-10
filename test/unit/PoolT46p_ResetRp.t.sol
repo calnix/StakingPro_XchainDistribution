@@ -705,13 +705,10 @@ contract StateT51p_ResetRp_VaultsAndUsersUpdated_Test is StateT51p_ResetRp_Vault
     // --------------- reset rp ---------------
     
     function testCannotResetBoostedRp_BeforeResetRp() public {
-        bytes32[] memory vaultIds = new bytes32[](2);
-            vaultIds[0] = vaultId1;
-            vaultIds[1] = vaultId2;
 
         vm.startPrank(owner);
             vm.expectRevert(Errors.RpNotResetCorrectly.selector);
-            pool.resetBoostedRealmPoints(vaultIds);
+            pool.resetBoostedRealmPoints();
         vm.stopPrank();
     }
 
@@ -820,34 +817,10 @@ contract StateT51p_ResetRp_ResetBaseRp_Test is StateT51p_ResetRp_ResetBaseRp {
     }
 
     function testCannotResetBoostedRp_NonExistentVault() public {
-        bytes32[] memory vaultIds = new bytes32[](1);
-            vaultIds[0] = bytes32(uint256(0));
-
+        
         vm.startPrank(owner);
             vm.expectRevert(Errors.NonExistentVault.selector);
-            pool.resetBoostedRealmPoints(vaultIds);
-        vm.stopPrank();
-    }
-
-    function testCannotResetBoostedRp_VaultHasRp() public {
-        // Modify storage to make vault1's stakedRealmPoints > 0
-        stdstore
-            .enable_packed_slots()
-            .target(address(pool))
-            .sig("vaults(bytes32)")
-            .with_key(vaultId1)
-            .depth(10)              // depth of .stakedRealmPoints
-            .checked_write(uint256(100 ether));
-
-        // check storage
-        assertEq(pool.getVault(vaultId1).stakedRealmPoints, 100 ether, "vault1 stakedRealmPoints should be 100 ether");
-        
-        bytes32[] memory vaultIds = new bytes32[](1);
-        vaultIds[0] = vaultId1;
-        
-        vm.startPrank(owner);
-            vm.expectRevert(Errors.RpNotResetCorrectly.selector);
-            pool.resetBoostedRealmPoints(vaultIds);
+            pool.resetBoostedRealmPoints();
         vm.stopPrank();
     }
 
@@ -855,14 +828,10 @@ contract StateT51p_ResetRp_ResetBaseRp_Test is StateT51p_ResetRp_ResetBaseRp {
     function testCanResetBoostedRp_T51() public {
         // Assert global base RP values are 0
         assertEq(pool.totalStakedRealmPoints(), 0, "totalStakedRealmPoints should be 0");
-        
-        bytes32[] memory vaultIds = new bytes32[](2);
-            vaultIds[0] = vaultId1;
-            vaultIds[1] = vaultId2;
-            
+ 
         // reset boosted rp
         vm.startPrank(owner);
-            pool.resetBoostedRealmPoints(vaultIds);
+            pool.resetBoostedRealmPoints();
         vm.stopPrank();
 
         // Check global boosted RP is 0
@@ -881,13 +850,8 @@ abstract contract StateT51p_ResetRp_ResetBoostedRp is StateT51p_ResetRp_ResetBas
     function setUp() public virtual override {
         super.setUp();
 
-        bytes32[] memory vaultIds = new bytes32[](2);
-        vaultIds[0] = vaultId1;
-        vaultIds[1] = vaultId2;
-        
-
         vm.startPrank(owner);
-            pool.resetBoostedRealmPoints(vaultIds);
+            pool.resetBoostedRealmPoints();
         vm.stopPrank();
     }
 }
