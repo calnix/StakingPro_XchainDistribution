@@ -220,6 +220,15 @@ contract StateT1_CreateVault1Test is StateT1_CreateVault1 {
         vm.stopPrank();
     }
 
+    function testCannotStakeRpNonIntegerValues() public {
+        uint256 amount = 1000.1 ether;
+        
+        vm.startPrank(user1);
+            vm.expectRevert(Errors.OnlyIntegerValues.selector);
+            pool.stakeRealmPoints(vaultId1, amount, block.timestamp + 1, bytes(""));
+        vm.stopPrank();
+    }    
+
     function testCannotStakeRpInvalidSignature() public {
         // Pack the struct data
         bytes32 structHash = keccak256(

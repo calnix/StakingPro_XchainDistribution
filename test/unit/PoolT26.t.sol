@@ -460,14 +460,14 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
     function testCannotMigrateRpFromNonExistentVault_T26() public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(Errors.NonExistentVault.selector, bytes32(uint256(1))));
-            pool.migrateRealmPoints(bytes32(uint256(1)), vaultId2, 1000);
+            pool.migrateRealmPoints(bytes32(uint256(1)), vaultId2, 10 ether);
         vm.stopPrank();
     }
 
     function testCannotMigrateRpToNonExistentVault_T26() public {
         vm.startPrank(user1);
             vm.expectRevert(abi.encodeWithSelector(Errors.NonExistentVault.selector, bytes32(uint256(1))));
-            pool.migrateRealmPoints(vaultId1, bytes32(uint256(1)), 1000);
+            pool.migrateRealmPoints(vaultId1, bytes32(uint256(1)), 10 ether);
         vm.stopPrank();
     }
 
@@ -481,14 +481,14 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
     function testCannotMigrateRpToSameVault_T26() public {
         vm.startPrank(user1);
             vm.expectRevert(Errors.InvalidVaultId.selector);
-            pool.migrateRealmPoints(vaultId1, vaultId1, 1000);
+            pool.migrateRealmPoints(vaultId1, vaultId1, 10 ether);
         vm.stopPrank();
     }
     
     function testCannotMigrateRpWhenNothingStakedInFrom_T26() public {
         vm.startPrank(user3);
             vm.expectRevert(abi.encodeWithSelector(Errors.InsufficientRealmPoints.selector, 0));
-            pool.migrateRealmPoints(vaultId1, vaultId2, 1000);
+            pool.migrateRealmPoints(vaultId1, vaultId2, 10 ether);
         vm.stopPrank();
     }   
 
@@ -496,6 +496,15 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
         vm.startPrank(user2);
             vm.expectRevert(abi.encodeWithSelector(Errors.InsufficientRealmPoints.selector, user2Rp));
             pool.migrateRealmPoints(vaultId1, vaultId2, user2Rp + 1 ether);
+        vm.stopPrank();
+    }
+
+    function testCannotMigrateRpNonIntegerValues_T26() public {
+        uint256 amount = 1000.1 ether;
+        
+        vm.startPrank(user2);
+            vm.expectRevert(abi.encodeWithSelector(Errors.OnlyIntegerValues.selector));
+            pool.migrateRealmPoints(vaultId1, vaultId2, amount);
         vm.stopPrank();
     }
 

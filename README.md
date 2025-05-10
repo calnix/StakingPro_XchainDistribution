@@ -21,5 +21,5 @@ We wanted this to be useable by other projects in the future. That would require
 * [Documentation/ContractExplanations.md](Documentation/ContractExplanations.md) explains and walkthrough contract functionality. I've tried to be as detailed as possible.
 * [Documentation/Risk.md](Documentation/Risk.md) covers the risk approach - like pausing contracts, in what order and such.
 * [test/TestOverview.md](test/TestOverview.md) describes the core unit testing scenarios covered in sequence and parallel.
-* Additional coverage tests can be found at [test\FunctionStates.md](test/FunctionStates.md).
+* Additional coverage tests can be found at [test\UnitTesting.md](test/UnitTesting.md).
 * src/ignore is out of scope. please ignore.

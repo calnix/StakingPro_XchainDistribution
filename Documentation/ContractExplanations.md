@@ -1119,7 +1119,7 @@ function updateAllUserAccounts(uint256 distributionId, bytes32 vaultId, address[
 ## 4) resetBaseRealmPoints
 
 ```solidity
-function resetRealmPoints(bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE)
+function resetBaseRealmPoints(bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE)
 ```
 
 - Once all vault and user accounts have been updated[and their rewards booked], RP can be reset.

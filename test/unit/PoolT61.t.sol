@@ -904,7 +904,7 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
     function testCannotMigrateRpToVaultOnceCooldownActivated() public {
         vm.prank(user2);
         vm.expectRevert(abi.encodeWithSelector(Errors.VaultEndTimeSet.selector, vaultId2));
-        pool.migrateRealmPoints(vaultId1, vaultId2, 1000);
+        pool.migrateRealmPoints(vaultId1, vaultId2, 10 ether);
     }
 
     function testCannotStakeOnBehalfAfterCooldownActivated_T61() public {
