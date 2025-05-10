@@ -97,7 +97,7 @@ event BoostedBalancesUpdated(bytes32[] vaultIds);
 // resetBaseRealmPoints
 event BaseRealmPointsReset(bytes32 indexed vaultId, address[] users, uint256 baseRealmPointsSum);
 // resetBoostedRealmPoints
-event BoostedRealmPointsReset(bytes32[] indexed vaultIds, uint256 boostedRealmPointsSum);
+event BoostedRealmPointsReset();
 // incrementSeason
 event SeasonIncremented(uint256 newSeason);
 
