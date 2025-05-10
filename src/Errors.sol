@@ -13,6 +13,7 @@ library Errors {
     error InvalidAddress();
     error InvalidStartTime();
     error UserIsNotCreator();
+    error OnlyIntegerValues();
     error InvalidDistributionId();
     error VaultEndTimeSet(bytes32 vaultId);
     error NonExistentVault(bytes32 vaultId);

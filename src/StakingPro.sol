@@ -302,6 +302,8 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(expiry < block.timestamp) revert Errors.SignatureExpired();
         if(amount < MINIMUM_REALMPOINTS_REQUIRED) revert Errors.MinimumRealmPointsRequired();
 
+        // only integer RP values are accepted: remainder should be 0 
+        if(amount % 1E18 > 0) revert Errors.OnlyIntegerValues();    // 1 RP = 1E18
 
         // verify signature
         bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(Constants.TYPEHASH, msg.sender, vaultId, amount, expiry, CURRENT_SEASON, userNonces[msg.sender])));
@@ -339,6 +341,9 @@ contract StakingPro is EIP712, Pausable, AccessControl {
     function migrateRealmPoints(bytes32 oldVaultId, bytes32 newVaultId, uint256 amount) external virtual whenStartedAndNotEnded whenNotPaused whenNotUnderMaintenance {
         if(amount == 0) revert Errors.InvalidAmount();
         if(oldVaultId == newVaultId) revert Errors.InvalidVaultId();
+
+        // only integer RP values are accepted: remainder should be 0 
+        if(amount % 1E18 > 0) revert Errors.OnlyIntegerValues();    // 1 RP = 1E18
 
         DataTypes.UpdateAccountsIndexesParams memory oldVaultParams;
             oldVaultParams.user = msg.sender;
