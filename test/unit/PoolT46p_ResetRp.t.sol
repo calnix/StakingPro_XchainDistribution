@@ -704,11 +704,11 @@ contract StateT51p_ResetRp_VaultsAndUsersUpdated_Test is StateT51p_ResetRp_Vault
 
     // --------------- reset rp ---------------
     
-    function testCannotResetBoostedRp_BeforeResetRp() public {
+    function testCannotResetTotalBoostedRp_BeforeResetRp() public {
 
         vm.startPrank(owner);
             vm.expectRevert(Errors.RpNotResetCorrectly.selector);
-            pool.resetBoostedRealmPoints();
+            pool.resetTotalBoostedRealmPoints();
         vm.stopPrank();
     }
 
@@ -816,22 +816,15 @@ contract StateT51p_ResetRp_ResetBaseRp_Test is StateT51p_ResetRp_ResetBaseRp {
         vm.stopPrank();
     }
 
-    function testCannotResetBoostedRp_NonExistentVault() public {
-        
-        vm.startPrank(owner);
-            vm.expectRevert(Errors.NonExistentVault.selector);
-            pool.resetBoostedRealmPoints();
-        vm.stopPrank();
-    }
-
     // transition
     function testCanResetBoostedRp_T51() public {
         // Assert global base RP values are 0
         assertEq(pool.totalStakedRealmPoints(), 0, "totalStakedRealmPoints should be 0");
+        assertGt(pool.totalBoostedRealmPoints(), 0, "totalBoostedRealmPoints should be greater than 0");
  
         // reset boosted rp
         vm.startPrank(owner);
-            pool.resetBoostedRealmPoints();
+            pool.resetTotalBoostedRealmPoints();
         vm.stopPrank();
 
         // Check global boosted RP is 0
@@ -851,7 +844,7 @@ abstract contract StateT51p_ResetRp_ResetBoostedRp is StateT51p_ResetRp_ResetBas
         super.setUp();
 
         vm.startPrank(owner);
-            pool.resetBoostedRealmPoints();
+            pool.resetTotalBoostedRealmPoints();
         vm.stopPrank();
     }
 }

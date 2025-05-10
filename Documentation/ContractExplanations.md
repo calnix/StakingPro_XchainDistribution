@@ -1076,12 +1076,13 @@ updateBoostedBalances(bytes32[] calldata vaultIds) external whenNotEnded whenNot
         2. updateActiveDistributions -- all active distributions
         3. updateAllVaultAccounts -- all vaults w/ rp
         4. updateAllUserAccounts -- book rp related fees before resetting
-        5. resetRealmPoints
-        6. incrementSeason
-        7. disableMaintenance
+        5. resetBaseRealmPoints
+        6. resetTotalBoostedRealmPoints
+        7. incrementSeason
+        8. disableMaintenance
      */
 
-1) Update all active distributions to current timestamp.
+## 1) Update all active distributions to current timestamp.
 
 - Some active distributions may have ended at this time.
 - Do not pop them; they should remain in activeDistributions array.
@@ -1100,7 +1101,7 @@ This step creates a snapshot that freezes time. This allows us to update all vau
 **If `updateActiveDistributions` is called again, we must restarted the entire process with updating all vault accounts, as our reference point has changed.**
 **However, if `updateActiveDistributions` is called mid-way through resetting RP, the contract has been bricked and must be re-deployed.**
 
-2) For each vault, update its accounts, for each distribution.
+## 2) For each vault, update its accounts, for each distribution.
 
 - only vaults that have RP staked need to have their accounts updated to account for D0 emissions and DX rp-related fees
 - however, there is no adverse outcome in updating vaults that do not have rp staked as well
@@ -1115,7 +1116,7 @@ function updateAllUserAccounts(uint256 distributionId, bytes32 vaultId, address[
 - only user accounts that are associated with vaults, in which user has RP staked need to be updated.
 - like vaultAccounts, we are permissive in allowing all user accounts to be updated just the same.
 
-## 4) resetRealmPoints
+## 4) resetBaseRealmPoints
 
 ```solidity
 function resetRealmPoints(bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE)
@@ -1123,11 +1124,23 @@ function resetRealmPoints(bytes32 vaultId, address[] calldata userAddresses) ext
 
 - Once all vault and user accounts have been updated[and their rewards booked], RP can be reset.
 - Operation: cycle through vault by vault, resetting all the users associated with that vault in batches.
+- For a vault that is on its last cycle, its boostedStakedTokens is reset, as stakedRealmPoints is zero.
 
 Function loops through the provided array of users, obtaining the sum of rp staked, to decrement against vault and global values.
 Users' rp values are also reset.
 
-## 5) incrementSeason
+## 5) resetTotalBoostedRealmPoints
+
+```solidity
+function resetTotalBoostedRealmPoints() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE)
+```
+
+In the event that `totalBoostedRealmPoints` did not get reset to 0 after `resetBaseRealmPoints` is ran.
+We call `resetTotalBoostedRealmPoints` to rest it.
+
+This accounts for edge case where base rp is completely reset, but `totalBoostedRealmPoints` has some residual value leftover as a result of mul/div solidity operations [since these involve rounding].
+
+## 6) incrementSeason
 
 ```solidity
 function incrementSeason() external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) 
@@ -1136,7 +1149,6 @@ function incrementSeason() external whenNotEnded whenNotPaused whenUnderMaintena
 - Once Rp has been reset fully, Operator can incrementSeason
 - If either base Rp or boosted Rp is non-zero, function reverts.
 - This means there has been an irreversible error somewhere - contract has to redeployed.
-
 
 # Risk Management functions
 
