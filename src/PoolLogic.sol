@@ -1258,60 +1258,32 @@ library PoolLogic {
         DataTypes.User memory user, 
         DataTypes.UserAccount memory userAccount,
         DataTypes.Vault memory vault, 
-        DataTypes.VaultAccount memory vaultAccount_, 
-        DataTypes.Distribution memory distribution_,
+        DataTypes.VaultAccount memory vaultAccount, 
+        DataTypes.Distribution memory distribution,
         DataTypes.UpdateAccountsIndexesParams calldata params
     ) external view returns (DataTypes.UserAccount memory, DataTypes.VaultAccount memory, DataTypes.Distribution memory) {
-        return _viewUserAccount(user, userAccount, vault, vaultAccount_, distribution_, params);
+        return _viewUserAccount(user, userAccount, vault, vaultAccount, distribution, params);
     }
 
     function _viewUserAccount(
         DataTypes.User memory user, 
         DataTypes.UserAccount memory userAccount,
         DataTypes.Vault memory vault, 
-        DataTypes.VaultAccount memory vaultAccount_, 
-        DataTypes.Distribution memory distribution_,
+        DataTypes.VaultAccount memory vaultAccount, 
+        DataTypes.Distribution memory distribution,
         DataTypes.UpdateAccountsIndexesParams calldata params
     ) internal view returns (DataTypes.UserAccount memory, DataTypes.VaultAccount memory, DataTypes.Distribution memory) {
         
         // get updated vaultAccount and distribution
-        (DataTypes.VaultAccount memory vaultAccount, DataTypes.Distribution memory distribution) = _viewVaultAccount(vault, vaultAccount_, distribution_, params);
+        (vaultAccount, distribution) = _viewVaultAccount(vault, vaultAccount, distribution, params);
 
-        // 1E18 precision
-        uint256 newUserIndex = vaultAccount.rewardsAccPerUnitStaked;
-        
-        // users whom staked tokens are eligible for rewards less of fees 
-        if(newUserIndex > userAccount.index) { 
-            if(user.stakedTokens > 0) {
-                uint256 accruedStakingRewards = _calculateRewards(user.stakedTokens, newUserIndex, userAccount.index);
-                userAccount.accStakingRewards += accruedStakingRewards;
-            }
-        }
-        
-        // user's accrued rewards for staked NFTs 
-        uint256 userStakedNfts = user.tokenIds.length;
-        if(userStakedNfts > 0) {
-            if(vaultAccount.nftIndex > userAccount.nftIndex){
-                uint256 accNftStakingRewards = (vaultAccount.nftIndex - userAccount.nftIndex) * userStakedNfts;
-                userAccount.accNftStakingRewards += accNftStakingRewards;
-            }
-        }
-
-        // user's accrued rewards from staked RP
-        if(user.stakedRealmPoints > 0){
-            // vaultAccount.rewardsAccPerUnitStaked could be incremented, w/out incrementing vaultAccount.rpIndex; 0 feeFactor.
-            if(vaultAccount.rpIndex > userAccount.rpIndex) {    
-
-                // users whom staked RP are eligible for a portion of RP fees 
-                uint256 accRealmPointsRewards = _calculateRewards(user.stakedRealmPoints, vaultAccount.rpIndex, userAccount.rpIndex);
-                userAccount.accRealmPointsRewards += accRealmPointsRewards;
-            }
-        }
-        
-        // update user indexes | all in 1E18 precision
-        userAccount.index = vaultAccount.rewardsAccPerUnitStaked;   // less of fees
-        userAccount.nftIndex = vaultAccount.nftIndex;
-        userAccount.rpIndex = vaultAccount.rpIndex;
+        // calculate accruals
+        (
+            DataTypes.UserAccount memory userAccount, 
+            uint256 accruedStakingRewards, 
+            uint256 accNftStakingRewards, 
+            uint256 accRealmPointsRewards
+        ) = _calculateUserAccruals(user, userAccount, vaultAccount);
 
         return (userAccount, vaultAccount, distribution);
     }
@@ -1319,22 +1291,22 @@ library PoolLogic {
     function viewVaultAccount(
         DataTypes.Vault memory vault, 
         DataTypes.VaultAccount memory vaultAccount, 
-        DataTypes.Distribution memory distribution_,
+        DataTypes.Distribution memory distribution,
         DataTypes.UpdateAccountsIndexesParams calldata params
     ) external view returns (DataTypes.VaultAccount memory, DataTypes.Distribution memory) {
-        return _viewVaultAccount(vault, vaultAccount, distribution_, params);
+        return _viewVaultAccount(vault, vaultAccount, distribution, params);
     }
 
     function _viewVaultAccount(
         DataTypes.Vault memory vault, 
         DataTypes.VaultAccount memory vaultAccount, 
-        DataTypes.Distribution memory distribution_,
+        DataTypes.Distribution memory distribution,
         DataTypes.UpdateAccountsIndexesParams calldata params
     ) internal view returns (DataTypes.VaultAccount memory, DataTypes.Distribution memory) {
 
         // get latest distributionIndex, if not already updated
-        DataTypes.Distribution memory distribution = _viewDistributionIndex(
-            distribution_, 
+        distribution = _viewDistributionIndex(
+            distribution, 
             params.totalBoostedRealmPoints, 
             params.totalBoostedStakedTokens
         );
