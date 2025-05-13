@@ -29,12 +29,11 @@ abstract contract StateT46p_ResetRp_UpdateDistributions is StateT41_User2StakesT
         vm.startPrank(owner);
             pool.enableMaintenance();
             pool.updateActiveDistributions();
-
         vm.stopPrank();
     }
 }
 
-// time is frozen at T46 - distribution state saved
+//note: time is frozen at T46 - distribution state saved
 contract StateT46p_ResetRp_UpdateDistributions_Test is StateT46p_ResetRp_UpdateDistributions {
 
 
@@ -150,7 +149,15 @@ contract StateT46p_ResetRp_UpdateDistributions_Test is StateT46p_ResetRp_UpdateD
 
 
 abstract contract StateT51p_ResetRp_VaultsAndUsersUpdated is StateT46p_ResetRp_UpdateDistributions {
-
+    // ------ T46 ------
+    DataTypes.Vault vault1_T46; 
+    DataTypes.Vault vault2_T46;
+    //vault1
+    DataTypes.VaultAccount vault1Account0_T46;
+    DataTypes.VaultAccount vault1Account1_T46;
+    //vault2
+    DataTypes.VaultAccount vault2Account0_T46;
+    DataTypes.VaultAccount vault2Account1_T46;
     //user1+vault1
     DataTypes.UserAccount user1Vault1Account0_T46;
     DataTypes.UserAccount user1Vault1Account1_T46;
@@ -164,6 +171,7 @@ abstract contract StateT51p_ResetRp_VaultsAndUsersUpdated is StateT46p_ResetRp_U
     DataTypes.UserAccount user2Vault2Account0_T46;
     DataTypes.UserAccount user2Vault2Account1_T46;
 
+    // ------ T51 ------
 
     //user1+vault1
     DataTypes.UserAccount user1Vault1Account0_T51;
@@ -181,8 +189,16 @@ abstract contract StateT51p_ResetRp_VaultsAndUsersUpdated is StateT46p_ResetRp_U
 
     function setUp() public virtual override {
         super.setUp();
+        
+        // for reference
+        vault1_T46 = pool.getVault(vaultId1);
+        vault2_T46 = pool.getVault(vaultId2);
 
-        // STORE userAccounts at T46
+        // STORE vault+user accounts at T46
+        vault1Account0_T46 = getVaultAccount(vaultId1, 0);
+        vault1Account1_T46 = getVaultAccount(vaultId1, 1);  
+        vault2Account0_T46 = getVaultAccount(vaultId2, 0);
+        vault2Account1_T46 = getVaultAccount(vaultId2, 1);
         user1Vault1Account0_T46 = getUserAccount(user1, vaultId1, 0);
         user1Vault1Account1_T46 = getUserAccount(user1, vaultId1, 1);
         user2Vault1Account0_T46 = getUserAccount(user2, vaultId1, 0);
@@ -230,11 +246,144 @@ abstract contract StateT51p_ResetRp_VaultsAndUsersUpdated is StateT46p_ResetRp_U
 // vaults and users updated at T51
 contract StateT51p_ResetRp_VaultsAndUsersUpdated_Test is StateT51p_ResetRp_VaultsAndUsersUpdated {
 
-    // ---------------- distribution 0 ----------------
+// ---------------- distribution 0 ----------------
+
+
+    function testVault1Account0_T51() public {
+        DataTypes.Distribution memory distribution = getDistribution(0);
+        DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
+        DataTypes.VaultAccount memory vaultAccount = getVaultAccount(vaultId1, 0);
+        
+        /** T46 - T51
+            stakedTokens: user1Moca + user2Moca/2
+            stakedRp: user1Rp + user2Rp/2 
+            stakedNfts: 2
+         */
+
+        // vault assets 
+        uint256 stakedRp = vault1_T46.stakedRealmPoints;  
+        uint256 stakedTokens = vault1_T46.stakedTokens;
+        uint256 stakedNfts = vault1_T46.stakedNfts;
+
+        uint256 boostedRp = vault1_T46.boostedRealmPoints;
+        uint256 poolBoostedRp = vault1_T46.boostedRealmPoints + vault2_T46.boostedRealmPoints;
+
+        uint256 prevVaultIndex = vault1Account0_T46.index;
+
+        // check indices
+
+            // calc. newly accrued rewards       
+            uint256 newlyAccRewards = calculateRewards(boostedRp, distribution.index, prevVaultIndex, 1E18); 
+
+            // newly accrued fees since last update: based on newlyAccRewards
+            uint256 newlyAccCreatorFee = newlyAccRewards * vault1_T46.creatorFeeFactor / 10_000;
+            uint256 newlyAccTotalNftFee = newlyAccRewards * vault1_T46.nftFeeFactor / 10_000;         
+            uint256 newlyAccRealmPointsFee = newlyAccRewards * vault1_T46.realmPointsFeeFactor / 10_000;
+            
+            // latest indices
+            uint256 latestNftIndex = (newlyAccTotalNftFee / stakedNfts) + vault1Account0_T46.nftIndex;     // 4 nfts staked frm t31-t36
+            uint256 latestRpIndex = (newlyAccRealmPointsFee * 1E18 / stakedRp) + vault1Account0_T46.rpIndex;
+
+        // check indices
+        assertEq(vaultAccount.index, distribution.index);
+        assertEq(vaultAccount.nftIndex, latestNftIndex);       
+        assertEq(vaultAccount.rpIndex, latestRpIndex);    
+
+        // calc. accumulated rewards
+        uint256 totalAccRewards = newlyAccRewards + vault1Account0_T46.totalAccRewards;
+        // calc. accumulated fees
+        uint256 latestAccCreatorFee = newlyAccCreatorFee + vault1Account0_T46.accCreatorRewards;
+        uint256 latestAccTotalNftFee = newlyAccTotalNftFee + vault1Account0_T46.accNftStakingRewards;
+        uint256 latestAccRealmPointsFee = newlyAccRealmPointsFee + vault1Account0_T46.accRealmPointsRewards;
+
+        // check accumulated rewards + fees
+        assertEq(vaultAccount.totalAccRewards, totalAccRewards);
+        assertEq(vaultAccount.accCreatorRewards, latestAccCreatorFee); 
+        assertEq(vaultAccount.accNftStakingRewards, latestAccTotalNftFee); 
+        assertEq(vaultAccount.accRealmPointsRewards, latestAccRealmPointsFee); 
+
+        // rewardsAccPerUnitStaked: for moca stakers
+        uint256 latestAccRewardsLessOfFees = newlyAccRewards - newlyAccCreatorFee - newlyAccTotalNftFee - newlyAccRealmPointsFee;
+        uint256 expectedRewardsAccPerUnitStaked = (latestAccRewardsLessOfFees * 1E18 / stakedTokens) + vault1Account0_T46.rewardsAccPerUnitStaked;
+
+        // rewardsAccPerUnitStaked
+        assertEq(vaultAccount.rewardsAccPerUnitStaked, expectedRewardsAccPerUnitStaked); 
+
+        // totalClaimedRewards: staking power cannot be claimed
+        assertEq(vaultAccount.totalClaimedRewards, 0, "totalClaimedRewards mismatch");
+    }
+
+    function testVault2Account0_T51() public {
+        DataTypes.Distribution memory distribution = getDistribution(0);
+        DataTypes.Vault memory vault2 = pool.getVault(vaultId2);
+        DataTypes.VaultAccount memory vaultAccount = getVaultAccount(vaultId2, 0);
+
+        /** T46 - T51
+            stakedTokens: user2Moca/2
+            stakedRp: user2Rp/2
+            stakedNfts: 2
+         */
+
+        // vault assets for t41-t46
+        uint256 stakedRp = vault2_T46.stakedRealmPoints;  
+        uint256 stakedTokens = vault2_T46.stakedTokens;
+        uint256 stakedNfts = vault2_T46.stakedNfts;
+
+        uint256 boostedRp = vault2_T46.boostedRealmPoints;
+        uint256 poolBoostedRp = vault1_T46.boostedRealmPoints + vault2_T46.boostedRealmPoints;
+
+        uint256 prevVaultIndex = vault2Account0_T46.index;
+
+        // check indices
+
+            // calc. newly accrued rewards       
+            uint256 newlyAccRewards = calculateRewards(boostedRp, distribution.index, prevVaultIndex, 1E18); 
+                // eval. rounding error
+                uint256 emittedRewards = 5 ether;
+                uint256 vault2ShareOfEmittedRewards = (boostedRp * emittedRewards) / poolBoostedRp;
+                assertApproxEqAbs(newlyAccRewards, vault2ShareOfEmittedRewards, 466);
+
+            // newly accrued fees since last update: based on newlyAccRewards
+            uint256 newlyAccCreatorFee = newlyAccRewards * vault2_T46.creatorFeeFactor / 10_000;
+            uint256 newlyAccTotalNftFee = newlyAccRewards * vault2_T46.nftFeeFactor / 10_000;         
+            uint256 newlyAccRealmPointsFee = newlyAccRewards * vault2_T46.realmPointsFeeFactor / 10_000;
+
+            // latest indices
+            uint256 latestNftIndex = (newlyAccTotalNftFee / stakedNfts) + vault2Account0_T46.nftIndex;   
+            uint256 latestRpIndex = (newlyAccRealmPointsFee * 1E18 / stakedRp) + vault2Account0_T46.rpIndex;
+
+        // check indices
+        assertEq(vaultAccount.index, distribution.index);
+        assertEq(vaultAccount.nftIndex, latestNftIndex);       
+        assertEq(vaultAccount.rpIndex, latestRpIndex);  
+
+            // calc. accumulated rewards
+            uint256 totalAccRewards = newlyAccRewards + vault2Account0_T46.totalAccRewards;
+            // calc. accumulated fees
+            uint256 latestAccCreatorFee = newlyAccCreatorFee + vault2Account0_T46.accCreatorRewards;
+            uint256 latestAccTotalNftFee = newlyAccTotalNftFee + vault2Account0_T46.accNftStakingRewards;
+            uint256 latestAccRealmPointsFee = newlyAccRealmPointsFee + vault2Account0_T46.accRealmPointsRewards;
+
+        // check accumulated rewards + fees
+        assertEq(vaultAccount.totalAccRewards, totalAccRewards, "totalAccRewards mismatch");
+        assertEq(vaultAccount.accCreatorRewards, latestAccCreatorFee, "accCreatorRewards mismatch"); 
+        assertEq(vaultAccount.accNftStakingRewards, latestAccTotalNftFee, "accNftStakingRewards mismatch"); 
+        assertEq(vaultAccount.accRealmPointsRewards, latestAccRealmPointsFee, "accRealmPointsRewards mismatch"); 
+
+            // rewardsAccPerUnitStaked: for moca stakers
+            uint256 latestAccRewardsLessOfFees = newlyAccRewards - newlyAccCreatorFee - newlyAccTotalNftFee - newlyAccRealmPointsFee;
+            uint256 expectedRewardsAccPerUnitStaked = (latestAccRewardsLessOfFees * 1E18 / stakedTokens) + vault2Account0_T46.rewardsAccPerUnitStaked;
+
+        // rewardsAccPerUnitStaked
+        assertEq(vaultAccount.rewardsAccPerUnitStaked, expectedRewardsAccPerUnitStaked, "rewardsAccPerUnitStaked mismatch"); 
+
+        // totalClaimedRewards: staking power cannot be claimed
+        assertEq(vaultAccount.totalClaimedRewards, 0, "totalClaimedRewards mismatch");
+    }
 
     // --------------- d0:vault1:users --------------- 
 
-/*        function testUser1_ForVault1Account0_T51() public {
+        function testUser1_ForVault1Account0_T51() public {
             DataTypes.UserAccount memory userAccount = getUserAccount(user1, vaultId1, 0);
             DataTypes.VaultAccount memory vaultAccount = getVaultAccount(vaultId1, 0);  
             
@@ -285,7 +434,7 @@ contract StateT51p_ResetRp_VaultsAndUsersUpdated_Test is StateT51p_ResetRp_Vault
 
         // IGNORING USER2 - SHOULD BE THE SAME AS USER1
 
-    // --------------- d0:vault2:user2 ---------------
+    // --------------- d0:vault2:users ---------------
 
         // user1 does not have any assets in vault2
         function testUser1_ForVault2Account0_T51() public {
@@ -297,16 +446,17 @@ contract StateT51p_ResetRp_VaultsAndUsersUpdated_Test is StateT51p_ResetRp_Vault
             uint256 stakedTokens = 0;
             uint256 numOfNfts = 0; 
 
-            // should show 0 for all values
+            // indexes should match btw user and vault accounts indicating update
+            assertEq(userAccount.index, vaultAccount.rewardsAccPerUnitStaked, "userIndex mismatch");
+            assertEq(userAccount.nftIndex, vaultAccount.nftIndex, "nftIndex mismatch");
+            assertEq(userAccount.rpIndex, vaultAccount.rpIndex, "rpIndex mismatch");
             
-            assertEq(userAccount.index, 0, "userIndex mismatch");
-            assertEq(userAccount.nftIndex, 0, "nftIndex mismatch");
-            assertEq(userAccount.rpIndex, 0, "rpIndex mismatch");
-
+            // rewards should be 0 as user1 did not stake anything into vault2
             assertEq(userAccount.accStakingRewards, 0, "accStakingRewards mismatch"); 
             assertEq(userAccount.accNftStakingRewards, 0, "accNftStakingRewards mismatch");
             assertEq(userAccount.accRealmPointsRewards, 0, "accRealmPointsRewards mismatch");
 
+            // staking power cannot be claimed
             assertEq(userAccount.claimedStakingRewards, 0, "claimedStakingRewards mismatch");
             assertEq(userAccount.claimedNftRewards, 0, "claimedNftRewards mismatch");
             assertEq(userAccount.claimedRealmPointsRewards, 0, "claimedRealmPointsRewards mismatch");
@@ -373,138 +523,7 @@ contract StateT51p_ResetRp_VaultsAndUsersUpdated_Test is StateT51p_ResetRp_Vault
             assertEq(claimableRewards, expectedClaimableRewards, "claimableRewards mismatch"); 
         }
 
-        // updated at T51; lastUpdated at T46
-        function testVault1Account1_T51() public {
-            DataTypes.Distribution memory distribution = getDistribution(1);
-            DataTypes.Vault memory vault = pool.getVault(vaultId1);
-
-            DataTypes.VaultAccount memory vaultAccount = getVaultAccount(vaultId1, 1);        
-
-            /** T46 - T51
-                stakedTokens: user1Moca + user2Moca/2
-                stakedRp: user1Rp + user2Rp/2 
-                stakedNfts: 2
-            */
-/*
-            // vault assets: T46-T51
-            uint256 stakedRp = user1Rp + user2Rp/2;  
-            uint256 stakedTokens = user1Moca + user2Moca/2;
-            uint256 stakedNfts = 2;
-            // prev. vault index
-            uint256 prevVaultIndex = vault1Account1_T46.index;
-            // boosted tokens
-            uint256 boostedTokens = vault1_T46.boostedStakedTokens;
-            uint256 poolBoostedTokens = vault1_T46.boostedStakedTokens + vault2_T46.boostedStakedTokens; 
-
-            // -------------- check indices --------------
-
-                // calc. newly accrued rewards       
-                uint256 newlyAccRewards = calculateRewards(boostedTokens, distribution.index, prevVaultIndex, 1E18); 
-
-                // newly accrued fees since last update: based on newlyAccRewards
-                uint256 newlyAccCreatorFee = newlyAccRewards * vault1_T46.creatorFeeFactor / 10_000;
-                uint256 newlyAccTotalNftFee = newlyAccRewards * vault1_T46.nftFeeFactor / 10_000;         
-                uint256 newlyAccRealmPointsFee = newlyAccRewards * vault1_T46.realmPointsFeeFactor / 10_000;
-                
-                // latest indices
-                uint256 latestNftIndex = (newlyAccTotalNftFee / stakedNfts) + vault1Account1_T46.nftIndex;     
-                uint256 latestRpIndex = (newlyAccRealmPointsFee * 1E18 / stakedRp) + vault1Account1_T46.rpIndex;
-
-            // Check indices match distribution
-            assertEq(vaultAccount.index, distribution.index, "vaultAccount index mismatch");
-            assertEq(vaultAccount.nftIndex, latestNftIndex, "vaultAccount nftIndex mismatch");
-            assertEq(vaultAccount.rpIndex, latestRpIndex, "vaultAccount rpIndex mismatch");
-        
-            // -------------- check accumulated rewards --------------
-
-                // calc. accumulated rewards
-                uint256 totalAccRewards = newlyAccRewards + vault1Account1_T46.totalAccRewards;
-                // calc. accumulated fees
-                uint256 latestAccCreatorFee = newlyAccCreatorFee + vault1Account1_T46.accCreatorRewards;
-                uint256 latestAccTotalNftFee = newlyAccTotalNftFee + vault1Account1_T46.accNftStakingRewards;
-                uint256 latestAccRealmPointsFee = newlyAccRealmPointsFee + vault1Account1_T46.accRealmPointsRewards;
-
-            // Check accumulated rewards
-            assertEq(vaultAccount.totalAccRewards, totalAccRewards, "totalAccRewards mismatch");
-            assertEq(vaultAccount.accCreatorRewards, latestAccCreatorFee, "accCreatorRewards mismatch");
-            assertEq(vaultAccount.accNftStakingRewards, latestAccTotalNftFee, "accNftStakingRewards mismatch"); 
-            assertEq(vaultAccount.accRealmPointsRewards, latestAccRealmPointsFee, "accRealmPointsRewards mismatch");
-
-            // -------------- check rewardsAccPerUnitStaked --------------
-
-                // rewardsAccPerUnitStaked: for moca stakers
-                uint256 latestAccRewardsLessOfFees = newlyAccRewards - newlyAccCreatorFee - newlyAccTotalNftFee - newlyAccRealmPointsFee;
-                uint256 expectedRewardsAccPerUnitStaked = (latestAccRewardsLessOfFees * 1E18 / stakedTokens) + vault1Account1_T46.rewardsAccPerUnitStaked;
-
-            // Check rewardsAccPerUnitStaked
-            assertEq(vaultAccount.rewardsAccPerUnitStaked, expectedRewardsAccPerUnitStaked, "rewardsAccPerUnitStaked mismatch");
-
-            // Check totalClaimedRewards
-            assertEq(vaultAccount.totalClaimedRewards, 0, "totalClaimedRewards mismatch");
-        }
-
-        // updated at T51; lastUpdated at T46
-        function testVault2Account1_T51() public {
-            DataTypes.Distribution memory distribution = getDistribution(1);
-            DataTypes.Vault memory vault = pool.getVault(vaultId2);
-
-            DataTypes.VaultAccount memory vaultAccount = getVaultAccount(vaultId2, 1);
-
-            // vault assets: T46-T51
-            uint256 stakedRp = user2Rp/2;  
-            uint256 stakedTokens = user2Moca/2;
-            uint256 stakedNfts = 2;
-            // prev. vault index
-            uint256 prevVaultIndex = vault2Account1_T46.index;
-            // boosted tokens
-            uint256 boostedTokens = vault2_T46.boostedStakedTokens;
-            uint256 poolBoostedTokens = vault1_T46.boostedStakedTokens + vault2_T46.boostedStakedTokens; 
-
-            // -------------- check indices --------------
-
-                // calc. newly accrued rewards       
-                uint256 newlyAccRewards = calculateRewards(boostedTokens, distribution.index, prevVaultIndex, 1E18); 
-
-                // newly accrued fees since last update: based on newlyAccRewards
-                uint256 newlyAccCreatorFee = newlyAccRewards * vault2_T46.creatorFeeFactor / 10_000;
-                uint256 newlyAccTotalNftFee = newlyAccRewards * vault2_T46.nftFeeFactor / 10_000;         
-                uint256 newlyAccRealmPointsFee = newlyAccRewards * vault2_T46.realmPointsFeeFactor / 10_000;
-                
-                // latest indices
-                uint256 latestNftIndex = (newlyAccTotalNftFee / stakedNfts) + vault2Account1_T46.nftIndex;     
-                uint256 latestRpIndex = (newlyAccRealmPointsFee * 1E18 / stakedRp) + vault2Account1_T46.rpIndex;
-
-            // Check indices match distribution at t41
-            assertEq(vaultAccount.index, distribution.index, "vaultAccount index mismatch");
-            assertEq(vaultAccount.nftIndex, latestNftIndex, "vaultAccount nftIndex mismatch");
-            assertEq(vaultAccount.rpIndex, latestRpIndex, "vaultAccount rpIndex mismatch");
-            
-            // -------------- check accumulated rewards --------------
-
-                // calc. accumulated rewards
-                uint256 totalAccRewards = newlyAccRewards + vault2Account1_T46.totalAccRewards;
-                // calc. accumulated fees
-                uint256 latestAccCreatorFee = newlyAccCreatorFee + vault2Account1_T46.accCreatorRewards;
-                uint256 latestAccTotalNftFee = newlyAccTotalNftFee + vault2Account1_T46.accNftStakingRewards;
-                uint256 latestAccRealmPointsFee = newlyAccRealmPointsFee + vault2Account1_T46.accRealmPointsRewards;
-
-            assertEq(vaultAccount.totalAccRewards, totalAccRewards, "totalAccRewards mismatch");
-            assertEq(vaultAccount.accCreatorRewards, latestAccCreatorFee, "accCreatorRewards mismatch");
-            assertEq(vaultAccount.accNftStakingRewards, latestAccTotalNftFee, "accNftStakingRewards mismatch"); 
-            assertEq(vaultAccount.accRealmPointsRewards, latestAccRealmPointsFee, "accRealmPointsRewards mismatch");
-            
-            // -------------- check rewardsAccPerUnitStaked --------------
-
-                // rewardsAccPerUnitStaked: for moca stakers
-                uint256 latestAccRewardsLessOfFees = newlyAccRewards - newlyAccCreatorFee - newlyAccTotalNftFee - newlyAccRealmPointsFee;
-                uint256 expectedRewardsAccPerUnitStaked = (latestAccRewardsLessOfFees * 1E18 / stakedTokens) + vault2Account1_T46.rewardsAccPerUnitStaked;
-
-            assertEq(vaultAccount.rewardsAccPerUnitStaked, expectedRewardsAccPerUnitStaked, "rewardsAccPerUnitStaked mismatch");
-
-            // Check totalClaimedRewards
-            assertEq(vaultAccount.totalClaimedRewards, 0, "totalClaimedRewards mismatch");
-        }
-    // ---------------- distribution 1 ----------------
+// ---------------- distribution 1 ----------------
 
         //    function testDistribution1_T51() public {
         //    function testVault1Account1_T51() public {
