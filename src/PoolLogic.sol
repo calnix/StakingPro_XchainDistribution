@@ -1384,10 +1384,9 @@ library PoolLogic {
             }
 
             return distribution;
-        }      
+        }    
 
         // ..... Distribution has NOT ended: normal distribution update ....
-        // staking power: realmPoints | tokens: staked tokens
         uint256 totalBoostedBalance = distribution.distributionId == 0 ? totalBoostedRealmPoints : totalBoostedStakedTokens;
         (uint256 nextIndex, uint256 currentTimestamp, uint256 emittedRewards) = _calculateDistributionIndex(distribution, totalBoostedBalance);
 
