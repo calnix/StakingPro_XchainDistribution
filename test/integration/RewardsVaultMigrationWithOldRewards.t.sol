@@ -1,11 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "./PoolT21.t.sol";
+import "../unit/PoolT21.t.sol";
 
 /** T26
-    - D1 started at T21
-    - create D2 at T26
+    1. T26: Setup new distribution D2
+    2. T31: Check claimable rewards [hotwire distribution updates by entering maintenance mode]
+    3. T36: Users claim current rewards
+    4. T36: End and Pop all active distributions, DX [cannot switch rewards vault if there are active distributions]
+    5. T36: Switch rewards vault
+    6. T36: Grant POOL ROLE to some EOA
+    7. T36: Setup old distribution D1 [bypassing all checks]
+    8. T36: Deposit remainder of rewards for D1
+    9. T36: Users claim old distribution remainder [same behaviour expected for D2]
  */
 
 abstract contract StateT26_D2Created is StateT21_CreationNftsUpdated {
@@ -258,7 +265,7 @@ abstract contract StateT36_ClaimOldDistributionRemainder is StateT36_SwitchRewar
         uint256 originalTotalRequired = 2 days * emissionPerSecond;
         uint256 remainder = originalTotalRequired - 10 ether;
 
-        // update distribution
+        // setup old distribution
         vm.startPrank(deployer);
             rewardsVaultV2.setupDistribution(distributionId, dstEid, tokenAddress, remainder);
         vm.stopPrank();
