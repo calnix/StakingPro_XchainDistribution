@@ -51,6 +51,9 @@ abstract contract StateT86466p_EndD1Ended is StateT86466p_SetD1EndTimeInTenSecon
         // D1 ends at this time
         vm.warp(distribution.endTime);
 
+        // advance block number to 100
+        vm.roll(100);
+
         // remove nft requirement
         vm.startPrank(operator);
             pool.updateCreationNfts(0);
@@ -58,8 +61,7 @@ abstract contract StateT86466p_EndD1Ended is StateT86466p_SetD1EndTimeInTenSecon
         
         uint256[] memory tokenIds = new uint256[](0);
         
-        // advance block number to 100
-        vm.roll(100);
+
         console.log("block.number:", block.number);
         console.log("block.timestamp:", block.timestamp);
 
@@ -71,29 +73,18 @@ abstract contract StateT86466p_EndD1Ended is StateT86466p_SetD1EndTimeInTenSecon
         vm.stopPrank();
 
         // store vaultIds
-        V1_id = generateVaultId(block.number - 1, user2);   //note: returns 0x24f6c86cc299508a85c4c0de7b08ff7d3fba2a939acdfe2307e0465e9e417506; which is based on `block.number - 100`
-        console.logBytes32(V1_id);
+        // note: V1_id = generateVaultId(block.number - 1, user2) returns 0x24f6c86cc299508a85c4c0de7b08ff7d3fba2a939acdfe2307e0465e9e417506; which is based on `block.number - 100`
+        // this is a foundry bug due to vm.roll
+        V1_id = 0x14e2413b875469fa30381d480c072d7f0626084e0149d9562f3a7302d538fada;
+        
         V2_id = generateVaultId(block.number - 2, user2);   // 0x394536f898ddd5aa628223a3f33e9eb517a5f798d600aebc92d69e11da9cb069
         console.logBytes32(V2_id);
         V3_id = generateVaultId(block.number - 3, user2);   // 0xbc0ea96761194fe7a925242f706cb2ef7c5af6e960ed156ab639fc3e4725d497
-        console.logBytes32(V3_id);
-        
+        console.logBytes32(V3_id);        
     }
 }
 
 contract StateT86466p_EndD1EndedTest is StateT86466p_EndD1Ended {
-
-    function test_wtfId() public {
-        for(uint256 i = 0; i < 10; i++) {
-
-            vm.startPrank(user2);
-            bytes32 id = generateVaultId(block.number - i, user2);
-                console.log("i:", i);
-                console.logBytes32(id);
-                console.log("....:");
-            vm.stopPrank();
-        }
-    }
 
     function test_V1FirstStakingAction_D1EndedNotUpdated() public {
         // get D1
