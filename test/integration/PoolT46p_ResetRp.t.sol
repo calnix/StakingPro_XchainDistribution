@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "./PoolT41.t.sol";
+import "../unit/PoolT41.t.sol";
 
     /**    
         1. enableMaintenance
@@ -9,6 +9,7 @@ import "./PoolT41.t.sol";
         3. updateAllVaultAccounts -- all vaults w/ rp
         4. updateAllUserAccounts -- book rp related fees before resetting
         5. resetRealmPoints
+            5.1 offchain script to check all vaults and users rp balances as sanity check, before proceeding to next onchain step
         6. incrementSeason
         7. disableMaintenance
      */
@@ -23,7 +24,7 @@ abstract contract StateT46p_ResetRp_UpdateDistributions is StateT41_User2StakesT
     function setUp() public virtual override {
         super.setUp();
 
-        // set t46p
+        // set t46
         vm.warp(46);
 
         // vaults
@@ -36,11 +37,6 @@ abstract contract StateT46p_ResetRp_UpdateDistributions is StateT41_User2StakesT
             pool.updateActiveDistributions();
         vm.stopPrank();
 
-
-        // for reference
-        vault1_T46 = pool.getVault(vaultId1);
-        vault2_T46 = pool.getVault(vaultId2);
-
         // store updated distributions at T46
         vault1_T46 = pool.getVault(vaultId1);
         vault2_T46 = pool.getVault(vaultId2);
@@ -51,7 +47,6 @@ abstract contract StateT46p_ResetRp_UpdateDistributions is StateT41_User2StakesT
 
 //note: time is frozen at T46 - distribution state saved
 contract StateT46p_ResetRp_UpdateDistributions_Test is StateT46p_ResetRp_UpdateDistributions {
-
 
     DataTypes.VaultAccount[2] public updatedVaultAccounts_D0_T46;
     DataTypes.VaultAccount[2] public updatedVaultAccounts_D0_T51;
@@ -73,6 +68,8 @@ contract StateT46p_ResetRp_UpdateDistributions_Test is StateT46p_ResetRp_UpdateD
         // STORE vaultAccounts at T46
         updatedVaultAccounts_D0_T46[0] = getVaultAccount(vaultId1, 0);
         updatedVaultAccounts_D0_T46[1] = getVaultAccount(vaultId2, 0);
+        updatedVaultAccounts_D1_T46[0] = getVaultAccount(vaultId1, 1);
+        updatedVaultAccounts_D1_T46[1] = getVaultAccount(vaultId2, 1);
     }
 
     function test_updateVaultAccounts_T51() public {
@@ -91,14 +88,20 @@ contract StateT46p_ResetRp_UpdateDistributions_Test is StateT46p_ResetRp_UpdateD
         // STORE vaultAccounts at T51
         updatedVaultAccounts_D0_T51[0] = getVaultAccount(vaultId1, 0);
         updatedVaultAccounts_D0_T51[1] = getVaultAccount(vaultId2, 0);
+        updatedVaultAccounts_D1_T51[0] = getVaultAccount(vaultId1, 1);
+        updatedVaultAccounts_D1_T51[1] = getVaultAccount(vaultId2, 1);
     }
-
     // transition fn
     function test_TimeIsFrozen() public {
-        // vaultAccount state should be the same regardless when it is updated, as distributions are frozen
         
-        // ---- D0: VAULTID 1 ----
+        // update vaultAccounts at different times
+        test_updateVaultAccounts_T46();
+        test_updateVaultAccounts_T51();
 
+        // vaultAccount state should be the same regardless when it is updated, as distributions are frozen
+        // ---- D0: VAULTID 1 ----
+        console.log("D0: VAULTID 1");
+        
             // indexes
             assertEq(updatedVaultAccounts_D0_T46[0].index, updatedVaultAccounts_D0_T51[0].index);
             assertEq(updatedVaultAccounts_D0_T46[0].nftIndex, updatedVaultAccounts_D0_T51[0].nftIndex);
@@ -114,7 +117,8 @@ contract StateT46p_ResetRp_UpdateDistributions_Test is StateT46p_ResetRp_UpdateD
             assertEq(updatedVaultAccounts_D0_T46[0].totalClaimedRewards, updatedVaultAccounts_D0_T51[0].totalClaimedRewards);
 
         // ---- D0: VAULTID 2 ----
-
+        console.log("D0: VAULTID 2");
+        
             // indexes
             assertEq(updatedVaultAccounts_D0_T46[1].index, updatedVaultAccounts_D0_T51[1].index);
             assertEq(updatedVaultAccounts_D0_T46[1].nftIndex, updatedVaultAccounts_D0_T51[1].nftIndex);
@@ -130,7 +134,8 @@ contract StateT46p_ResetRp_UpdateDistributions_Test is StateT46p_ResetRp_UpdateD
             assertEq(updatedVaultAccounts_D0_T46[1].totalClaimedRewards, updatedVaultAccounts_D0_T51[1].totalClaimedRewards);
         
         // ---- D1: VAULTID 1 ----
-
+        console.log("D1: VAULTID 1");
+        
             // indexes
             assertEq(updatedVaultAccounts_D1_T46[0].index, updatedVaultAccounts_D1_T51[0].index);
             assertEq(updatedVaultAccounts_D1_T46[0].nftIndex, updatedVaultAccounts_D1_T51[0].nftIndex);
@@ -146,7 +151,7 @@ contract StateT46p_ResetRp_UpdateDistributions_Test is StateT46p_ResetRp_UpdateD
             assertEq(updatedVaultAccounts_D1_T46[0].totalClaimedRewards, updatedVaultAccounts_D1_T51[0].totalClaimedRewards);
 
         // ---- D1: VAULTID 2 ----
-
+        console.log("D1: VAULTID 2");
             // indexes
             assertEq(updatedVaultAccounts_D1_T46[1].index, updatedVaultAccounts_D1_T51[1].index);
             assertEq(updatedVaultAccounts_D1_T46[1].nftIndex, updatedVaultAccounts_D1_T51[1].nftIndex);
@@ -800,9 +805,7 @@ contract StateT51p_ResetRp_VaultsAndUsersUpdated_Test is StateT51p_ResetRp_Vault
 
         }
         
-    // --------------- state transition  ---------------
-
-    // --------------- reset rp ---------------
+// --------------- state transition: reset rp ---------------
     
     function testCannotResetTotalBoostedRp_BeforeResetRp() public {
 
