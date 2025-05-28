@@ -11,8 +11,9 @@ pragma solidity 0.8.26;
 import './Events.sol';
 import {Errors} from './Errors.sol';
 import {DataTypes} from './DataTypes.sol';
-import {PoolLogic} from "./PoolLogic.sol";
 import {Constants} from "./Constants.sol";
+import {PoolLogic} from "./PoolLogic.sol";
+import {PoolRiskLogic} from "./PoolRiskLogic.sol";
 
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20, IERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -1002,41 +1003,16 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param userAddresses Array of user addresses whose accounts will be updated
      */
     function updateAllUserAccounts(uint256 distributionId, bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
-        // get num of users + sanity check
-        uint256 numOfUsers = userAddresses.length;
-        if(numOfUsers == 0) revert Errors.InvalidArray();
-
-        // get distribution + sanity check: distribution must have started [and therefore exists]
-        DataTypes.Distribution storage distribution = distributions[distributionId];
-        if(distribution.startTime > block.timestamp) revert Errors.DistributionNotStarted();        // if not started: no emissions, nothing pending to book
-
-        // get vault + sanity check: vault must exist
-        DataTypes.Vault storage vault = vaults[vaultId];
-        if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
-
-        // if vault has no rp staked, it is not affected, whether if its D0 emissions or DX rp fees
-        //if(vault.stakedRealmPoints == 0) revert Errors.NoRpStaked(); note: not blocking this, as its better to be more permissive
-
-        // get vault account 
-        DataTypes.VaultAccount storage vaultAccount = vaultAccounts[vaultId][distributionId];
-
-        // update user accounts
-        for(uint256 i; i < numOfUsers; ++i){
-            address userAddress = userAddresses[i];
-
-            // get user vault assets
-            DataTypes.User storage userVaultAssets = users[userAddress][vaultId];
-            //if(userVaultAssets.stakedRealmPoints == 0) revert Errors.NoRpStaked(); note: not blocking this, as its better to be more permissive
-
-            // get user account + sanity check  
-            DataTypes.UserAccount memory userAccount = userAccounts[userAddress][vaultId][distributionId];
-
-
-            // update user account
-            userAccounts[userAddress][vaultId][distributionId] = PoolLogic.executeUpdateUserAccount(vaultId, userAddress, distributionId, userVaultAssets, userAccount, vaultAccount);
-        }
-
-        emit UserAccountsUpdated(distributionId, vaultId, userAddresses);
+        PoolLogic.executeUpdateUserAccounts(
+            vaultId,
+            distributionId,
+            userAddresses,
+            vaults,
+            distributions,
+            users,
+            vaultAccounts,
+            userAccounts
+        );
     }
 
 
@@ -1047,47 +1023,11 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param userAddresses Array of user addresses whose realm points will be reset
      */
     function resetBaseRealmPoints(bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
-        
-        // get num of users + sanity check
-        uint256 numOfUsers = userAddresses.length;
-        if(numOfUsers == 0) revert Errors.InvalidArray();
 
-        // get vault + sanity check
-        DataTypes.Vault storage vault = vaults[vaultId];
-        if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
-        //if(vault.stakedRealmPoints == 0) revert Errors.NoRpStaked(); -- note?
+        uint256 baseRealmPointsSum = PoolLogic.executeResetBaseRealmPoints(vaultId, userAddresses, vaults, users);
 
-        // counters
-        uint256 baseRealmPointsSum;
-
-        // loop thru all users against the same vault
-        for(uint256 i; i < numOfUsers; ++i){
-            address user = userAddresses[i];
-
-            // get user assets for specified vault
-            DataTypes.User storage userVaultAssets = users[user][vaultId];
-
-            // increment counter
-            baseRealmPointsSum += userVaultAssets.stakedRealmPoints;
-            
-            // reset user's rp
-            delete userVaultAssets.stakedRealmPoints;
-        }
-
-        // decrement vault totals
-        vault.stakedRealmPoints -= baseRealmPointsSum;
-
-        // if last cycle: reset boosted realm points on vault, decrement global total
-        if(vault.stakedRealmPoints == 0){
-
-            totalBoostedRealmPoints -= vault.boostedRealmPoints;
-            delete vault.boostedRealmPoints;
-        }
-
-        // decrement global totals
+        // decrement global total
         totalStakedRealmPoints -= baseRealmPointsSum;
-
-        emit BaseRealmPointsReset(vaultId, userAddresses, baseRealmPointsSum);
     }
 
     /**
@@ -1293,67 +1233,13 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             onBehalfOf = msg.sender;
         }
 
-        uint256 userTotalStakedNfts;
-        uint256 userTotalStakedTokens;
-        uint256 userTotalCreationNfts;
-
-        for(uint256 i; i < vaultIds.length; ++i){
-
-            // get vault + check if has been created            
-            bytes32 vaultId = vaultIds[i];
-            DataTypes.Vault storage vault = vaults[vaultId];
-            if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
-
-            // get user data for vault
-            DataTypes.User storage userVaultAssets = users[onBehalfOf][vaultId];
-
-            // check user has non-zero holdings
-            uint256 stakedNfts = userVaultAssets.tokenIds.length;
-            uint256 stakedTokens = userVaultAssets.stakedTokens;       
-            if (
-                !(vault.creator == onBehalfOf && vault.creationTokenIds.length > 0)     // if creator, check if there are creator nfts to retrieve 
-                && stakedNfts == 0                                                       // user has no staked nfts
-                && stakedTokens == 0                                                     // user has no staked tokens 
-                ) revert Errors.UserHasNothingStaked(vaultId, onBehalfOf);
-
-            // update balances: user + vault
-            if(stakedTokens > 0){
-
-                // decrement
-                vault.stakedTokens -= stakedTokens;
-                delete userVaultAssets.stakedTokens;
-                
-                // track total
-                userTotalStakedTokens += stakedTokens;
-            }
-
-            uint256[] memory userTotalTokenIds;
-
-            // update balances: user + vault
-            if(stakedNfts > 0){
-
-                // track total
-                userTotalTokenIds = PoolLogic.concatArrays(userTotalTokenIds, userVaultAssets.tokenIds);
-                userTotalStakedNfts += stakedNfts;
-
-                // decrement
-                vault.stakedNfts -= stakedNfts;
-                delete userVaultAssets.tokenIds;
-            }
-
-            // creation nfts
-            if(vault.creator == onBehalfOf){
-
-                userTotalTokenIds = PoolLogic.concatArrays(userTotalTokenIds, vault.creationTokenIds);
-                userTotalCreationNfts += vault.creationTokenIds.length;
-
-                delete vault.creationTokenIds;
-            }
-
-            // record unstake with registry, else users nfts will be locked in locker
-            NFT_REGISTRY.recordUnstake(onBehalfOf, userTotalTokenIds, vaultId);
-            emit NftsExited(onBehalfOf, vaultId, userTotalTokenIds);        
-        }
+        (uint256 userTotalStakedNfts, uint256 userTotalStakedTokens, uint256 userTotalCreationNfts) = PoolRiskLogic.executeEmergencyExit(
+            onBehalfOf,
+            vaultIds,
+            vaults,
+            users,
+            NFT_REGISTRY
+        );
 
         // update global
         totalStakedNfts -= userTotalStakedNfts;
