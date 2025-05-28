@@ -92,7 +92,11 @@ contract StateT86466p_EndD1EndedTest is StateT86466p_EndD1Ended {
 
         // get vault account for D1 before
         DataTypes.VaultAccount memory vaultAccount_before = getVaultAccount(V1_id, 1);
+        DataTypes.UserAccount memory userAccount_before = getUserAccount(user2, V1_id, 1);
         assertEq(vaultAccount_before.index, 0);
+        assertEq(userAccount_before.index, 0);
+        
+        // D1 index is non-zero and larger than vault index
         assertGt(distribution_before.index, vaultAccount_before.index);
 
         vm.startPrank(user2);
@@ -104,11 +108,19 @@ contract StateT86466p_EndD1EndedTest is StateT86466p_EndD1Ended {
         DataTypes.Distribution memory distribution_after = getDistribution(1);
         // get vault account for D1 after
         DataTypes.VaultAccount memory vaultAccount_after = getVaultAccount(V1_id, 1);
-        
+        DataTypes.UserAccount memory userAccount_after = getUserAccount(user2, V1_id, 1);
 
-        // vault index == 0 although d1.index was incremented on final update
+        // vault and user index == 0 although d1.index was incremented on final update
         assertEq(vaultAccount_after.index, 0);
+        assertEq(userAccount_after.index, 0);
         assertGt(distribution_after.index, distribution_before.index);
+    }
+
+    function test_NotEligibleForRewards_D1EndedWhenVaultStarted() public {
+        vm.startPrank(user2);
+            vm.expectRevert(Errors.NotEligibleForRewards.selector);
+            pool.claimRewards(V1_id, 1);
+        vm.stopPrank();
     }
 }
 
