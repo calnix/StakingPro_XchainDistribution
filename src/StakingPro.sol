@@ -1023,11 +1023,47 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param userAddresses Array of user addresses whose realm points will be reset
      */
     function resetBaseRealmPoints(bytes32 vaultId, address[] calldata userAddresses) external whenNotEnded whenNotPaused whenUnderMaintenance onlyRole(Constants.OPERATOR_ROLE) {
+        
+        // get num of users + sanity check
+        uint256 numOfUsers = userAddresses.length;
+        if(numOfUsers == 0) revert Errors.InvalidArray();
 
-        uint256 baseRealmPointsSum = PoolLogic.executeResetBaseRealmPoints(vaultId, userAddresses, vaults, users);
+        // get vault + sanity check
+        DataTypes.Vault storage vault = vaults[vaultId];
+        if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
+        //if(vault.stakedRealmPoints == 0) revert Errors.NoRpStaked(); -- note?
 
-        // decrement global total
+        // counters
+        uint256 baseRealmPointsSum;
+
+        // loop thru all users against the same vault
+        for(uint256 i; i < numOfUsers; ++i){
+            address user = userAddresses[i];
+
+            // get user assets for specified vault
+            DataTypes.User storage userVaultAssets = users[user][vaultId];
+
+            // increment counter
+            baseRealmPointsSum += userVaultAssets.stakedRealmPoints;
+            
+            // reset user's rp
+            delete userVaultAssets.stakedRealmPoints;
+        }
+
+        // decrement vault totals
+        vault.stakedRealmPoints -= baseRealmPointsSum;
+
+        // if last cycle: reset boosted realm points on vault, decrement global total
+        if(vault.stakedRealmPoints == 0){
+
+            totalBoostedRealmPoints -= vault.boostedRealmPoints;
+            delete vault.boostedRealmPoints;
+        }
+
+        // decrement global totals
         totalStakedRealmPoints -= baseRealmPointsSum;
+
+        emit BaseRealmPointsReset(vaultId, userAddresses, baseRealmPointsSum);
     }
 
     /**

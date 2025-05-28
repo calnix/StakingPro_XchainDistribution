@@ -832,52 +832,6 @@ library PoolLogic {
         return userAccount;
     }
 
-    function executeResetBaseRealmPoints(
-        bytes32 vaultId, 
-        address[] calldata userAddresses,
-        mapping(bytes32 vaultId => DataTypes.Vault vault) storage vaults,
-        mapping(address user => mapping(bytes32 vaultId => DataTypes.User userVaultAssets)) storage users
-    ) external returns(uint256){
-
-        // get num of users + sanity check
-        uint256 numOfUsers = userAddresses.length;
-        if(numOfUsers == 0) revert Errors.InvalidArray();
-
-        // get vault + sanity check
-        DataTypes.Vault storage vault = vaults[vaultId];
-        if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
-        //if(vault.stakedRealmPoints == 0) revert Errors.NoRpStaked(); -- note?
-
-        // counters
-        uint256 baseRealmPointsSum;
-
-        // loop thru all users against the same vault
-        for(uint256 i; i < numOfUsers; ++i){
-            address user = userAddresses[i];
-
-            // get user assets for specified vault
-            DataTypes.User storage userVaultAssets = users[user][vaultId];
-
-            // increment counter
-            baseRealmPointsSum += userVaultAssets.stakedRealmPoints;
-            
-            // reset user's rp
-            delete userVaultAssets.stakedRealmPoints;
-        }
-
-        // decrement vault totals
-        vault.stakedRealmPoints -= baseRealmPointsSum;
-
-        // if last cycle: reset boosted realm points on vault
-        if(vault.stakedRealmPoints == 0){
-            delete vault.boostedRealmPoints;
-        }
-
-        emit BaseRealmPointsReset(vaultId, userAddresses, baseRealmPointsSum);
-
-        return baseRealmPointsSum;
-    }
-
     function viewClaimRewards(        
         mapping(bytes32 vaultId => DataTypes.Vault vault) storage vaults,
         mapping(uint256 distributionId => DataTypes.Distribution distribution) storage distributions,
