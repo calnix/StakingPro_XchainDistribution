@@ -5,6 +5,7 @@ import './Events.sol';
 import {Errors} from './Errors.sol';
 import {DataTypes} from './DataTypes.sol';
 import {Constants} from './Constants.sol';
+import {PoolHelpers} from './PoolHelpers.sol';
 
 import {INftRegistry} from "./interfaces/INftRegistry.sol";
 
@@ -91,7 +92,7 @@ library PoolLogic {
         if (vault.stakedRealmPoints > 0) vault.boostedRealmPoints = (vault.stakedRealmPoints * vault.totalBoostFactor) / Constants.PRECISION_BASE;
 
         // update: user's tokenIds + boostedBalances
-        userVaultAssets.tokenIds = _concatArrays(userVaultAssets.tokenIds, tokenIds);
+        userVaultAssets.tokenIds = PoolHelpers._concatArrays(userVaultAssets.tokenIds, tokenIds);
 
         // update storage: mappings 
         vaults[params.vaultId] = vault;
@@ -760,6 +761,54 @@ library PoolLogic {
         }
     }
 
+    function executeUpdateUserAccounts(
+        bytes32 vaultId,
+        uint256 distributionId,
+        address[] calldata userAddresses,
+        mapping(bytes32 vaultId => DataTypes.Vault vault) storage vaults,
+        mapping(uint256 distributionId => DataTypes.Distribution distribution) storage distributions,
+        mapping(address user => mapping(bytes32 vaultId => DataTypes.User userVaultAssets)) storage users,
+        mapping(bytes32 vaultId => mapping(uint256 distributionId => DataTypes.VaultAccount vaultAccount)) storage vaultAccounts,
+        mapping(address user => mapping(bytes32 vaultId => mapping(uint256 distributionId => DataTypes.UserAccount userAccount))) storage userAccounts
+    ) external returns(DataTypes.UserAccount memory) {
+
+        // get num of users + sanity check
+        uint256 numOfUsers = userAddresses.length;
+        if(numOfUsers == 0) revert Errors.InvalidArray();
+
+        // get distribution + sanity check: distribution must have started [and therefore exists]
+        DataTypes.Distribution storage distribution = distributions[distributionId];
+        if(distribution.startTime > block.timestamp) revert Errors.DistributionNotStarted();        // if not started: no emissions, nothing pending to book
+
+        // get vault + sanity check: vault must exist
+        DataTypes.Vault storage vault = vaults[vaultId];
+        if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
+
+        // if vault has no rp staked, it is not affected, whether if its D0 emissions or DX rp fees
+        //if(vault.stakedRealmPoints == 0) revert Errors.NoRpStaked(); note: not blocking this, as its better to be more permissive
+
+        // get vault account 
+        DataTypes.VaultAccount storage vaultAccount = vaultAccounts[vaultId][distributionId];
+
+        // update user accounts
+        for(uint256 i; i < numOfUsers; ++i){
+            address userAddress = userAddresses[i];
+
+            // get user assets for specified vault
+            DataTypes.User storage userVaultAssets = users[userAddress][vaultId];
+            //if(userVaultAssets.stakedRealmPoints == 0) revert Errors.NoRpStaked(); note: not blocking this, as its better to be more permissive
+            
+            // get user account + sanity check  
+            DataTypes.UserAccount memory userAccount = userAccounts[userAddress][vaultId][distributionId];
+
+            // update user account
+            userAccounts[userAddress][vaultId][distributionId] = executeUpdateUserAccount(vaultId, userAddress, distributionId, userVaultAssets, userAccount, vaultAccount);
+            
+        }
+
+        emit UserAccountsUpdated(distributionId, vaultId, userAddresses);
+    }
+
     function executeUpdateUserAccount(
         bytes32 vaultId,
         address userAddress,
@@ -767,7 +816,7 @@ library PoolLogic {
         DataTypes.User memory user,
         DataTypes.UserAccount memory userAccount,
         DataTypes.VaultAccount memory vaultAccount
-    ) external returns(DataTypes.UserAccount memory) {
+    ) internal returns(DataTypes.UserAccount memory) {
 
 
         // calculate accruals
@@ -781,6 +830,52 @@ library PoolLogic {
         emit UserAccountUpdated(userAddress, vaultId, distributionId, accruedStakingRewards, accNftStakingRewards, accRealmPointsRewards);
 
         return userAccount;
+    }
+
+    function executeResetBaseRealmPoints(
+        bytes32 vaultId, 
+        address[] calldata userAddresses,
+        mapping(bytes32 vaultId => DataTypes.Vault vault) storage vaults,
+        mapping(address user => mapping(bytes32 vaultId => DataTypes.User userVaultAssets)) storage users
+    ) external returns(uint256){
+
+        // get num of users + sanity check
+        uint256 numOfUsers = userAddresses.length;
+        if(numOfUsers == 0) revert Errors.InvalidArray();
+
+        // get vault + sanity check
+        DataTypes.Vault storage vault = vaults[vaultId];
+        if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
+        //if(vault.stakedRealmPoints == 0) revert Errors.NoRpStaked(); -- note?
+
+        // counters
+        uint256 baseRealmPointsSum;
+
+        // loop thru all users against the same vault
+        for(uint256 i; i < numOfUsers; ++i){
+            address user = userAddresses[i];
+
+            // get user assets for specified vault
+            DataTypes.User storage userVaultAssets = users[user][vaultId];
+
+            // increment counter
+            baseRealmPointsSum += userVaultAssets.stakedRealmPoints;
+            
+            // reset user's rp
+            delete userVaultAssets.stakedRealmPoints;
+        }
+
+        // decrement vault totals
+        vault.stakedRealmPoints -= baseRealmPointsSum;
+
+        // if last cycle: reset boosted realm points on vault
+        if(vault.stakedRealmPoints == 0){
+            delete vault.boostedRealmPoints;
+        }
+
+        emit BaseRealmPointsReset(vaultId, userAddresses, baseRealmPointsSum);
+
+        return baseRealmPointsSum;
     }
 
     function viewClaimRewards(        
@@ -841,10 +936,6 @@ library PoolLogic {
         }
 
         return totalUnclaimedRewardsInNative;
-    }
-
-    function concatArrays(uint256[] memory arr1, uint256[] memory arr2) external pure returns (uint256[] memory) {
-        return _concatArrays(arr1, arr2);
     }
 
 //-----------------------------------internal-------------------------------------------  
@@ -1200,27 +1291,6 @@ library PoolLogic {
         return (userVaultAssets, vault);
     }
 
-    ///@dev concat two uint256 arrays: [1,2,3],[4,5] -> [1,2,3,4,5]
-    function _concatArrays(uint256[] memory arr1, uint256[] memory arr2) internal pure returns(uint256[] memory) {
-        
-        // create resulting arr
-        uint256 len1 = arr1.length;
-        uint256 len2 = arr2.length;
-        uint256[] memory resArr = new uint256[](len1 + len2);
-        
-        uint256 i;
-        for (; i < len1; i++) {
-            resArr[i] = arr1[i];
-        }
-        
-        uint256 j;
-        while (j < len2) {
-            resArr[i++] = arr2[j++];
-        }
-
-        return resArr;
-    }
-
     ///@dev will revert if arrToRemove contains elements not found within originalArr
     ///@dev reversion due to resArr accessing an invalid index
     function _removeFromArray(uint256[] memory originalArr, uint256[] memory arrToRemove) internal pure returns (uint256[] memory) {
@@ -1249,6 +1319,8 @@ library PoolLogic {
 
         return resArr;
     }
+
+//-----------------------------------helpers-------------------------------------------  
 
     /*//////////////////////////////////////////////////////////////
                                 HELPERS

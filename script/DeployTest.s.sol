@@ -100,8 +100,8 @@ abstract contract ContractAddresses {
 
     address public owner = 0x8C9C001F821c04513616fd7962B2D8c62f925fD2;
 
-    StakingPro public pool = StakingPro(0x2531f0C4A7161C0203C21BEc446757fA4D509Fb0);
-    RewardsVaultV1 public rewardsVault = RewardsVaultV1(0xa8dC9344DfAbbb8d831426108da937F60514fCd8);
+    StakingPro public pool = StakingPro(0xAFF17Cdfcbb3582F35750a2167A7c8bf337461e6);
+    RewardsVaultV1 public rewardsVault = RewardsVaultV1(0x0cb183Dfa91FC3D485d099C481157849c6fc5BD8);
 }
 
 /*
@@ -180,11 +180,12 @@ contract Roles is Script, ContractAddresses {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_TEST");
         vm.startBroadcast(deployerPrivateKey);
 
-        address target = 0x800954e76c4F7Fc77c0cB7E4e8EDC3Ba2065518B;
+        address target = 0x38854C27E424eC0bE5A7C6AA05A3862b05F8AAC4;
 
         pool.grantRole(Constants.OPERATOR_ROLE, target);
         pool.grantRole(Constants.MONITOR_ROLE, target);
         pool.grantRole(Constants.CRON_JOB_ROLE, target);
+        pool.grantRole(Constants.POOL_ROLE, target);
 
         vm.stopBroadcast();
     }
