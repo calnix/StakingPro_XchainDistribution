@@ -234,6 +234,21 @@ The user account is updated next, accounting for the user's share of the rewards
 
 Link to the illustration: https://link.excalidraw.com/l/ZeH3y0tOi6/8T00wtHkie9
 
+## Updating Indexes
+
+On first stake, all user indexes are updated to match vault indexes:
+
+- _updateUserAccount() always updates all 3 userIndexes to vault's latest
+- regardless of what is staked (tokens, nfts, rp) all the indexes get updated
+- this ensures that the user Account is kept in sync with the vault
+- also starts a user off at 0 prior accrued rewards for that vault
+
+If a user has nothing staked to a vault, its userAccounts for that vault should be zero:
+
+- none of its indexes would be updated; hence 0
+- so if a userAccount should be 0-ed out; txn should revert before
+- e.g claimRewards() should revert if user has nothing staked to a vault
+
 ## Fees and rewards
 
 Fees are levied on the vault's accrued rewards, before the rewards are distributed to the vault's stakers.
