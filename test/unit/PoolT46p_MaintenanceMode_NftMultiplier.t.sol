@@ -970,6 +970,8 @@ abstract contract StateT46p_MaintenanceMode_DisableMaintenance is StateT46p_Main
     function setUp() public virtual override {
         super.setUp();
         
+        vm.warp(51);
+
         vm.startPrank(operator);
             pool.disableMaintenance();
         vm.stopPrank();
@@ -983,6 +985,44 @@ contract StateT46p_MaintenanceMode_DisableMaintenanceTest is StateT46p_Maintenan
             vm.expectRevert(abi.encodeWithSelector(Errors.NotInMaintenance.selector));
             pool.disableMaintenance();
         vm.stopPrank();
+    }   
+
+    function test_TimeIsNotLostInMaintenanceMode() public {
+        // 1. maintenance mode entered at T46
+        // 2. distributions updated at T46 
+        // 3. maintenance mode exited at T51
+        // 4. next state update occurs at T56 
+        // we show that the 5s of time, T46 - T51, is not lost
+        // users will get rewards accounting for emissions from T46 - T56
+
+        // get state before 
+        DataTypes.Distribution memory distribution_before = getDistribution(1);
+        DataTypes.VaultAccount memory vault1Account_before = getVaultAccount(vaultId1, 1);
+
+
+        vm.warp(56);
+
+        vm.startPrank(user1);
+            pool.claimRewards(vaultId1, 1);
+        vm.stopPrank();
+
+        // Get distribution state after update
+        DataTypes.Distribution memory distribution_after = getDistribution(1);
+        DataTypes.VaultAccount memory vault1Account_after = getVaultAccount(vaultId1, 1);
+        
+        // Calculate expected index increment for 10 seconds of emissions
+        uint256 expectedEmitted = 10 * distribution_before.emissionPerSecond;    
+        uint256 expectedIndexIncrement = expectedEmitted * 1E18 / pool.totalBoostedStakedTokens();
+        uint256 expectedIndex = distribution_before.index + expectedIndexIncrement;
+
+        // Verify distribution state
+        assertEq(distribution_after.index, expectedIndex, "distribution index mismatch");
+        assertEq(distribution_after.totalEmitted, distribution_before.totalEmitted + expectedEmitted, "distribution total emitted mismatch");
+        assertEq(distribution_after.lastUpdateTimeStamp, 56, "distribution last update timestamp mismatch");
+
+        // Verify vault1 accrued rewards during maintenance mode
+        assertEq(vault1Account_after.index, expectedIndex, "vault1 index mismatch");
+        assertGt(vault1Account_after.totalAccRewards, vault1Account_before.totalAccRewards, "vault1 total rewards did not increase");
     }
-    
 }
+
