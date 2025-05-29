@@ -1,15 +1,21 @@
-# Risk matrix for all contracts
+# Risk
+
+## Contracts + Chains
 
 Mainnet
+
 - NftLocker
 - MocaTokenAdapter
 - NftStreaming
 
 Base
-- StakingPro + RewardsVault
+
+- StakingPro
+- RewardsVault
 - NftRegistry
 
 Away
+
 - EVMVault
 
 ## Approach
@@ -29,6 +35,8 @@ Contracts will enter paused state at differing times, since different chains wil
 
 This means that there might be some in-flight txns that could be malicious.
 Before, unpausing, we should check the in-flight txns and assess if they all should be allowed to land or some should be rejected.
+
+This would impact NFTlocker+Registry and MocaToken contracts. 
 
 ### StakingPro
 

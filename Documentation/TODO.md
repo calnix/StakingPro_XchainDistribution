@@ -7,15 +7,6 @@
 
 ---
 
-# STAKING PRO MISC
-
-1. RP can be uint128; struct packing
-2. struct packing for fees, as input params: createVault + updateVaultFees
-3. pack library return variables into struct: gas savings?
-4. check internal fns in library, make sure no extra inputs/mappings/outputs
-
-Check dups in errors,events and remove.
-
 # Post-deployment
 
 ## integration suite
