@@ -45,8 +45,10 @@ contract RewardsVaultV1 is Pausable, AccessControl {
         if(pool == address(0)) revert Errors.InvalidAddress();
 
         // access control
-        _grantRole(DEFAULT_ADMIN_ROLE, owner);              // default admin role for all roles
-        
+        _grantRole(DEFAULT_ADMIN_ROLE, owner);                  // default admin role for all roles
+        _grantRole(Constants.MONITOR_ROLE, owner);              // default admin role for all roles
+        _grantRole(Constants.MONEY_MANAGER_ROLE, owner);
+
         _grantRole(Constants.POOL_ROLE, pool);                        // pool contract
         _grantRole(Constants.MONITOR_ROLE, monitor);                  // risk monitoring script
         _grantRole(Constants.MONEY_MANAGER_ROLE, moneyManager);
@@ -174,11 +176,11 @@ contract RewardsVaultV1 is Pausable, AccessControl {
         
         // sanity checks
         Distribution memory distribution = distributions[distributionId];
-        // incorrect distribution Id: only local deposits
-        if(distribution.dstEid != Constants.LOCAL_EID) revert Errors.CallDepositOnRemote();
         // distribution must be setup
         if(distribution.tokenAddress == bytes32(0)) revert Errors.DistributionNotSetup();
-        
+        // incorrect distribution Id: only local deposits
+        if(distribution.dstEid != Constants.LOCAL_EID) revert Errors.CallDepositOnRemote();
+                
         // revert if token address is 0
         address token = bytes32ToAddress(distribution.tokenAddress);
         if(token == address(0)) revert Errors.InvalidTokenAddress();
@@ -215,16 +217,18 @@ contract RewardsVaultV1 is Pausable, AccessControl {
         // check 
         Distribution memory distribution = distributions[distributionId];
         if(distribution.tokenAddress == bytes32(0)) revert Errors.DistributionNotSetup();
-        
-        // sanity check: totalDeposited must be >= totalRequired
-        if(distribution.totalDeposited < distribution.totalRequired) revert Errors.InsufficientDeposit();
 
         // check if sufficient balance
         uint256 balance = distribution.totalDeposited - distribution.totalClaimed;
         if(balance < withdrawAmount) revert Errors.InsufficientBalance();
-        
-        // update + storage
+
+        // decrement
         distribution.totalDeposited -= withdrawAmount;
+        
+        // sanity check: totalDeposited must be >= totalRequired
+        if(distribution.totalDeposited < distribution.totalRequired) revert Errors.InsufficientDeposit();
+
+        // update storage
         distributions[distributionId] = distribution;
 
         // local: transfer to receiver

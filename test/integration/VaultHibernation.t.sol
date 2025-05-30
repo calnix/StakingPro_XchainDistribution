@@ -86,6 +86,7 @@ abstract contract StateT86466p_EndD1Ended is StateT86466p_SetD1EndTimeInTenSecon
 
 contract StateT86466p_EndD1EndedTest is StateT86466p_EndD1Ended {
 
+    // vault and user index == 0 although d1.index was incremented on final update
     function test_V1FirstStakingAction_D1EndedNotUpdated() public {
         // get D1
         DataTypes.Distribution memory distribution_before = getDistribution(1);
@@ -116,10 +117,24 @@ contract StateT86466p_EndD1EndedTest is StateT86466p_EndD1Ended {
         assertGt(distribution_after.index, distribution_before.index);
     }
 
-    function test_NotEligibleForRewards_D1EndedWhenVaultStarted() public {
+    function test_V1NotEligibleForRewards_D1EndedWhenVaultStarted() public {
         vm.startPrank(user2);
             vm.expectRevert(Errors.NotEligibleForRewards.selector);
             pool.claimRewards(V1_id, 1);
+        vm.stopPrank();
+    }
+
+    function test_V2NotEligibleForRewards_D1EndedWhenVaultStarted() public {
+        vm.startPrank(user2);
+            vm.expectRevert(Errors.NotEligibleForRewards.selector);
+            pool.claimRewards(V2_id, 1);
+        vm.stopPrank();
+    }
+
+    function test_V3NotEligibleForRewards_D1EndedWhenVaultStarted() public {
+        vm.startPrank(user2);
+            vm.expectRevert(Errors.NotEligibleForRewards.selector);
+            pool.claimRewards(V3_id, 1);
         vm.stopPrank();
     }
 }

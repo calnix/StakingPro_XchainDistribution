@@ -14,11 +14,23 @@ abstract contract StateDeploy is TestingHarness {
 
     function setUp() public virtual override {
         super.setUp();
+
+        // setup D0 so that we can test deposit on DX
+        vm.prank(operator);
+        
+        // staking power
+            uint256 distributionId = 0;
+            uint256 distributionStartTime = block.timestamp + 1;
+            uint256 emissionPerSecond = 1 ether;
+            uint256 tokenPrecision = 1E18;
+            bytes32 tokenAddress = 0x00;
+        pool.setupDistribution(distributionId, distributionStartTime, 0, emissionPerSecond, tokenPrecision, 0, tokenAddress);        
     }
 }
 
 contract StateDeployTest is StateDeploy {
-
+    using stdStorage for StdStorage;
+    
     function testConstructor() public {
         
         // check roles
@@ -156,7 +168,7 @@ contract StateDeployTest is StateDeploy {
         assertEq(rewardsVault.bytes32ToAddress(zeroBytes), zeroAddr, "Zero bytes32 to address failed");
     }
 
-    // --------  set receiver tests --------
+// --------  set receiver tests --------
 
     function testCannotSetReceiverWithZeroEvmAddress() public {
         vm.startPrank(user1);
@@ -186,9 +198,321 @@ contract StateDeployTest is StateDeploy {
         assertEq(storedSolanaAddress, bytes32(0), "Incorrect Solana address stored");
     }
 
+// --------  deposit tests --------
+
+    function testCannotDespositD0() public {
+        vm.startPrank(depositor);
+        vm.expectRevert(Errors.InvalidDistributionId.selector);
+        rewardsVault.deposit(0, 10 ether, depositor);
+        vm.stopPrank();
+    }
+
+    function testCannotDepositFromZeroAddress() public {
+        vm.startPrank(depositor);
+        vm.expectRevert(Errors.InvalidAddress.selector);
+        rewardsVault.deposit(1, 10 ether, address(0));
+        vm.stopPrank();
+    }
+
+    function testCannotDepositZeroAmount() public {
+        vm.startPrank(depositor);
+        vm.expectRevert(Errors.InvalidAmount.selector);
+        rewardsVault.deposit(1, 0, depositor);
+        vm.stopPrank();
+    }
+
+    function testCannotDepositRemoteToken() public {
+        // Setup remote distribution
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = block.timestamp + 1;
+        uint256 distributionEndTime = block.timestamp + 11 seconds;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken1));
+        uint256 totalRequired = 10 ether;
+
+        // Setup remote distribution on pool
+        vm.startPrank(operator);
+            pool.setupDistribution(
+                distributionId,
+                distributionStartTime,
+                distributionEndTime,
+                emissionPerSecond,
+                tokenPrecision,
+                (dstEid + 1), // Set as remote distribution
+                tokenAddress
+            );
+        vm.stopPrank();
+
+        // Attempt to deposit for remote distribution
+        vm.startPrank(depositor);
+            vm.expectRevert(Errors.CallDepositOnRemote.selector);
+            rewardsVault.deposit(distributionId, totalRequired, depositor);
+        vm.stopPrank();
+    }
+
+    function testCannotDepositForNonExistentDistribution() public {
+        vm.startPrank(depositor);
+        vm.expectRevert(Errors.DistributionNotSetup.selector);
+        rewardsVault.deposit(12, 10 ether, depositor);
+        vm.stopPrank();
+    }
+
+/* note: cannot unit test InvalidTokenAddress() since it gets picked up first as DistributionNotSetup() 
+    function testCannotDepositInvalidTokenAddress() public {
+        // Setup distribution 
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = block.timestamp + 1;
+        uint256 distributionEndTime = block.timestamp + 11 seconds;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken1));
+        uint256 totalRequired = 10 ether;
+
+        // Setup distribution on pool
+        vm.startPrank(operator);
+            pool.setupDistribution(
+                distributionId,
+                distributionStartTime,
+                distributionEndTime,
+                emissionPerSecond,
+                tokenPrecision,
+                dstEid,
+                tokenAddress
+            );
+        vm.stopPrank();
+
+        // modify storage to make tokenAddress be 0 on rewardsVault
+        stdstore
+            .target(address(rewardsVault))
+            .sig("distributions(uint256)")
+            .with_key(1)
+            .depth(1)   
+            .checked_write(bytes32(0));
+
+        // Attempt to deposit
+        vm.startPrank(depositor);
+            vm.expectRevert(Errors.InvalidTokenAddress.selector);
+            rewardsVault.deposit(distributionId, totalRequired, depositor);
+        vm.stopPrank();
+    }
+*/
+    function testCanDeposit() public {
+        // distribution params
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = block.timestamp + 1;
+        uint256 distributionEndTime = block.timestamp + 11 seconds;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken1));
+        uint256 totalRequired = 10 ether;
+
+        // operator sets up distribution
+        vm.startPrank(operator);
+            // create distribution 1
+            pool.setupDistribution(
+                distributionId, 
+                distributionStartTime, 
+                distributionEndTime, 
+                emissionPerSecond, 
+                tokenPrecision,
+                dstEid, tokenAddress
+            );
+        vm.stopPrank();
+
+        // Check initial balances
+        uint256 initialVaultBalance = rewardsToken1.balanceOf(address(rewardsVault));
+        (,,,,uint256 initialTotalDeposited) = rewardsVault.distributions(1);
+
+        // depositor mints, approves, deposits
+        vm.startPrank(depositor);
+            rewardsToken1.mint(depositor, totalRequired);
+            rewardsToken1.approve(address(rewardsVault), totalRequired);
+
+            // Expect event emission
+            vm.expectEmit(true, true, true, true);
+            emit Deposit(distributionId, dstEid, depositor, totalRequired);
+
+            rewardsVault.deposit(distributionId, totalRequired, depositor);
+        vm.stopPrank();
+
+        // Check final balances
+        uint256 finalVaultBalance = rewardsToken1.balanceOf(address(rewardsVault));
+        (,,,,uint256 finalTotalDeposited) = rewardsVault.distributions(1);
+
+        // Verify token transfers
+        assertEq(finalVaultBalance, initialVaultBalance + totalRequired, "Vault balance should increase by deposit amount");
+        // Verify storage update
+        assertEq(finalTotalDeposited, initialTotalDeposited + totalRequired, "Total deposited should increase by deposit amount");
+    }
+    
 }
 
-abstract contract StatePaused is StateDeploy {
+abstract contract StateDeposit is StateDeploy {
+
+    function setUp() public virtual override {
+        super.setUp();
+
+        // distribution params
+        uint256 distributionId = 1;
+        uint256 distributionStartTime = block.timestamp + 1;
+        uint256 distributionEndTime = block.timestamp + 11 seconds;
+        uint256 emissionPerSecond = 1 ether;
+        uint256 tokenPrecision = 1E18;
+        bytes32 tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken1));
+        uint256 totalRequired = 10 ether;
+
+        // operator sets up distribution
+        vm.startPrank(operator);
+
+            // create distribution 1
+            pool.setupDistribution(
+                distributionId, 
+                distributionStartTime, 
+                distributionEndTime, 
+                emissionPerSecond, 
+                tokenPrecision,
+                dstEid, tokenAddress
+            );
+        vm.stopPrank();
+
+       
+        // depositor mints, approves, deposits | partial deposit
+        vm.startPrank(depositor);
+            rewardsToken1.mint(depositor, totalRequired);
+            rewardsToken1.approve(address(rewardsVault), totalRequired);
+            rewardsVault.deposit(distributionId, totalRequired - 5 ether, depositor);
+        vm.stopPrank();
+    }
+}
+
+contract StateDepositTest is StateDeposit {
+
+    function testCannotDepositInExcess() public {    
+        vm.startPrank(depositor);
+        vm.expectRevert(Errors.ExcessiveDeposit.selector);
+        rewardsVault.deposit(1, 11 ether, depositor);
+        vm.stopPrank();
+    }
+
+    function testDeposit() public {
+        (,,,,uint256 totalDeposited) = rewardsVault.distributions(1);
+        assertEq(totalDeposited, 5 ether);
+    }
+
+// --------  withdraw tests --------
+    function testCannotWithdrawInvalidDistribution() public {
+        vm.startPrank(depositor);
+        vm.expectRevert(Errors.InvalidDistributionId.selector);
+        rewardsVault.withdraw(0, 10 ether, depositor);
+        vm.stopPrank();
+    }
+
+    function testCannotWithdrawInvalidAddress() public {
+        vm.startPrank(depositor);
+        vm.expectRevert(Errors.InvalidAddress.selector);
+        rewardsVault.withdraw(1, 11 ether, address(0));
+        vm.stopPrank();
+    }
+
+    function testCannotWithdrawZeroAmount() public {
+        vm.startPrank(depositor);
+        vm.expectRevert(Errors.InvalidAmount.selector);
+        rewardsVault.withdraw(1, 0, depositor);
+        vm.stopPrank();
+    }
+
+    function testCannotWithdrawDistributionNotSetup() public {
+        vm.startPrank(depositor);
+        vm.expectRevert(Errors.DistributionNotSetup.selector);
+        rewardsVault.withdraw(11, 10 ether, depositor);
+        vm.stopPrank();
+    }
+
+    
+    function testCannotWithdrawInsufficientBalance() public {
+        vm.startPrank(depositor);
+        vm.expectRevert(Errors.InsufficientBalance.selector);
+        rewardsVault.withdraw(1, 200 ether, depositor);
+        vm.stopPrank();
+    }
+
+    function testCannotWithdrawInsufficientDeposit() public {
+        vm.startPrank(depositor);
+        vm.expectRevert(Errors.InsufficientDeposit.selector);
+        rewardsVault.withdraw(1, 3 ether, depositor);
+        vm.stopPrank();
+    }
+
+    function testCannotWithdrawInsufficientDeposit_Overflow() public {
+        vm.startPrank(depositor);
+        vm.expectRevert();
+        rewardsVault.withdraw(1, 20 ether, depositor);
+        vm.stopPrank();
+    }
+
+    function testCanWithdrawIfDistributionHasSurplus() public {
+        // Setup distribution with surplus
+        uint256 distributionId = 1;
+        uint256 newEndTime = block.timestamp + 2 seconds; // Reduced duration
+        uint256 newTotalRequired = 3 ether; // Reduced total required
+
+        // Update distribution through pool
+        vm.startPrank(operator);
+            pool.updateDistribution(distributionId, 0, newEndTime, 1 ether);
+        vm.stopPrank();
+
+        // Check initial balances
+        uint256 initialVaultBalance = rewardsToken1.balanceOf(address(rewardsVault));
+        uint256 initialDepositorBalance = rewardsToken1.balanceOf(depositor);
+
+        // Withdraw surplus
+        vm.startPrank(depositor);
+            vm.expectEmit(true, true, true, true);
+            emit Withdraw(distributionId, dstEid, depositor, 1 ether);
+            
+            rewardsVault.withdraw(distributionId, 1 ether, depositor);
+        vm.stopPrank();
+
+        // Verify balances
+        assertEq(rewardsToken1.balanceOf(address(rewardsVault)), initialVaultBalance - 1 ether, "Incorrect vault balance after withdrawal");
+        assertEq(rewardsToken1.balanceOf(depositor), initialDepositorBalance + 1 ether, "Incorrect depositor balance after withdrawal");
+    } 
+        
+}
+
+abstract contract StateWithdraw is StateDeposit {
+
+    function setUp() public virtual override {
+        super.setUp();        
+
+        // Setup distribution with surplus
+        uint256 distributionId = 1;
+        uint256 newEndTime = block.timestamp + 2 seconds; // Reduced duration
+        uint256 newTotalRequired = 3 ether; // Reduced total required
+
+        // Update distribution through pool
+        vm.startPrank(operator);
+            pool.updateDistribution(distributionId, 0, newEndTime, 1 ether);
+        vm.stopPrank();
+    }
+}
+
+contract StateWithdrawTest is StateWithdraw {
+
+    function testCanWithdraw() public {
+        uint256 distributionId = 1;
+
+        vm.startPrank(depositor);
+            vm.expectEmit(true, true, true, true);
+            emit Withdraw(distributionId, dstEid, depositor, 1 ether);
+
+            rewardsVault.withdraw(distributionId, 1 ether, depositor);
+        vm.stopPrank();
+    }
+}
+
+abstract contract StatePaused is StateWithdraw {
 
     function setUp() public virtual override {
         super.setUp();
@@ -286,6 +610,18 @@ contract StatePausedTest is StatePaused {
         );
         rewardsVault.exit(address(rewardsToken1));
         vm.stopPrank();
+    }
+    
+    function testAdminCanExit() public {
+        uint256 initialBalance = rewardsToken1.balanceOf(owner);
+        uint256 vaultBalance = rewardsToken1.balanceOf(address(rewardsVault));
+        
+        vm.startPrank(owner);
+        rewardsVault.exit(address(rewardsToken1));
+        vm.stopPrank();
+
+        assertEq(rewardsToken1.balanceOf(owner), initialBalance + vaultBalance, "Tokens not transferred correctly");
+        assertEq(rewardsToken1.balanceOf(address(rewardsVault)), 0, "Vault balance not zeroed");
     }
 
 }

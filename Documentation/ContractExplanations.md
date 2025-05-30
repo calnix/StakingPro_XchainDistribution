@@ -1259,6 +1259,8 @@ This serves as a sanity check to ensure that the multiplier is updated correctly
 
 ## 9. Migrating from old rewardsVault (V1) to new rewardsVault (V2)
 
+### previously
+
 Process:
 
 1. end all active distributions on stakingPro  [users have may unclaimed rewards]
@@ -1269,6 +1271,17 @@ Step 3 will require an EOA address to be granted the POOL_ROLE, to be able to ca
 
 Additionally, `totalClaimed` and `totalDeposited` will start from `0` on rewardsVaultV2.
 These values will not be migrated over from V1 - so we must be mindful of this when migrating.
+
+### Using the same distribution id
+
+Process:
+
+1. Pause RewardsVaultV1 contract - this allows `exit()` to be called by Owner [DEFAULT_ADMIN_ROLE]
+2. Owner calls exit to remove remaining tokens from contract
+3. Owner grants `POOL_ROLE` to self on new RewardsVaultV2 contract
+4. Owner calls `setupDistribution` to setup the original distributions on the new RewardsVaultV2 contract
+5. Owner calls `deposit` to finances them accordingly, with the remaining tokens taken from the old contract. 
+
 
 # V2: How does RewardsVaultV2 work w/ EVMVault
 

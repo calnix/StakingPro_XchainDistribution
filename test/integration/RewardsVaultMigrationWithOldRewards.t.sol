@@ -248,33 +248,38 @@ abstract contract StateT36_ClaimOldDistributionRemainder is StateT36_SwitchRewar
     function setUp() public virtual override {
         super.setUp();
 
-        // grant POOL ROLE to some other address
+        // grant POOL ROLE to self
         vm.startPrank(owner);
-            rewardsVaultV2.grantRole(Constants.POOL_ROLE, deployer);
+            rewardsVaultV2.grantRole(Constants.POOL_ROLE, owner);
         vm.stopPrank();
 
-        // CALC. TOTAL REQUIRED
-        uint256 distributionId = 1;
-        uint256 distributionStartTime = 21;
-        uint256 distributionEndTime = 21 + 2 days;
-        uint256 emissionPerSecond = 1 ether;
-        uint256 tokenPrecision = 1E18;
-        bytes32 tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken1));
+            // CALC. TOTAL REQUIRED
+            uint256 distributionId = 1;
+            uint256 distributionStartTime = 21;
+            uint256 distributionEndTime = 21 + 2 days;
+            uint256 emissionPerSecond = 1 ether;
+            uint256 tokenPrecision = 1E18;
+            bytes32 tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken1));
 
-        // original total required
-        uint256 originalTotalRequired = 2 days * emissionPerSecond;
-        uint256 remainder = originalTotalRequired - 10 ether;
+            // original total required
+            uint256 originalTotalRequired = 2 days * emissionPerSecond;
+            uint256 remainder = originalTotalRequired - 10 ether;
 
-        // setup old distribution
-        vm.startPrank(deployer);
+        // withdraw remainder of rewards from old rewards vault - has to be done via exit()
+        vm.startPrank(owner);
+            rewardsVault.pause();
+            rewardsVault.exit(address(rewardsToken1));
+        vm.stopPrank();
+
+        // setup old distribution on new vault
+        vm.startPrank(owner);
             rewardsVaultV2.setupDistribution(distributionId, dstEid, tokenAddress, remainder);
         vm.stopPrank();
 
         // deposit remainder of rewards
-        vm.startPrank(depositor);
-            rewardsToken1.mint(depositor, remainder);
+        vm.startPrank(owner);
             rewardsToken1.approve(address(rewardsVaultV2), remainder);
-            rewardsVaultV2.deposit(distributionId, remainder, depositor);
+            rewardsVaultV2.deposit(distributionId, remainder, owner);
         vm.stopPrank();
     }
 }
