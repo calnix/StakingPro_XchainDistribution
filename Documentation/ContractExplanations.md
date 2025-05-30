@@ -1280,8 +1280,10 @@ Process:
 2. Owner calls exit to remove remaining tokens from contract
 3. Owner grants `POOL_ROLE` to self on new RewardsVaultV2 contract
 4. Owner calls `setupDistribution` to setup the original distributions on the new RewardsVaultV2 contract
-5. Owner calls `deposit` to finances them accordingly, with the remaining tokens taken from the old contract. 
+5. Owner calls `deposit` to finances them accordingly, with the remaining tokens taken from the old contract.
 
+Do not need to `endDistributions` on StakingPro, as txns will revert once RewardsVaultV1 is paused.
+Essentially, we can switch RewardsVault contracts without making changes to StakingPro.
 
 # V2: How does RewardsVaultV2 work w/ EVMVault
 
