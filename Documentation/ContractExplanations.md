@@ -1259,19 +1259,6 @@ This serves as a sanity check to ensure that the multiplier is updated correctly
 
 ## 9. Migrating from old rewardsVault (V1) to new rewardsVault (V2)
 
-### previously
-
-Process:
-
-1. end all active distributions on stakingPro  [users have may unclaimed rewards]
-2. switch to rewardsVaultV2
-3. setup old distributions on rewardsVaultV2 [via setupDistribution]
-
-Step 3 will require an EOA address to be granted the POOL_ROLE, to be able to call setupDistribution.
-
-Additionally, `totalClaimed` and `totalDeposited` will start from `0` on rewardsVaultV2.
-These values will not be migrated over from V1 - so we must be mindful of this when migrating.
-
 ### Using the same distribution id
 
 Process:
@@ -1284,6 +1271,9 @@ Process:
 
 Do not need to `endDistributions` on StakingPro, as txns will revert once RewardsVaultV1 is paused.
 Essentially, we can switch RewardsVault contracts without making changes to StakingPro.
+
+Additionally, `totalClaimed` and `totalDeposited` will start from `0` on rewardsVaultV2.
+These values will not be migrated over from V1 - so we must be mindful of this when migrating.
 
 # V2: How does RewardsVaultV2 work w/ EVMVault
 
