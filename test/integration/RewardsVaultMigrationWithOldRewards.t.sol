@@ -291,8 +291,14 @@ abstract contract StateT36_ClaimOldDistributionRemainder is StateT36_SwitchRewar
 
     function setUp() public virtual override {
         super.setUp();
+         
+        // users had claimable from T26 - T31
+        (,,uint256 totalRequiredAfterEnded,uint256 totalClaimedAfterEnded,) = rewardsVault.distributions(2);
+        uint256 emittedButNotClaimed = totalRequiredAfterEnded - totalClaimedAfterEnded;
+        // delta of 723 from expectation: 5 ether for 5 seconds 
+        assertEq(emittedButNotClaimed, 5 ether + 723);
         
-        uint256 emittedButNotClaimed = emissionPerSecond * 5 seconds; // users had claimable from T26 - T31
+        // future emissions calc based on paper math
         uint256 futureEmissions = rewardsToken2.balanceOf(address(rewardsVault)) - emittedButNotClaimed;
 
         // 1. pause old rewards vault, then exit tokens. transfer to depositor
@@ -324,10 +330,7 @@ abstract contract StateT36_ClaimOldDistributionRemainder is StateT36_SwitchRewar
         vm.stopPrank();
 
         (,,uint256 newTotalRequired,,) = rewardsVaultV2.distributions(3);
-        console2.log("newTotalRequired", newTotalRequired);
-        console2.log("futureEmissions", futureEmissions);
-        // minor delta - probably due to rounding
-        assertEq(futureEmissions - newTotalRequired, 723);
+        assertEq(futureEmissions - newTotalRequired, 0);
 
         // 5. deposit remainder of rewards into new distribution [easier for owner to do this instead of transferring to depositor]
         vm.startPrank(owner);
@@ -433,6 +436,32 @@ contract StateT36_ClaimOldDistributionRemainderTest is StateT36_ClaimOldDistribu
         // check that claimed rewards are updated
         uint256 totalClaimedRewardsAfter = userAccountAfter.claimedStakingRewards + userAccountAfter.claimedNftRewards + userAccountAfter.claimedRealmPointsRewards;
         assertEq(totalClaimedRewardsAfter, totalClaimedRewards + expectedRewards, "Claimed rewards should be updated");
+    }
+
+    function test_DistributionWasMigratedCorrectly_D2D3() public {
+        // Get D2 values from old vault
+        (,,uint256 oldD2TotalRequired, uint256 oldD2TotalClaimed, uint256 oldD2TotalDeposited) = rewardsVault.distributions(2);
+
+        // Get D2 and D3 values from new vault
+        (,,uint256 newD2TotalRequired, uint256 newD2TotalClaimed, uint256 newD2TotalDeposited) = rewardsVaultV2.distributions(2);
+        (,,uint256 newD3TotalRequired, uint256 newD3TotalClaimed, uint256 newD3TotalDeposited) = rewardsVaultV2.distributions(3);
+        
+        // get total emitted w/ rewards vault v1
+        (,,,,,,uint256 poolTotalEmitted,,uint256 manuallyEnded) = pool.distributions(2);
+        assertEq(manuallyEnded, 1);
+
+        // 1. pool emitted should match old D2 totalRequired -> this is set to match as per endDistributionManually
+        // 2. pool emitted, less what had been claimed on old rewards vault, should be equal to new D2 totalRequired 
+        // this ensures new D2 was setup correctly to ONLY emit emitted+unclaimed
+        assertEq(poolTotalEmitted, oldD2TotalRequired);
+        assertEq(poolTotalEmitted - oldD2TotalClaimed, newD2TotalRequired, "new D2 totalRequired incorrect");
+
+        // get future emissions of old D2: started T26 & ended T36; meant to end T26 + 2Days
+        uint256 futureDuration = distributionEndTime - 36;
+        uint256 futureEmissions = futureDuration * emissionPerSecond;
+
+        // check D3 setup correctly
+        assertEq(newD3TotalRequired, futureEmissions, "D3 should be setup to emit futureEmissions");
     }
 }
 
