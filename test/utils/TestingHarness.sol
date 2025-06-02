@@ -109,7 +109,7 @@ abstract contract TestingHarness is Test {
             vaultCoolDownDuration,
             owner,
             monitor,
-            operator,
+            cronJob,
             storedSigner,
             "StakingPro",
             "1");
@@ -119,7 +119,7 @@ abstract contract TestingHarness is Test {
 
         // V2
         rewardsVaultV2 = new RewardsVaultV2(depositor, monitor, owner, address(pool), address(lzMock));
-        
+    
         // rewards
         rewardsToken1 = new ERC20Mock();
         rewardsToken2 = new ERC20Mock();
@@ -153,18 +153,18 @@ abstract contract TestingHarness is Test {
 
         vm.stopPrank();
 
-        // set nftRegistry pool
+        // grant operator role to operator
         vm.startPrank(owner);
-            nftRegistry.setPool(address(pool));
+            pool.grantRole(Constants.OPERATOR_ROLE, operator);
         vm.stopPrank();
 
         vm.startPrank(operator);
             pool.setRewardsVault(address(rewardsVault));
         vm.stopPrank();
 
-        // grant cron job role
+        // set nftRegistry pool
         vm.startPrank(owner);
-            pool.grantRole(Constants.CRON_JOB_ROLE, cronJob);
+            nftRegistry.setPool(address(pool));
         vm.stopPrank();
     }
 

@@ -1252,28 +1252,32 @@ This serves as a sanity check to ensure that the multiplier is updated correctly
 
 ## 8. Ending a distribution
 
-- `endDistributionImmediately(uint256 distributionId)` followed by `popEndedDistribution(uint256 distributionId)`
-- This function enables immediate termination of a distribution by setting its end time to the current block timestamp.
-- Effectively stops any further rewards from being distributed while preserving all rewards earned up to that point.
-- Distribution must exist and be active (not ended).
+1. `endDistributionImmediately(uint256 distributionId)` called by OPERATOR
+2. `updateAllVaultAccounts(vaultIds[], distributionId)` called by CRON_JOB
+3. `popEndedDistribution(uint256 distributionId)` called by OPERATOR
+
+Vault accounts have to be updated, so as to book rewards against the fee structures at that time.
+Else, when vault owner changes fees in the future, the newer fee structure would be incorrectly applied to past rewards.
+Hence, it is important call updateAllVaultAccounts before popping a distribution.
 
 ## 9. Migrating from old rewardsVault (V1) to new rewardsVault (V2)
 
-### Using the same distribution id
-
 Process:
 
-1. Pause RewardsVaultV1 contract - this allows `exit()` to be called by Owner [DEFAULT_ADMIN_ROLE]
-2. Owner calls exit to remove remaining tokens from contract
-3. Owner grants `POOL_ROLE` to self on new RewardsVaultV2 contract
-4. Owner calls `setupDistribution` to setup the original distributions on the new RewardsVaultV2 contract
-5. Owner calls `deposit` to finances them accordingly, with the remaining tokens taken from the old contract.
+1. End all active distributions on stakingPro  [users have may unclaimed rewards]
+2. Since distributions are ended, make sure to update vaults and pop active distributions.
+3. `MONEY_MANAGER_ROLE` on RewardsVaultV1 to withdraw remaining tokens on contract
 
-Do not need to `endDistributions` on StakingPro, as txns will revert once RewardsVaultV1 is paused.
-Essentially, we can switch RewardsVault contracts without making changes to StakingPro.
+### on unclaimed rewards for prior distributions
 
-Additionally, `totalClaimed` and `totalDeposited` will start from `0` on rewardsVaultV2.
-These values will not be migrated over from V1 - so we must be mindful of this when migrating.
+1. Have Owner of RewardsVaultV2 grant `POOL_ROLE` to some EOA.
+2. EOA will call `setupDistribution` on RewardsVaultV2 to setup *ended distributions*
+3. `MONEY_MANAGER_ROLE` on RewardsVaultV2 to deposit remaining tokens for these distributions
+
+This will allow users to claim previously ended distributions, on the new contract.
+
+> note that  `totalClaimed` and `totalDeposited` will not be carried over to the new RewardsVault contract, so its important to end distributions.
+> Hotswapping rewards vault contracts is not encouraged as we want to avoid a discrepancy btw StakingPro and RewardsVault, especially surrounding the calculations of `totalRequired`.
 
 # V2: How does RewardsVaultV2 work w/ EVMVault
 

@@ -17,24 +17,31 @@ import "../unit/PoolT21.t.sol";
 
 abstract contract StateT26_D2Created is StateT21_CreationNftsUpdated {
 
+    uint256 public distributionId = 2;
+    uint256 public distributionStartTime;
+    uint256 public distributionEndTime;
+    uint256 public emissionPerSecond;
+    uint256 public tokenPrecision;
+    bytes32 public tokenAddress;
+    uint256 public totalRequired;
+
     function setUp() public virtual override {
         super.setUp();
 
         vm.warp(26);
-
-        // create D2
-        uint256 distributionId = 2;
-        uint256 distributionStartTime = block.timestamp;
-        uint256 distributionEndTime = distributionStartTime + 2 days;
-        uint256 emissionPerSecond = 1 ether;
-        uint256 tokenPrecision = 1E18;
-        bytes32 tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken2));
+        
+        // d2 params
+        distributionStartTime = block.timestamp;
+        distributionEndTime = distributionStartTime + 2 days;
+        emissionPerSecond = 1 ether;
+        tokenPrecision = 1E18;
+        tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken2));
 
         vm.startPrank(operator);
             pool.setupDistribution(distributionId, distributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
         vm.stopPrank();
 
-        uint256 totalRequired = (distributionEndTime - distributionStartTime) * emissionPerSecond;
+        totalRequired = (distributionEndTime - distributionStartTime) * emissionPerSecond;
 
         // mint rewards
         vm.startPrank(depositor);
@@ -155,20 +162,47 @@ abstract contract StateT36_EndAllActiveDistributions is StateT31_CheckClaimableR
     function setUp() public virtual override {
         super.setUp();
 
+        // user claims rewards at T31
+        vm.startPrank(user1);
+            pool.claimRewards(vaultId1, 1);
+            pool.claimRewards(vaultId1, 2);
+        vm.stopPrank();
         vm.startPrank(user2);
             pool.claimRewards(vaultId1, 1);
             pool.claimRewards(vaultId1, 2);
         vm.stopPrank();
 
-        // 5 more ticks of emissions
+        // 5 more ticks of emissions -> users have claimable rewards; BUT NOT CLAIMED
         vm.warp(36);
 
+        // 1. grant operator role to operator
+        // done in testing harness
+
+        // 2. Operator ends distribution manually
         vm.startPrank(operator);
             pool.endDistributionManually(1);
             pool.endDistributionManually(2);
+        vm.stopPrank();
+
+        bytes32[] memory vaultIds = new bytes32[](1);
+        vaultIds[0] = vaultId1;
+
+        // 3. CronJob updates vault accounts
+        vm.startPrank(cronJob);
+            pool.updateAllVaultAccounts(vaultIds, 1);
+            pool.updateAllVaultAccounts(vaultIds, 2);
+        vm.stopPrank();
+
+        // 4. Operator pops ended distribution
+        vm.startPrank(operator);
             pool.popEndedDistribution(1);
             pool.popEndedDistribution(2);
         vm.stopPrank();
+
+        // 5. Operator renounceRole role on self [for ease of testing, ignore this step]
+        //vm.startPrank(operator);
+        //    pool.renounceRole(Constants.OPERATOR_ROLE, operator);
+        //vm.stopPrank();
     }
 }
 
@@ -189,8 +223,6 @@ contract StateT36_EndAllActiveDistributionsTest is StateT36_EndAllActiveDistribu
 }
 
 abstract contract StateT36_SwitchRewardsVault is StateT36_EndAllActiveDistributions {
-
-    //address oldRewardsVault = address(pool.REWARDS_VAULT());
 
     function setUp() public virtual override {
         super.setUp();
@@ -244,55 +276,88 @@ contract StateT36_SwitchRewardsVaultTest is StateT36_SwitchRewardsVault {
 
 // note: when bypassing to setup old distribution, none of the input checks would be applied
 abstract contract StateT36_ClaimOldDistributionRemainder is StateT36_SwitchRewardsVault {
+    /**
+        We setup the old distribution on the new rewardsVault contract,
+        then deposit only the portion of rewards deemed emitted, but not claimed.
+
+        This allows users to claim their rewards under the old distributionId.
+
+        However, we do not use this avenue to have the distribution continue.
+        Rather, we setup a new distributionId to distribute the remaining unemitted rewards.
+        This is to ensure no edge case issues with totalRequired, etc.
+
+        Hence the complexity of process detailed below.
+     */
 
     function setUp() public virtual override {
         super.setUp();
+        
+        uint256 emittedButNotClaimed = emissionPerSecond * 5 seconds; // users had claimable from T26 - T31
+        uint256 futureEmissions = rewardsToken2.balanceOf(address(rewardsVault)) - emittedButNotClaimed;
 
-        // grant POOL ROLE to self
-        vm.startPrank(owner);
-            rewardsVaultV2.grantRole(Constants.POOL_ROLE, owner);
-        vm.stopPrank();
-
-            // CALC. TOTAL REQUIRED
-            uint256 distributionId = 1;
-            uint256 distributionStartTime = 21;
-            uint256 distributionEndTime = 21 + 2 days;
-            uint256 emissionPerSecond = 1 ether;
-            uint256 tokenPrecision = 1E18;
-            bytes32 tokenAddress = rewardsVault.addressToBytes32(address(rewardsToken1));
-
-            // original total required
-            uint256 originalTotalRequired = 2 days * emissionPerSecond;
-            uint256 remainder = originalTotalRequired - 10 ether;
-
-        // withdraw remainder of rewards from old rewards vault - has to be done via exit()
+        // 1. pause old rewards vault, then exit tokens. transfer to depositor
         vm.startPrank(owner);
             rewardsVault.pause();
-            rewardsVault.exit(address(rewardsToken1));
+            rewardsVault.exit(address(rewardsToken2));
+            //rewardsToken2.transfer(depositor, futureEmissions);
         vm.stopPrank();
 
-        // setup old distribution on new vault
+        // 2. grant POOL_ROLE to self 
+        // 3. setup old distribution on new vault: to allow users to claim emitted rewards [we are not continuing the distribution; only claiming emitted]
         vm.startPrank(owner);
-            rewardsVaultV2.setupDistribution(distributionId, dstEid, tokenAddress, remainder);
+            rewardsVaultV2.grantRole(Constants.POOL_ROLE, owner);
+
+            rewardsVaultV2.setupDistribution(distributionId, dstEid, tokenAddress, emittedButNotClaimed);
+        
+            rewardsToken2.approve(address(rewardsVaultV2), emittedButNotClaimed);
+            rewardsVaultV2.deposit(distributionId, emittedButNotClaimed, owner);
+
+            rewardsVaultV2.revokeRole(Constants.POOL_ROLE, owner);
         vm.stopPrank();
 
-        // deposit remainder of rewards
+        // 4. create new distribution for remainder of rewards - through stakingPro
+        // all params remain the same except, id and startTime - look to distribute emissions only
+        uint256 newDistributionId = 3;
+        uint256 newDistributionStartTime = block.timestamp;
+        vm.startPrank(operator);
+            pool.setupDistribution(newDistributionId, newDistributionStartTime, distributionEndTime, emissionPerSecond, tokenPrecision, dstEid, tokenAddress);
+        vm.stopPrank();
+
+        (,,uint256 newTotalRequired,,) = rewardsVaultV2.distributions(3);
+        console2.log("newTotalRequired", newTotalRequired);
+        console2.log("futureEmissions", futureEmissions);
+        // minor delta - probably due to rounding
+        assertEq(futureEmissions - newTotalRequired, 723);
+
+        // 5. deposit remainder of rewards into new distribution [easier for owner to do this instead of transferring to depositor]
         vm.startPrank(owner);
-            rewardsToken1.approve(address(rewardsVaultV2), remainder);
-            rewardsVaultV2.deposit(distributionId, remainder, owner);
+            rewardsToken2.approve(address(rewardsVaultV2), newTotalRequired);
+            rewardsVaultV2.deposit(newDistributionId, newTotalRequired, owner);
         vm.stopPrank();
     }
 }
 
 contract StateT36_ClaimOldDistributionRemainderTest is StateT36_ClaimOldDistributionRemainder {
-
-    function test_ClaimOldDistributionRemainder_D1() public {
+    
+    // D1 was not setup on new RewardsVault; users cannot claim previously emitted+unclaimed rewards
+    function test_CannotClaimOldDistributionIfNotSetup_D1() public {
         uint256 distributionId = 1;
+        bytes32 vaultId = vaultId1;
+
+        // Claim rewards
+        vm.startPrank(user2);
+            vm.expectRevert(Errors.InsufficientBalance.selector);
+            pool.claimRewards(vaultId, distributionId);
+        vm.stopPrank();
+    }
+
+    function test_CanClaimOldDistributionRemainder_D2() public {
+        uint256 distributionId = 2;
         bytes32 vaultId = vaultId1;
         
         // Check initial balances
-        uint256 initialBalance = rewardsToken1.balanceOf(user2);
-        uint256 initialVaultBalance = rewardsToken1.balanceOf(address(rewardsVaultV2));
+        uint256 initialBalance = rewardsToken2.balanceOf(user2);
+        uint256 initialVaultBalance = rewardsToken2.balanceOf(address(rewardsVaultV2));
         
         // Get user account before claiming
         (DataTypes.UserAccount memory userAccountBefore, , ) = pool.getUpdatedUserAccount(user2, vaultId, distributionId);
@@ -312,13 +377,56 @@ contract StateT36_ClaimOldDistributionRemainderTest is StateT36_ClaimOldDistribu
         vm.stopPrank();
         
         // Check balances after claiming
-        uint256 finalBalance = rewardsToken1.balanceOf(user2);
-        uint256 finalVaultBalance = rewardsToken1.balanceOf(address(rewardsVaultV2));
+        uint256 finalBalance = rewardsToken2.balanceOf(user2);
+        uint256 finalVaultBalance = rewardsToken2.balanceOf(address(rewardsVaultV2));
         
         // check token transfers
         assertEq(finalBalance, initialBalance + expectedRewards, "User balance should increase by claimed rewards");
         assertEq(finalVaultBalance, initialVaultBalance - expectedRewards, "Vault balance should decrease by claimed rewards");
         
+        // Get user account after claiming
+        DataTypes.UserAccount memory userAccountAfter = getUserAccount(user2, vaultId, distributionId);
+        
+        // check that claimed rewards are updated
+        uint256 totalClaimedRewardsAfter = userAccountAfter.claimedStakingRewards + userAccountAfter.claimedNftRewards + userAccountAfter.claimedRealmPointsRewards;
+        assertEq(totalClaimedRewardsAfter, totalClaimedRewards + expectedRewards, "Claimed rewards should be updated");
+    }
+
+    function test_CanClaimNewDistribution_D3() public {
+        // for emissions to occur
+        vm.warp(block.timestamp + 1);
+
+        uint256 distributionId = 3;
+        bytes32 vaultId = vaultId1;
+
+        // Check initial balances
+        uint256 initialBalance = rewardsToken2.balanceOf(user2);
+        uint256 initialVaultBalance = rewardsToken2.balanceOf(address(rewardsVaultV2));
+
+        // Get user account before claiming
+        (DataTypes.UserAccount memory userAccountBefore, , ) = pool.getUpdatedUserAccount(user2, vaultId, distributionId);
+
+        // Calculate expected rewards
+        uint256 totalAccruedRewards = userAccountBefore.accStakingRewards + userAccountBefore.accNftStakingRewards + userAccountBefore.accRealmPointsRewards; 
+        uint256 totalClaimedRewards = userAccountBefore.claimedStakingRewards + userAccountBefore.claimedNftRewards + userAccountBefore.claimedRealmPointsRewards;
+        uint256 expectedRewards = totalAccruedRewards - totalClaimedRewards;
+
+        // Claim rewards
+        vm.startPrank(user2);
+            vm.expectEmit(true, true, true, true);
+            emit RewardsClaimed(distributionId, vaultId, user2, expectedRewards);
+
+            pool.claimRewards(vaultId, distributionId);
+        vm.stopPrank();
+
+        // Check balances after claiming
+        uint256 finalBalance = rewardsToken2.balanceOf(user2);
+        uint256 finalVaultBalance = rewardsToken2.balanceOf(address(rewardsVaultV2));
+        
+        // check token transfers
+        assertEq(finalBalance, initialBalance + expectedRewards, "User balance should increase by claimed rewards");
+        assertEq(finalVaultBalance, initialVaultBalance - expectedRewards, "Vault balance should decrease by claimed rewards");
+
         // Get user account after claiming
         DataTypes.UserAccount memory userAccountAfter = getUserAccount(user2, vaultId, distributionId);
         

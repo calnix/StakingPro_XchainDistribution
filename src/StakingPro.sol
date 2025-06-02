@@ -96,13 +96,13 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         address nftRegistry, address stakedToken, uint256 startTime_, 
         /*uint256 maxFeeFactor, uint256 minRpRequired,*/ uint256 nftMultiplier, 
         uint256 creationNftsRequired, uint256 vaultCoolDownDuration,
-        address owner, address monitor, address operator,
+        address owner, address monitor, address cron_job,
         address storedSigner, string memory name, string memory version) payable EIP712(name, version) {
 
         // sanity check: addresses 
         if(owner == address(0)) revert Errors.InvalidAddress();
         if(monitor == address(0)) revert Errors.InvalidAddress();
-        if(operator == address(0)) revert Errors.InvalidAddress();
+        if(cron_job == address(0)) revert Errors.InvalidAddress();
         if(stakedToken == address(0)) revert Errors.InvalidAddress();
 
         // disable for 3rd-party use
@@ -141,8 +141,11 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // monitor script: only calls pause
         _grantRole(Constants.MONITOR_ROLE, monitor);
 
-        // operator
-        _grantRole(Constants.OPERATOR_ROLE, operator);
+        // note: only to be granted on demand.
+        //_grantRole(Constants.OPERATOR_ROLE, operator);
+
+        // cron_job: script to call updateAllVaultAccounts when a distribution ends
+        _grantRole(Constants.CRON_JOB_ROLE, cron_job);
     }
 
 
