@@ -1263,10 +1263,19 @@ Hence, it is important call updateAllVaultAccounts before popping a distribution
 ## 9. Migrating from old rewardsVault (V1) to new rewardsVault (V2)
 
 Process:
+1. End active distributions on stakingPro
+2. Update vaults and pop ended distributions
+3. Update Pool's RewardsVault reference via `setRewardsVault`
+4. Pause old RewardsVault and call `exit` to withdraw tokens
+5. On new RewardsVault:
+   - Owner grants self POOL_ROLE
+   - Setup ended distribution IDs via `setupDistribution` for unclaimed rewards
+   - Deposit tokens for unclaimed rewards
+6. Create new distribution through stakingPro with same parameters (new ID/startTime)
+    - Setup new distribution ID for future emissions
+7. Deposit remaining rewards into new distribution
 
-1. End all active distributions on stakingPro  [users have may unclaimed rewards]
-2. Since distributions are ended, make sure to update vaults and pop active distributions.
-3. `MONEY_MANAGER_ROLE` on RewardsVaultV1 to withdraw remaining tokens on contract
+Reference: StateT36_ClaimOldDistributionRemainder in RewardsVaultMigrationWithOldRewards.t.sol
 
 ### on unclaimed rewards for prior distributions
 

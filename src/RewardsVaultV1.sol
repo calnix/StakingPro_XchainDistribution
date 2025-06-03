@@ -287,21 +287,4 @@ contract RewardsVaultV1 is Pausable, AccessControl {
         
         return address(uint160(value));
     }
-
-
 } 
-    
-
-
-
-/**
-    Setup a distribution
-    - deposit required into here
-    - setUpDistribution on pool
-    
-    - should setUpDistri on pool sanity check tokenVault?
-    - yes, cos we can have multiple distributions, for the same token.
-
-    LAYERZERO
-    - isSupportedEid: https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts
- */
