@@ -44,9 +44,11 @@ contract EVMVault is OApp, Pausable, Ownable2Step, AccessControl {
 
         // access control
         _grantRole(DEFAULT_ADMIN_ROLE, owner);              // default admin role for all roles
-        
+        _grantRole(MONITOR_ROLE, owner);                    // to call pause
+        _grantRole(MONEY_MANAGER_ROLE, owner);              // withdraw/deposit
+
         _grantRole(MONITOR_ROLE, monitor);                  // risk monitoring script
-        _grantRole(MONEY_MANAGER_ROLE, moneyManager);
+        _grantRole(MONEY_MANAGER_ROLE, moneyManager);       // withdraw/deposit
     }
 
     /**

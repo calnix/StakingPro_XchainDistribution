@@ -412,7 +412,7 @@ If we only wanted to express fee factors in integer values, (meaning 0 precision
 
 ---
 
-# Contract Walkthrough
+# StakingPro Contract Walkthrough
 
 ## Constructor & Initial setup
 

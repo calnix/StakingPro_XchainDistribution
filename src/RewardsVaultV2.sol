@@ -78,6 +78,13 @@ contract RewardsVaultV2 is RewardsVaultV1, OApp, Ownable2Step {
         }
     }
 
+    /**
+     * @notice Updates the total deposited balance for a remote distribution
+     * @dev Only callable by MONEY_MANAGER_ROLE. Used to update the remote token balance available on EvmVault
+     * @param distributionId The ID of the distribution to update
+     * @param amount The amount to add/subtract from totalDeposited
+     * @param isDeposit Flag indicating if this is a deposit (1) or withdrawal (0)
+     */
     function updateRemoteBalance(uint256 distributionId, uint256 amount, uint256 isDeposit) external onlyRole(Constants.MONEY_MANAGER_ROLE) {
         if(amount == 0) revert Errors.InvalidAmount();
         if(distributionId == 0) revert Errors.InvalidDistributionId();
