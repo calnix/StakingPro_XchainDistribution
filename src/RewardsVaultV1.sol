@@ -134,8 +134,8 @@ contract RewardsVaultV1 is Pausable, AccessControl {
         if(msg.value > 0) revert Errors.PayableBlocked();
 
         // get distribution + user
-        Distribution memory distribution = distributions[distributionId];
-        UserAddresses memory user = users[staker];
+        Distribution storage distribution = distributions[distributionId];
+        UserAddresses storage user = users[staker];
 
         // check balance
         uint256 balance = distribution.totalDeposited - distribution.totalClaimed;
@@ -149,7 +149,6 @@ contract RewardsVaultV1 is Pausable, AccessControl {
         address token = bytes32ToAddress(distribution.tokenAddress);
 
         // update storage
-        distributions[distributionId] = distribution;
         paidOut[staker][addressToBytes32(receiver)][distributionId] += amount;
     
         emit PayRewards(distributionId, staker, receiver, amount);
@@ -204,7 +203,7 @@ contract RewardsVaultV1 is Pausable, AccessControl {
     /**
      * @notice Withdraws rewards from the vault for a specific distribution
      * @dev Only callable by accounts with MONEY_MANAGER_ROLE. Distribution ID 0 is reserved for staking power.
-     * @dev Withdrawal allowed based on balance; onus on caller to check and maintain sufficient balances.
+     * @dev Only withdrawals of excess deposit allowed. This occurs when distributions are ended/updated leading to a lower totalRequired.
      * @param distributionId The ID of the distribution to withdraw rewards from
      * @param withdrawAmount Amount of rewards to withdraw (in wei)
      * @param to Address to which rewards will be sent
