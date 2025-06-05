@@ -1304,7 +1304,9 @@ Note that the RewardsVault only supports local, other remote evm chains.
 Process:
 
 1. First, the vault creator must activate the cooldown by calling `activateCooldown()`. This sets the end time on a vault.
-2. Once the end time is reached, `endVaults()` must be called on the vault. This removes the vault's staked assets from the system and updates the global boosted balances.
+2. Once the end time is reached, `endVaults()` must be called on the vault. 
+    - This removes the vault's staked assets from the system and updates the global boosted balances.
+    - Also, sets vault.removed = 1
 
 ### activateCooldown()
 
