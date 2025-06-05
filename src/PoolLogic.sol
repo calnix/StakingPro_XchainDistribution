@@ -195,24 +195,22 @@ library PoolLogic {
         users[newVaultParams.user][newVaultParams.vaultId] = userNewVaultAssets;
 
         // global delta calculations
-        uint256 totalBoostedDelta;
         if(oldVault.removed == 0){
             
             if(newBoostedRealmPoints > oldBoostedRealmPoints) {
-                totalBoostedDelta = (newBoostedRealmPoints - oldBoostedRealmPoints);    
+                uint256 totalBoostedDelta = (newBoostedRealmPoints - oldBoostedRealmPoints);    
                 //1: flag for incrementation
                 return(totalBoostedDelta, 1);
 
             } else{
-                totalBoostedDelta = (oldBoostedRealmPoints - newBoostedRealmPoints);
+                uint256 totalBoostedDelta = (oldBoostedRealmPoints - newBoostedRealmPoints);
                 //0: flag for decrementation
                 return(totalBoostedDelta, 0);
             }
 
         } else{ 
             // oldVault.removed is 1: increment global state as per newVault's boost factor
-           totalBoostedDelta = newBoostedRealmPoints;
-           return(totalBoostedDelta, 1);
+           return(newBoostedRealmPoints, 1);
         }
     }
 

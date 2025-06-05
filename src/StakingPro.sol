@@ -297,7 +297,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param signature The signature to verify
      * @custom:requirements
      * - Amount must be at least MINIMUM_REALMPOINTS_REQUIRED
-     * - Signature must not be expired or already executed
+     * - Signature must not be either expired or already executed
      * - Signature must be valid and from the stored signer
      * - Signature must be for the current season
      * - Contract must not be paused and staking must have started
