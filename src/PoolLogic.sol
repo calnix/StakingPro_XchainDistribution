@@ -750,7 +750,7 @@ library PoolLogic {
                 uint256 accCreatorFee, 
                 uint256 accTotalNftFee,
                 uint256 accRealmPointsFee
-            ) = _calculateVaultAccountAccruals(totalAccRewards, vault, vaultAccount_, distribution);
+            ) = _calculateVaultAccountAccruals(totalAccRewards, vault, vaultAccount_);
 
             // update vaultIndex
             vaultAccount.index = distribution.index;
@@ -985,7 +985,6 @@ library PoolLogic {
     }
 
     // update specified vault account
-    // returns updated vault account and updated distribution structs 
     function _updateVaultAccount(
         DataTypes.Vault memory vault, 
         DataTypes.VaultAccount memory vaultAccount, 
@@ -1040,7 +1039,7 @@ library PoolLogic {
             uint256 accCreatorFee, 
             uint256 accTotalNftFee,
             uint256 accRealmPointsFee
-        ) = _calculateVaultAccountAccruals(totalAccRewards, vault, vaultAccount, distribution);
+        ) = _calculateVaultAccountAccruals(totalAccRewards, vault, vaultAccount);
 
         // update vaultIndex
         vaultAccount.index = distribution.index;
@@ -1052,8 +1051,7 @@ library PoolLogic {
     function _calculateVaultAccountAccruals(
         uint256 totalAccRewards,
         DataTypes.Vault memory vault, 
-        DataTypes.VaultAccount memory vaultAccount, 
-        DataTypes.Distribution memory distribution
+        DataTypes.VaultAccount memory vaultAccount 
     ) internal pure returns (DataTypes.VaultAccount memory, uint256, uint256, uint256) {
 
         // update vault rewards + fees
@@ -1366,7 +1364,7 @@ library PoolLogic {
             uint256 accCreatorFee, 
             uint256 accTotalNftFee,
             uint256 accRealmPointsFee
-        ) = _calculateVaultAccountAccruals(totalAccRewards, vault, vaultAccount, distribution);
+        ) = _calculateVaultAccountAccruals(totalAccRewards, vault, vaultAccount);
 
         // update vaultIndex
         vaultAccount.index = distribution.index;

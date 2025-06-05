@@ -174,7 +174,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         uint256 incomingNfts = tokenIds.length;
         if(incomingNfts != CREATION_NFTS_REQUIRED) revert Errors.InvalidCreationNfts(); // incomingNfts can be 0, if CREATION_NFTS_REQUIRED == 0
 
-        //note: MOCA stakers must receive at least 50% of rewards
+        //note: MOCA stakers must receive at least (1-MAXIMUM_FEE_FACTOR)% of rewards
         uint256 totalFeeFactor = nftFeeFactor + creatorFeeFactor + realmPointsFeeFactor;
         if(totalFeeFactor > MAXIMUM_FEE_FACTOR) revert Errors.MaximumFeeFactorExceeded();
 
