@@ -517,10 +517,8 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // only update storage for distributions, vaultAccounts, userAccounts
         DataTypes.Vault memory vault = PoolLogic.executeActivateCooldown(activeDistributions, vaults, distributions, users, vaultAccounts, userAccounts, params);
 
-        uint256 vaultCoolDownDuration = VAULT_COOLDOWN_DURATION;
-
         // calc. vault endTime based on current cooldown duration
-        uint256 endTimeBasedOnCooldown = block.timestamp + vaultCoolDownDuration;
+        uint256 endTimeBasedOnCooldown = block.timestamp + VAULT_COOLDOWN_DURATION;
 
         // take the shorter of endTimes, if contract endTime is set
         if(endTime > 0) {

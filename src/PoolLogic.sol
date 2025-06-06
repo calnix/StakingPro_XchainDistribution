@@ -413,7 +413,7 @@ library PoolLogic {
         // sanity check: user must be creator 
         if(vault.creator != params.user) revert Errors.UserIsNotCreator();
 
-        // sanity check: incoming creatorFeeFactor must be lower than current
+        // sanity check: incoming creatorFeeFactor must be lower or equal to current
         if(creatorFeeFactor > vault.creatorFeeFactor) revert Errors.CreatorFeeCanOnlyBeDecreased();
         // sanity check: nftFeeFactor + realmPointsFeeFactor cannot be decreased
         if(nftFeeFactor < vault.nftFeeFactor) revert Errors.NftFeeCanOnlyBeIncreased();
