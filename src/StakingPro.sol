@@ -753,6 +753,8 @@ contract StakingPro is EIP712, Pausable, AccessControl {
      * @param distributionEndTime Timestamp when distribution ends (0 allowed only for ID 0)
      * @param emissionPerSecond Rate of token emissions per second (must be > 0)
      * @param tokenPrecision Decimal precision for the distributed token (must be > 0)
+     * @param dstEid Destination EID for the distributed token (used to identify if x-chain token)
+     * @param tokenAddress Address of the distributed token as bytes32 (for standardizing to LZ req.)
      */
     function setupDistribution(uint256 distributionId, uint256 distributionStartTime, uint256 distributionEndTime, uint256 emissionPerSecond, uint256 tokenPrecision,
         uint32 dstEid, bytes32 tokenAddress
