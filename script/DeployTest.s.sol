@@ -189,11 +189,25 @@ contract Roles is Script, ContractAddresses {
         pool.grantRole(Constants.MONITOR_ROLE, target);
         pool.grantRole(Constants.CRON_JOB_ROLE, target);
 
-        rewardsVault.grantRole(Constants.MONITOR_ROLE, owner);            
-        rewardsVault.grantRole(Constants.MONEY_MANAGER_ROLE, owner);
+        rewardsVault.grantRole(Constants.MONITOR_ROLE, target);            
+        rewardsVault.grantRole(Constants.MONEY_MANAGER_ROLE, target);
 
         vm.stopBroadcast();
     }
 }
 
 // forge script script/DeployTest.s.sol:Roles --rpc-url base_sepolia --broadcast -vvvvv
+
+contract Unpause is Script, ContractAddresses {
+
+    function run() public {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_TEST");
+        vm.startBroadcast(deployerPrivateKey);
+
+        pool.unpause();
+
+        vm.stopBroadcast();
+    }
+}
+
+// forge script script/DeployTest.s.sol:Unpause --rpc-url base_sepolia --broadcast -vvvvv
