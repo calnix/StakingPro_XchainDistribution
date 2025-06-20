@@ -371,12 +371,17 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // totalBoostedDelta == 0 if vault had been removed from circulation already
         if(totalBoostedDelta > 0) {
             // flag dictates addition/subtraction to global state
-            if(flag == 1) {
-                // newBoostedRealmPoints > oldBoostedRealmPoints
-                totalBoostedRealmPoints += totalBoostedDelta;
-            } else{
+            if(flag == 0) {
                 // newBoostedRealmPoints < oldBoostedRealmPoints
                 totalBoostedRealmPoints -= totalBoostedDelta;
+            } else if(flag == 1) {
+                // newBoostedRealmPoints > oldBoostedRealmPoints
+                totalBoostedRealmPoints += totalBoostedDelta;
+            } else if(flag == 2) {
+                // oldVault.removed is 1 - vault has been removed from circulation already
+                // increment global state: totalStakedRealmPoints, totalBoostedRealmPoints
+                totalStakedRealmPoints += amount;
+                totalBoostedRealmPoints += totalBoostedDelta;
             }
         }
     }
