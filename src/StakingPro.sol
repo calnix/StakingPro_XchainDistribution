@@ -1168,12 +1168,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // do not enforce this check: update process could be long, and result in time drift
         //if(distribution.lastUpdateTimeStamp < block.timestamp) revert Error.NotUpdated;
 
-        DataTypes.UpdateAccountsIndexesParams memory params;
-            //params.user = msg.sender; -> NOT USED
-            params.totalBoostedRealmPoints = totalBoostedRealmPoints;
-            params.totalBoostedStakedTokens = totalBoostedStakedTokens;
-
-        PoolLogic.executeUpdateVaultsAndAccounts(vaults, vaultAccounts, distribution, params, vaultIds, numOfVaults);
+        PoolLogic.executeUpdateVaultsAndAccounts(vaults, vaultAccounts, distribution, vaultIds, numOfVaults);
 
         emit VaultAccountsUpdated(vaultIds);
     }    
@@ -1211,7 +1206,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
             // if vault removed from circulation, global state has been updated: revert
             if(vault.removed == 1) revert Errors.VaultAlreadyRemoved();
-            
+
             // decrement global totals before updating vault
             totalBoostedRealmPoints -= vault.boostedRealmPoints;
             totalBoostedStakedTokens -= vault.boostedStakedTokens;
