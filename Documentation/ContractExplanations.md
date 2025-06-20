@@ -539,7 +539,7 @@ Contract is set to `underMaintenance` when there is a need to update the `NFT_MU
 
 Process:
     1. enableMaintenance
-    2. updateDistributions
+    2. updateActiveDistributions
     3. updateAllVaultAccounts
     4. updateNftMultiplier
     5. updateBoostedBalances
@@ -1131,6 +1131,8 @@ function updateAllUserAccounts(uint256 distributionId, bytes32 vaultId, address[
 - only user accounts that are associated with vaults, in which user has RP staked need to be updated.
 - like vaultAccounts, we are permissive in allowing all user accounts to be updated just the same.
 
+**This includes vaults that have been removed. Vaults that are removed should not be excluded in this step**
+
 ## 4) resetBaseRealmPoints
 
 ```solidity
@@ -1332,7 +1334,7 @@ The expectation is that we call `endVaults()` on all the vaults that have come t
 Process:
 
         1. enableMaintenance
-        2. updateDistributions: updates all distribution indexes
+        2. updateActiveDistributions: updates all distribution indexes
         3. updateAllVaultAccounts: updates all vault indexes
         4. updateNftMultiplier: updates NFT multiplier
         5. updateBoostedBalances: updates boosted balances

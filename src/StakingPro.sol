@@ -1209,6 +1209,9 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             DataTypes.Vault memory vault = vaults[vaultId];
             if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
 
+            // if vault removed from circulation, global state has been updated: revert
+            if(vault.removed == 1) revert Errors.VaultAlreadyRemoved();
+            
             // decrement global totals before updating vault
             totalBoostedRealmPoints -= vault.boostedRealmPoints;
             totalBoostedStakedTokens -= vault.boostedStakedTokens;
