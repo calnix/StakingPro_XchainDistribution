@@ -209,7 +209,7 @@ library PoolLogic {
             }
 
         } else{ 
-            // oldVault.removed is 1: increment global state: totalStakedRealmPoints, totalBoostedRealmPoints
+            //2: flag for incrementing both totalStakedRealmPoints, totalBoostedRealmPoints
            return(newBoostedRealmPoints, 2);
         }
     }
