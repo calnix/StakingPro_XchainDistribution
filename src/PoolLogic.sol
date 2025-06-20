@@ -197,12 +197,12 @@ library PoolLogic {
         // global delta calculations            
         if(newBoostedRealmPoints > oldBoostedRealmPoints) {
             uint256 totalBoostedDelta = (newBoostedRealmPoints - oldBoostedRealmPoints);    
-            //1: flag for incrementation
+            //1: flag for incrementing
             return(totalBoostedDelta, 1);
 
         } else{
             uint256 totalBoostedDelta = (oldBoostedRealmPoints - newBoostedRealmPoints);
-            //0: flag for decrementation
+            //0: flag for decrementing
             return(totalBoostedDelta, 0);
         }
     }
@@ -707,7 +707,6 @@ library PoolLogic {
         mapping(bytes32 vaultId => DataTypes.Vault vault) storage vaults,
         mapping(bytes32 vaultId => mapping(uint256 distributionId => DataTypes.VaultAccount vaultAccount)) storage vaultAccounts,
         DataTypes.Distribution memory distribution,
-        DataTypes.UpdateAccountsIndexesParams calldata params,
         bytes32[] calldata vaultIds,
         uint256 numOfVaults
     ) external {
