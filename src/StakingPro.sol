@@ -1058,6 +1058,8 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
             totalBoostedRealmPoints -= vault.boostedRealmPoints;
             delete vault.boostedRealmPoints;
+
+            emit VaultRealmPointsZeroed(vaultId);
         }
 
         // decrement global totals
