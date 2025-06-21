@@ -191,6 +191,7 @@ contract StateT61p_Vault2CooldownActivated_VaultIsRemovedImmediately_Test is Sta
         // vault states: before
         DataTypes.Vault memory vault1Before = pool.getVault(vaultId1);
         DataTypes.Vault memory vault2Before = pool.getVault(vaultId2);
+        assertEq(vault2Before.removed, 1, "Vault2 should be ended");
 
         // user accounts: before
         DataTypes.User memory user2Vault1Before = pool.getUser(user2, vaultId1);
@@ -213,9 +214,9 @@ contract StateT61p_Vault2CooldownActivated_VaultIsRemovedImmediately_Test is Sta
         DataTypes.User memory user2Vault1After = pool.getUser(user2, vaultId1);
         DataTypes.User memory user2Vault2After = pool.getUser(user2, vaultId2);
 
-        // check global state: no changes
-        uint256 totalBoostedDelta = (rpToMigrate * vault2Before.totalBoostFactor) / 10_000;
-        assertEq(poolTotalRpBefore, poolTotalRpAfter, "totalStakedRealmPoints mismatch");
+        // check global state: vault2's rp is added back into system via migrateRealmPoints()
+        uint256 totalBoostedDelta = (rpToMigrate * vault1Before.totalBoostFactor) / 10_000;
+        assertEq(poolTotalRpBefore + rpToMigrate, poolTotalRpAfter, "totalStakedRealmPoints mismatch");
         assertEq(poolTotalBoostedRpBefore + totalBoostedDelta, poolTotalBoostedRpAfter, "totalBoostedRealmPoints mismatch");
 
         // check vault states: rp moved correctly

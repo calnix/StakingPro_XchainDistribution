@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-// note: remove
-event test(string message, uint256 amount);
+event Warning();
 
 // createVault
 event VaultCreated(
