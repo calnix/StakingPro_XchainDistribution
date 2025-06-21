@@ -1036,10 +1036,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // get vault + sanity check
         DataTypes.Vault storage vault = vaults[vaultId];
         if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
-        //if(vault.stakedRealmPoints == 0) revert Errors.NoRpStaked(); -- note?
-
-        // if vault removed from circulation, global state has been updated: revert
-        if(vault.removed == 1) revert Errors.VaultAlreadyRemoved();
+        //if(vault.stakedRealmPoints == 0) revert Errors.NoRpStaked(); -- note
 
         // counters
         uint256 baseRealmPointsSum;
@@ -1063,15 +1060,32 @@ contract StakingPro is EIP712, Pausable, AccessControl {
 
         // if last cycle: reset boosted realm points on vault, decrement global total
         if(vault.stakedRealmPoints == 0){
+        
+            // decrement global total if vault is not already removed
+            if(vault.removed == 0) {
+                if(vault.boostedRealmPoints <= totalBoostedRealmPoints){
+                    totalBoostedRealmPoints -= vault.boostedRealmPoints;
 
-            totalBoostedRealmPoints -= vault.boostedRealmPoints;
+                } else{
+                    totalBoostedRealmPoints = 0;
+                    emit Warning();
+                }
+            }
+
             delete vault.boostedRealmPoints;
-
             emit VaultRealmPointsZeroed(vaultId);
         }
 
-        // decrement global totals
-        totalStakedRealmPoints -= baseRealmPointsSum;
+        // decrement global total if vault is not already removed
+        if(vault.removed == 0) {
+            if(baseRealmPointsSum <= totalStakedRealmPoints){
+                totalStakedRealmPoints -= baseRealmPointsSum;
+
+            } else{
+                totalStakedRealmPoints = 0;
+                emit Warning();
+            }
+        }
 
         emit BaseRealmPointsReset(vaultId, userAddresses, baseRealmPointsSum);
     }
