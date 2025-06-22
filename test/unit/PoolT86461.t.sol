@@ -744,6 +744,54 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
         vm.stopPrank();
     }
 
+    function testCanMigrateRpFromEndedVault_T86461() public {
+        // Get initial pool state
+        uint256 initialPoolTotalStakedRealmPoints = pool.totalStakedRealmPoints();
+        uint256 initialPoolTotalBoostedRealmPoints = pool.totalBoostedRealmPoints();
+        
+        // Get initial vault states
+        DataTypes.Vault memory initialSourceVault = pool.getVault(vaultId2);
+        DataTypes.Vault memory initialDestinationVault = pool.getVault(vaultId1);
+        
+        // Get initial user-vault states
+        DataTypes.User memory initialUser2SourceVaultState = pool.getUser(user2, vaultId2);
+        DataTypes.User memory initialUser2DestinationVaultState = pool.getUser(user2, vaultId1);
+        
+        // Define migration amount
+        uint256 migrationAmount = user2Rp/2;
+        
+        // Perform migration from ended vault
+        vm.startPrank(user2);
+            pool.migrateRealmPoints(vaultId2, vaultId1, migrationAmount);
+        vm.stopPrank();
+        
+        // Get final pool state
+        uint256 finalPoolTotalStakedRealmPoints = pool.totalStakedRealmPoints();
+        uint256 finalPoolTotalBoostedRealmPoints = pool.totalBoostedRealmPoints();
+        
+        // Get final vault states
+        DataTypes.Vault memory finalSourceVault = pool.getVault(vaultId2);
+        DataTypes.Vault memory finalDestinationVault = pool.getVault(vaultId1);
+        
+        // Get final user-vault states
+        DataTypes.User memory finalUser2SourceVaultState = pool.getUser(user2, vaultId2);
+        DataTypes.User memory finalUser2DestinationVaultState = pool.getUser(user2, vaultId1);
+        
+        // globals are incremented
+        assertEq(finalPoolTotalStakedRealmPoints, initialPoolTotalStakedRealmPoints + migrationAmount, "Total staked RP should increase after migration");
+        assertTrue(finalPoolTotalBoostedRealmPoints > initialPoolTotalBoostedRealmPoints, "Total boosted RP should increase when migrating to a boosted vault");
+        
+        // Check source vault RP decreased
+        assertEq(finalSourceVault.stakedRealmPoints, initialSourceVault.stakedRealmPoints - migrationAmount, "Source vault RP not decreased correctly");
+        // Check destination vault RP increased
+        assertEq(finalDestinationVault.stakedRealmPoints, initialDestinationVault.stakedRealmPoints + migrationAmount, "Destination vault RP not increased correctly");
+
+        // Check user balances for source vault
+        assertEq(finalUser2SourceVaultState.stakedRealmPoints, initialUser2SourceVaultState.stakedRealmPoints - migrationAmount, "User's source vault RP not reduced correctly");
+        // Check user balances for destination vault
+        assertEq(finalUser2DestinationVaultState.stakedRealmPoints, initialUser2DestinationVaultState.stakedRealmPoints + migrationAmount, "User's destination vault RP not increased correctly");
+    }
+
 // --------------- state transition ---------------
 
     function testUser2CanUnstakeAfterVault2Ended() public {
