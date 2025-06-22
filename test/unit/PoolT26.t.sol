@@ -508,79 +508,298 @@ contract StateT26_User2CreatesVault2Test is StateT26_User2CreatesVault2 {
         vm.stopPrank();
     }
 
-    function testUser2MigrateRp() public {
-        
-        // get initial values
-        uint256 poolBoostedRpBefore = pool.totalBoostedRealmPoints();
-        uint256 poolTotalRpBefore = pool.totalStakedRealmPoints();
-        DataTypes.Vault memory vault1Before = pool.getVault(vaultId1);
-        DataTypes.Vault memory vault2Before = pool.getVault(vaultId2);
-        DataTypes.User memory user2VaultOneBefore = pool.getUser(user2, vaultId1);
-        DataTypes.User memory user2VaultTwoBefore = pool.getUser(user2, vaultId2);
+// ---------------- state transition: PoolT31.t.sol ----------------
 
-        // user2 migrates half their RP from vault1 to vault2
+    // migrateRp flag 0: from boosted to non-boosted vault
+    function testUser2MigrateRp_TotalBoostedRealmPointsDecreases_T26() public {
+        
+        /**
+            vault1 - 4 Nfts (boosted)
+            vault2 - 0 Nfts (no boost)
+            totalBoostedRealmPoints should decrease when migrating from boosted to non-boosted vault
+            totalStakedRealmPoints unchanged as RP are just moved between vaults
+         */
+
+        // Get initial pool state
+        uint256 initialPoolTotalBoostedRealmPoints = pool.totalBoostedRealmPoints();
+        uint256 initialPoolTotalStakedRealmPoints = pool.totalStakedRealmPoints();
+        
+        // Get initial vault states
+        DataTypes.Vault memory initialSourceVault = pool.getVault(vaultId1);
+        DataTypes.Vault memory initialDestinationVault = pool.getVault(vaultId2);
+        
+        // Get initial user-vault states
+        DataTypes.User memory initialUser2SourceVaultState = pool.getUser(user2, vaultId1);
+        DataTypes.User memory initialUser2DestinationVaultState = pool.getUser(user2, vaultId2);
+
+        // Define migration amount - half of user2's RP
+        uint256 migrationAmount = user2Rp / 2;
+        
+        // User2 migrates half their RP from vault1 (with NFTs) to vault2 (without NFTs)
         vm.startPrank(user2);
-            uint256 amount = user2Rp/2;
-            // check event
+            // Check event emission
             vm.expectEmit(true, true, true, true);
-            emit RealmPointsMigrated(user2, vaultId1, vaultId2, amount);
-            pool.migrateRealmPoints(vaultId1, vaultId2, amount);
+            emit RealmPointsMigrated(user2, vaultId1, vaultId2, migrationAmount);
+            
+            // Execute migration
+            pool.migrateRealmPoints(vaultId1, vaultId2, migrationAmount);
         vm.stopPrank();
         
-        // --------- VAULT1 CHECKS: before & after migration ---------
-
-        // check vault1 (old vault) balances
-        DataTypes.Vault memory vault1After = pool.getVault(vaultId1);
+        // --------- SOURCE VAULT CHECKS (VAULT1) ---------
+        DataTypes.Vault memory finalSourceVault = pool.getVault(vaultId1);
         
-        // Base RP checks for vault1
-        assertEq(vault1After.stakedRealmPoints, vault1Before.stakedRealmPoints - amount, "Vault1 base RP not reduced correctly");
-        // Boosted RP checks for vault1
-        uint256 expectedVault1BoostFactor = Constants.PRECISION_BASE + (vault1After.stakedNfts * pool.NFT_MULTIPLIER());
-        uint256 expectedVault1BoostedRp = (vault1After.stakedRealmPoints * expectedVault1BoostFactor) / Constants.PRECISION_BASE;
-        assertEq(vault1After.boostedRealmPoints, expectedVault1BoostedRp, "Vault1 boosted RP not reduced correctly");
-
-        // --------- VAULT2 CHECKS: before & after migration ---------
-
-        // check vault2 (new vault) balances
-        DataTypes.Vault memory vault2After = pool.getVault(vaultId2);
+        // Base RP checks for source vault
+        assertEq(
+            finalSourceVault.stakedRealmPoints, 
+            initialSourceVault.stakedRealmPoints - migrationAmount, 
+            "Source vault base RP not reduced correctly"
+        );
         
-        // Base RP checks for vault2
-        assertEq(vault2After.stakedRealmPoints, vault2Before.stakedRealmPoints + amount, "Vault2 base RP not increased correctly");
-        // Boosted RP checks for vault2
-        uint256 expectedVault2BoostFactor = Constants.PRECISION_BASE + (vault2After.stakedNfts * pool.NFT_MULTIPLIER());
-        uint256 expectedVault2BoostedRp = (vault2After.stakedRealmPoints * expectedVault2BoostFactor) / Constants.PRECISION_BASE;
-        assertEq(vault2After.boostedRealmPoints, expectedVault2BoostedRp, "Vault2 boosted RP not increased correctly");
+        // Boosted RP checks for source vault
+        uint256 expectedSourceVaultBoostFactor = Constants.PRECISION_BASE + (finalSourceVault.stakedNfts * pool.NFT_MULTIPLIER());
+        uint256 expectedSourceVaultBoostedRp = (finalSourceVault.stakedRealmPoints * expectedSourceVaultBoostFactor) / Constants.PRECISION_BASE;
+        assertEq(
+            finalSourceVault.boostedRealmPoints, 
+            expectedSourceVaultBoostedRp, 
+            "Source vault boosted RP not calculated correctly after migration"
+        );
 
-        // --------- POOL CHECKS: before & after migration ---------
-
-        // check pool totals
-        assertEq(pool.totalStakedRealmPoints(), poolTotalRpBefore, "Pool total RP should not change");
-        assertEq(pool.totalBoostedRealmPoints(), expectedVault1BoostedRp + expectedVault2BoostedRp, "Pool total boosted RP incorrect");
-
-        // --------- USER-VAULT BALANCES CHECKS: before & after migration ---------
-
-        // check user balances for vault1
-        DataTypes.User memory user2VaultOneAfter = pool.getUser(user2, vaultId1);
-        assertEq(user2VaultOneAfter.stakedRealmPoints, user2VaultOneBefore.stakedRealmPoints - amount, "User2 vault1 RP not reduced correctly");
-
-        // check user balances for vault2
-        DataTypes.User memory user2VaultTwoAfter = pool.getUser(user2, vaultId2);
-        assertEq(user2VaultTwoAfter.stakedRealmPoints, user2VaultTwoBefore.stakedRealmPoints + amount, "User2 vault2 RP not increased correctly");
-
-
-        // ----- MISC: OTHER CHECKS -----
+        // --------- DESTINATION VAULT CHECKS (VAULT2) ---------
+        DataTypes.Vault memory finalDestinationVault = pool.getVault(vaultId2);
         
-        // Other vault1 checks
-        assertEq(vault1After.stakedNfts, vault1Before.stakedNfts, "Vault1 NFTs should not change");
-        assertEq(vault1After.stakedTokens, vault1Before.stakedTokens, "Vault1 tokens should not change");
-        assertEq(vault1After.totalBoostFactor, expectedVault1BoostFactor, "Vault1 boost factor incorrect");
-        assertEq(vault1After.boostedStakedTokens, (vault1After.stakedTokens * expectedVault1BoostFactor) / Constants.PRECISION_BASE, "Vault1 boosted tokens incorrect");
+        // Base RP checks for destination vault
+        assertEq(
+            finalDestinationVault.stakedRealmPoints, 
+            initialDestinationVault.stakedRealmPoints + migrationAmount, 
+            "Destination vault base RP not increased correctly"
+        );
+        
+        // Boosted RP checks for destination vault
+        uint256 expectedDestinationVaultBoostFactor = Constants.PRECISION_BASE + (finalDestinationVault.stakedNfts * pool.NFT_MULTIPLIER());
+        uint256 expectedDestinationVaultBoostedRp = (finalDestinationVault.stakedRealmPoints * expectedDestinationVaultBoostFactor) / Constants.PRECISION_BASE;
+        assertEq(
+            finalDestinationVault.boostedRealmPoints, 
+            expectedDestinationVaultBoostedRp, 
+            "Destination vault boosted RP not calculated correctly after migration"
+        );
 
-        // Other vault2 checks
-        assertEq(vault2After.stakedNfts, vault2Before.stakedNfts, "Vault2 NFTs should not change");
-        assertEq(vault2After.stakedTokens, vault2Before.stakedTokens, "Vault2 tokens should not change");
-        assertEq(vault2After.totalBoostFactor, expectedVault2BoostFactor, "Vault2 boost factor incorrect");
-        assertEq(vault2After.boostedStakedTokens, (vault2After.stakedTokens * expectedVault2BoostFactor) / Constants.PRECISION_BASE, "Vault2 boosted tokens incorrect");
+        // --------- POOL TOTAL CHECKS ---------
+        // Total staked RP should remain unchanged (just moved between vaults)
+        assertEq(
+            pool.totalStakedRealmPoints(), 
+            initialPoolTotalStakedRealmPoints, 
+            "Pool total staked RP should remain unchanged after migration"
+        );
+        
+        // Total boosted RP should decrease (migrating from boosted vault to non-boosted vault)
+        uint256 finalPoolTotalBoostedRealmPoints = pool.totalBoostedRealmPoints();
+        assertEq(
+            finalPoolTotalBoostedRealmPoints, 
+            expectedSourceVaultBoostedRp + expectedDestinationVaultBoostedRp, 
+            "Pool total boosted RP incorrect after migration"
+        );
+        
+        // Verify that total boosted RP decreased
+        assertTrue(
+            finalPoolTotalBoostedRealmPoints < initialPoolTotalBoostedRealmPoints,
+            "Pool total boosted RP should decrease when migrating from boosted to non-boosted vault"
+        );
+
+        // --------- USER-VAULT BALANCES CHECKS ---------
+        // Check user balances for source vault
+        DataTypes.User memory finalUser2SourceVaultState = pool.getUser(user2, vaultId1);
+        assertEq(
+            finalUser2SourceVaultState.stakedRealmPoints, 
+            initialUser2SourceVaultState.stakedRealmPoints - migrationAmount, 
+            "User's source vault RP not reduced correctly"
+        );
+
+        // Check user balances for destination vault
+        DataTypes.User memory finalUser2DestinationVaultState = pool.getUser(user2, vaultId2);
+        assertEq(
+            finalUser2DestinationVaultState.stakedRealmPoints, 
+            initialUser2DestinationVaultState.stakedRealmPoints + migrationAmount, 
+            "User's destination vault RP not increased correctly"
+        );
+
+        // --------- OTHER INVARIANT CHECKS ---------
+        // Verify other source vault properties remain unchanged
+        assertEq(finalSourceVault.stakedNfts, initialSourceVault.stakedNfts, "Source vault NFTs should not change");
+        assertEq(finalSourceVault.stakedTokens, initialSourceVault.stakedTokens, "Source vault tokens should not change");
+        assertEq(finalSourceVault.totalBoostFactor, expectedSourceVaultBoostFactor, "Source vault boost factor incorrect");
+        assertEq(
+            finalSourceVault.boostedStakedTokens, 
+            (finalSourceVault.stakedTokens * expectedSourceVaultBoostFactor) / Constants.PRECISION_BASE, 
+            "Source vault boosted tokens incorrect"
+        );
+
+        // Verify other destination vault properties remain unchanged
+        assertEq(finalDestinationVault.stakedNfts, initialDestinationVault.stakedNfts, "Destination vault NFTs should not change");
+        assertEq(finalDestinationVault.stakedTokens, initialDestinationVault.stakedTokens, "Destination vault tokens should not change");
+        assertEq(finalDestinationVault.totalBoostFactor, expectedDestinationVaultBoostFactor, "Destination vault boost factor incorrect");
+        assertEq(
+            finalDestinationVault.boostedStakedTokens, 
+            (finalDestinationVault.stakedTokens * expectedDestinationVaultBoostFactor) / Constants.PRECISION_BASE, 
+            "Destination vault boosted tokens incorrect"
+        );
     }
 
+    // migrateRp flag 1: from non-boosted to boosted vault
+    function testUser2MigrateRp_TotalBoostedRealmPointsIncreases_T26() public {
+        /**
+            vault1 - 4 Nfts (boosted)
+            vault2 - 0 Nfts (no boost)
+            totalBoostedRealmPoints should decrease when migrating from boosted to non-boosted vault
+            totalStakedRealmPoints unchanged as RP are just moved between vaults
+         */
+
+        // Define migration amount - half of user2's RP
+        uint256 migrationAmount = user2Rp / 2;
+        
+        // User2 migrates half their RP from vault1 (with NFTs) to vault2 (without NFTs)
+        vm.startPrank(user2);
+            pool.migrateRealmPoints(vaultId1, vaultId2, migrationAmount);
+        vm.stopPrank();
+
+        // Get initial pool state after first migration (this is our starting point)
+        uint256 initialPoolTotalBoostedRealmPoints = pool.totalBoostedRealmPoints();
+        uint256 initialPoolTotalStakedRealmPoints = pool.totalStakedRealmPoints();
+        
+        // Get initial vault states after first migration
+        DataTypes.Vault memory initialSourceVault = pool.getVault(vaultId2); // Now vault2 is source
+        DataTypes.Vault memory initialDestinationVault = pool.getVault(vaultId1); // Now vault1 is destination
+        
+        // Get initial user-vault states after first migration
+        DataTypes.User memory initialUser2SourceVaultState = pool.getUser(user2, vaultId2); // Now vault2 is source
+        DataTypes.User memory initialUser2DestinationVaultState = pool.getUser(user2, vaultId1); // Now vault1 is destination
+
+        // User2 migrates the same amount back from vault2 (non-boosted) to vault1 (boosted)
+        vm.startPrank(user2);
+            pool.migrateRealmPoints(vaultId2, vaultId1, migrationAmount);
+        vm.stopPrank();
+
+        // Get final pool state after second migration
+        uint256 finalPoolTotalBoostedRealmPoints = pool.totalBoostedRealmPoints();
+        uint256 finalPoolTotalStakedRealmPoints = pool.totalStakedRealmPoints();
+        
+        // Get final vault states after second migration
+        DataTypes.Vault memory finalSourceVault = pool.getVault(vaultId2);
+        DataTypes.Vault memory finalDestinationVault = pool.getVault(vaultId1);
+        
+        // Get final user-vault states after second migration
+        DataTypes.User memory finalUser2SourceVaultState = pool.getUser(user2, vaultId2);
+        DataTypes.User memory finalUser2DestinationVaultState = pool.getUser(user2, vaultId1);
+
+        // --------- POOL STATE CHECKS ---------
+        // Verify that total staked RP remains unchanged
+        assertEq(
+            finalPoolTotalStakedRealmPoints,
+            initialPoolTotalStakedRealmPoints,
+            "Pool total staked RP should remain unchanged after migration"
+        );
+        
+        // Verify that total boosted RP increased when migrating from non-boosted to boosted vault
+        assertTrue(
+            finalPoolTotalBoostedRealmPoints > initialPoolTotalBoostedRealmPoints,
+            "Pool total boosted RP should increase when migrating from non-boosted to boosted vault"
+        );
+
+        // Calculate expected boosted RP values
+        uint256 expectedSourceVaultBoostFactor = finalSourceVault.totalBoostFactor;
+        uint256 expectedDestinationVaultBoostFactor = finalDestinationVault.totalBoostFactor;
+        
+        uint256 expectedSourceVaultBoostedRp = 
+            (finalSourceVault.stakedRealmPoints * expectedSourceVaultBoostFactor) / Constants.PRECISION_BASE;
+        
+        uint256 expectedDestinationVaultBoostedRp = 
+            (finalDestinationVault.stakedRealmPoints * expectedDestinationVaultBoostFactor) / Constants.PRECISION_BASE;
+        
+        // Verify the total boosted RP matches the sum of vault boosted RPs
+        assertEq(
+            finalPoolTotalBoostedRealmPoints,
+            expectedSourceVaultBoostedRp + expectedDestinationVaultBoostedRp,
+            "Pool total boosted RP incorrect after migration"
+        );
+
+        // --------- SOURCE VAULT CHECKS (VAULT2) ---------
+        // Base RP checks for source vault
+        assertEq(
+            finalSourceVault.stakedRealmPoints, 
+            initialSourceVault.stakedRealmPoints - migrationAmount, 
+            "Source vault base RP not reduced correctly"
+        );
+        
+        // Boosted RP checks for source vault
+        assertEq(
+            finalSourceVault.boostedRealmPoints, 
+            expectedSourceVaultBoostedRp, 
+            "Source vault boosted RP calculated incorrectly"
+        );
+        
+        // Verify boost factor remains unchanged
+        assertEq(
+            finalSourceVault.totalBoostFactor, 
+            initialSourceVault.totalBoostFactor, 
+            "Source vault boost factor should remain unchanged"
+        );
+
+        // --------- DESTINATION VAULT CHECKS (VAULT1) ---------
+        // Base RP checks for destination vault
+        assertEq(
+            finalDestinationVault.stakedRealmPoints, 
+            initialDestinationVault.stakedRealmPoints + migrationAmount, 
+            "Destination vault base RP not increased correctly"
+        );
+        
+        // Boosted RP checks for destination vault
+        assertEq(
+            finalDestinationVault.boostedRealmPoints, 
+            expectedDestinationVaultBoostedRp, 
+            "Destination vault boosted RP calculated incorrectly"
+        );
+        
+        // Verify boost factor remains unchanged
+        assertEq(
+            finalDestinationVault.totalBoostFactor, 
+            initialDestinationVault.totalBoostFactor, 
+            "Destination vault boost factor should remain unchanged"
+        );
+
+        // --------- USER-VAULT BALANCES CHECKS ---------
+        // Check user balances for source vault
+        assertEq(
+            finalUser2SourceVaultState.stakedRealmPoints, 
+            initialUser2SourceVaultState.stakedRealmPoints - migrationAmount, 
+            "User's source vault RP not reduced correctly"
+        );
+
+        // Check user balances for destination vault
+        assertEq(
+            finalUser2DestinationVaultState.stakedRealmPoints, 
+            initialUser2DestinationVaultState.stakedRealmPoints + migrationAmount, 
+            "User's destination vault RP not increased correctly"
+        );
+
+        // --------- OTHER INVARIANT CHECKS ---------
+        // Verify other source vault properties remain unchanged
+        assertEq(finalSourceVault.stakedNfts, initialSourceVault.stakedNfts, "Source vault NFTs should not change");
+        assertEq(finalSourceVault.stakedTokens, initialSourceVault.stakedTokens, "Source vault tokens should not change");
+        
+        // Verify other destination vault properties remain unchanged
+        assertEq(finalDestinationVault.stakedNfts, initialDestinationVault.stakedNfts, "Destination vault NFTs should not change");
+        assertEq(finalDestinationVault.stakedTokens, initialDestinationVault.stakedTokens, "Destination vault tokens should not change");
+        
+        // Verify boosted tokens calculations
+        assertEq(
+            finalSourceVault.boostedStakedTokens, 
+            (finalSourceVault.stakedTokens * expectedSourceVaultBoostFactor) / Constants.PRECISION_BASE, 
+            "Source vault boosted tokens incorrect"
+        );
+        
+        assertEq(
+            finalDestinationVault.boostedStakedTokens, 
+            (finalDestinationVault.stakedTokens * expectedDestinationVaultBoostFactor) / Constants.PRECISION_BASE, 
+            "Destination vault boosted tokens incorrect"
+        );
+    }
 }
