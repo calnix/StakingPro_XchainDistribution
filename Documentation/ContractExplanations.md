@@ -1151,10 +1151,11 @@ Users' rp values are also reset.
 
 **Must process vaults that were ended in this epoch**
 
-Else, users can carry foward their RP into a new epoch, although it does not get accounted for in the globals.
+Else, users can carry forward their RP into a new epoch, although it does not get accounted for in the globals.
 This will result in incorrect user level rewards distribution
 
 *Example*
+
 1. vault ended [vault.removed == 1]
 2. RP of ended vault removed from system. however, RP is still reflected in both the vault assets and corresponding user assets.
 3. reset Rp process initiated
