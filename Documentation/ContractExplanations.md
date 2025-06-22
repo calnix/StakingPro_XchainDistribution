@@ -1097,7 +1097,7 @@ updateBoostedBalances(bytes32[] calldata vaultIds) external whenNotEnded whenNot
         8. disableMaintenance
      */
 
-## 1) Update all active distributions to current timestamp.
+## 1) Update all active distributions to current timestamp
 
 - Some active distributions may have ended at this time.
 - Do not pop them; they should remain in activeDistributions array.
@@ -1116,7 +1116,7 @@ This step creates a snapshot that freezes time. This allows us to update all vau
 **If `updateActiveDistributions` is called again, we must restarted the entire process with updating all vault accounts, as our reference point has changed.**
 **However, if `updateActiveDistributions` is called mid-way through resetting RP, the contract has been bricked and must be re-deployed.**
 
-## 2) For each vault, update its accounts, for each distribution.
+## 2) For each vault, update its accounts, for each distribution
 
 - only vaults that have RP staked need to have their accounts updated to account for D0 emissions and DX rp-related fees
 - however, there is no adverse outcome in updating vaults that do not have rp staked as well
@@ -1133,6 +1133,9 @@ function updateAllUserAccounts(uint256 distributionId, bytes32 vaultId, address[
 
 **This includes vaults that have been removed. Vaults that are removed should not be excluded in this step**
 
+- applies to vaults ended this epoch
+- if it were ended in a previous epoch, it should have been reset; not only against global totals, but also at a vault and user level.
+
 ## 4) resetBaseRealmPoints
 
 ```solidity
@@ -1145,6 +1148,23 @@ function resetBaseRealmPoints(bytes32 vaultId, address[] calldata userAddresses)
 
 Function loops through the provided array of users, obtaining the sum of rp staked, to decrement against vault and global values.
 Users' rp values are also reset.
+
+**Must process vaults that were ended in this epoch**
+
+Else, users can carry foward their RP into a new epoch, although it does not get accounted for in the globals.
+This will result in incorrect user level rewards distribution
+
+*Example*
+1. vault ended [vault.removed == 1]
+2. RP of ended vault removed from system. however, RP is still reflected in both the vault assets and corresponding user assets.
+3. reset Rp process initiated
+4. resetBaseRealmPoints() reverts on ended vault [its users are not zero-ed out]
+5. At a global level, totalStakedRp will reflect zero. 
+6. However, users have Rp staked in that vault, which is carried forward into the new season
+7. migrateRp can be called since, it only checks user vault assets to ensure that there is sufficient RP
+
+So we cannot simply put in a `vault.removed == 1` check in `resetBaseRealmPoints()`.
+If we do, users' and vault state cannot be decremented; hence the carry forward.
 
 ## 5) resetTotalBoostedRealmPoints
 
