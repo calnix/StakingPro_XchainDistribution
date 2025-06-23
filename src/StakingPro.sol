@@ -1215,27 +1215,28 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             bytes32 vaultId = vaultIds[i];
 
             // get vault + ensure it exists
-            DataTypes.Vault memory vault = vaults[vaultId];
+            DataTypes.Vault storage vault = vaults[vaultId];
             if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
 
-            // if vault removed from circulation, global state has been updated: revert
-            if(vault.removed == 1) revert Errors.VaultAlreadyRemoved();
+            // calc. new boost values
+            uint256 newBoostFactor = (vault.stakedNfts * NFT_MULTIPLIER) + Constants.PRECISION_BASE;  // expressed as 1.XXX
+            uint256 newBoostedRealmPoints = (vault.stakedRealmPoints * newBoostFactor) / Constants.PRECISION_BASE;    
+            uint256 newBoostedStakedTokens = (vault.stakedTokens * newBoostFactor) / Constants.PRECISION_BASE;
 
-            // decrement global totals before updating vault
-            totalBoostedRealmPoints -= vault.boostedRealmPoints;
-            totalBoostedStakedTokens -= vault.boostedStakedTokens;
+            // update global totals | only if vault is active
+            if(vault.removed == 0) {
+                // subtract old values, add new values
+                totalBoostedRealmPoints = totalBoostedRealmPoints - vault.boostedRealmPoints + newBoostedRealmPoints;
+                totalBoostedStakedTokens = totalBoostedStakedTokens - vault.boostedStakedTokens + newBoostedStakedTokens;
+            }
 
-            // update vault with new multiplier
-            vault.totalBoostFactor = (vault.stakedNfts * NFT_MULTIPLIER) + Constants.PRECISION_BASE;  // expressed as 1.XXX
-            vault.boostedRealmPoints = (vault.stakedRealmPoints * vault.totalBoostFactor) / Constants.PRECISION_BASE;    
-            vault.boostedStakedTokens = (vault.stakedTokens * vault.totalBoostFactor) / Constants.PRECISION_BASE;
+            // update vault with new values
+            vault.totalBoostFactor = newBoostFactor;
+            vault.boostedRealmPoints = newBoostedRealmPoints;
+            vault.boostedStakedTokens = newBoostedStakedTokens;
 
-            // Write back vault changes to storage
+            // write back vault changes to storage
             vaults[vaultId] = vault;
-
-            // increment global totals with new values
-            totalBoostedRealmPoints += vault.boostedRealmPoints;
-            totalBoostedStakedTokens += vault.boostedStakedTokens;
         }
 
         emit BoostedBalancesUpdated(vaultIds);
