@@ -1234,9 +1234,6 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             vault.totalBoostFactor = newBoostFactor;
             vault.boostedRealmPoints = newBoostedRealmPoints;
             vault.boostedStakedTokens = newBoostedStakedTokens;
-
-            // write back vault changes to storage
-            vaults[vaultId] = vault;
         }
 
         emit BoostedBalancesUpdated(vaultIds);
