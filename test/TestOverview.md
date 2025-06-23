@@ -193,7 +193,7 @@ Others
 
 
 
-### `updateDistribution`[!!!]
+### `updateDistribution`
 
 - split sometime after distribution 1 is created
 - might need a couple of parallels to test different scenarios
@@ -221,8 +221,6 @@ startTime, endTime, emissionPerSecond
 - partial deposits for distributions
 
 # TODO
-
-## Integration testing
 
 ## Migration
 

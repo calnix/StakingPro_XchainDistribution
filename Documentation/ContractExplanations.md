@@ -1361,7 +1361,7 @@ Process:
         5. updateBoostedBalances: updates boosted balances
         6. disableMaintenance
 
-We will need to call `updateBoostedBalances()` multiple times to ensure all vaults have been updated.
+We will need to call `updateBoostedBalances()` multiple times to ensure **all vaults** have been updated.
 During this process, user functions are disabled, as calling them during this process will result in incorrect calculations.
 
 E.g. an unstake() could slip in btw `updateBoostedBalances()` calls and wreck havoc on calculations.
@@ -1371,6 +1371,8 @@ If verification fails, end the contract and redeploy.
 
 When all the vaults have been updated to use the latest `NFT_MULTIPLIER` value, `totalBoostedStakedTokens` and `totalBoostedRealmPoints` should match up.
 This serves as a sanity check to ensure that the multiplier is updated correctly, as well as the vaults are updated correctly.
+
+**All vaults must be updated, including ended vaults that have Nfts in them. This is to prevent any math issues that will revert and block unstaking.**
 
 ## 7. How to end stakingPro and/or migrate to a new stakingPro contract (endTime)
 
