@@ -275,9 +275,20 @@ library PoolLogic {
             uint256 nftBoostedTokensDelta = (boostFactorReduction * vault.stakedTokens) / Constants.PRECISION_BASE;            
             totalBoostedTokensDelta += nftBoostedTokensDelta;
 
-            // update vault
-            vault.stakedNfts -= numOfNftsToUnstake;            
-            vault.totalBoostFactor -= boostFactorReduction;
+            // update vault: numOfNftsToUnstake & totalBoostFactor
+            vault.stakedNfts -= numOfNftsToUnstake;
+            
+            // to avoid underflow, set totalBoostFactor to 0 if boostFactorReduction is greater than totalBoostFactor
+            if(boostFactorReduction <= vault.totalBoostFactor) {
+                vault.totalBoostFactor -= boostFactorReduction;
+            } else {
+                if(vault.removed == 1){
+                    delete vault.totalBoostFactor;
+                } else{
+                    // we definitely should not be here
+                    revert Errors.Warning();
+                }
+            }
 
             // recalc vault's boosted balances, based on remaining staked assets
             if (vault.stakedTokens > 0) vault.boostedStakedTokens -= nftBoostedTokensDelta;            

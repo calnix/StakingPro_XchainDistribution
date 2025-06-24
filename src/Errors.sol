@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 library Errors {
 
     // generic (used across multiple functions)
+    error Warning();    
     error NotStarted();
     error StakingEnded();
     error InvalidArray();
