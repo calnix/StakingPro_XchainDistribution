@@ -414,11 +414,14 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // decrement user's staked tokens and boosted staked tokens
         if(isRemoved == 0){
 
+            // decrement totalBoostedStakedTokens; this will occur regardless of what is unstaked
+            // decrementation of totalBoostedRealmPoints is handled with the nft conditional below
+            totalBoostedStakedTokens -= totalBoostedTokensDelta;
+
             if(amount > 0){
 
                 // update global
                 totalStakedTokens -= amount;
-                totalBoostedStakedTokens -= totalBoostedTokensDelta;
 
                 // return MOCA
                 STAKED_TOKEN.safeTransfer(msg.sender, amount);
@@ -431,10 +434,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
                 // update global
                 totalStakedNfts -= numOfNftsToUnstake;
                 totalBoostedRealmPoints -= totalBoostedRealmPointsDelta;
-                
-                // decrement totalBoostedStakedTokens when only nfts are unstaked
-                if(amount == 0) totalBoostedStakedTokens -= totalBoostedTokensDelta;
-                
+                                
                 // record unstake with registry
                 NFT_REGISTRY.recordUnstake(msg.sender, tokenIds, vaultId);
             }

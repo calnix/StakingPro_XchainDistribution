@@ -256,7 +256,6 @@ library PoolLogic {
 
             // update vault
             vault.stakedTokens -= amount;
-            //vault.boostedStakedTokens -= totalBoostedTokensDelta;
 
             // update user
             userVaultAssets.stakedTokens -= amount;
@@ -283,11 +282,11 @@ library PoolLogic {
             // nftBoostedTokensDelta & totalBoostedRealmPointsDelta are 0 if vault is ended
             emit UnstakedNfts(params.user, params.vaultId, tokenIds, nftBoostedTokensDelta, totalBoostedRealmPointsDelta);             
 
-            // update vault: numOfNftsToUnstake & totalBoostFactor
+            // update vault: numOfNftsToUnstake
             vault.stakedNfts -= numOfNftsToUnstake;
         }
 
-        // if vault is not removed, decrement its boosted balances
+        // if vault is not removed, decrement its boosted balances & update totalBoostFactor
         if(vault.removed == 0){
             vault.boostedStakedTokens -= totalBoostedTokensDelta;
             vault.boostedRealmPoints -= totalBoostedRealmPointsDelta;
