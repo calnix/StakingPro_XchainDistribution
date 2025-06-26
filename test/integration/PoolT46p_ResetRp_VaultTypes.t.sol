@@ -16,7 +16,7 @@ import "../unit/PoolT41.t.sol";
 
     /**
         other vault types
-        1: ended [removed == 1]  | cannot be reset 
+        1: ended [removed == 1]
         2: in cooldown [endTime > 0]
     */
 
@@ -282,6 +282,24 @@ abstract contract StateT51p_ResetRp_VaultsAndUsersUpdated is StateT46p_ResetRp_U
 
 // vaults and users updated at T51
 contract StateT51p_ResetRp_VaultsAndUsersUpdated_Test is StateT51p_ResetRp_VaultsAndUsersUpdated {
+
+    function testVault1_StateFrozenAtT46() public {
+        DataTypes.Vault memory vault1 = pool.getVault(vaultId1);
+        
+        // Check base balances
+        assertEq(vault1.stakedRealmPoints, user1Rp + user2Rp/2);
+        assertEq(vault1.stakedTokens, user1Moca + user2Moca/2);
+        assertEq(vault1.stakedNfts, 2);
+
+        // Check boosted values
+        uint256 boostFactor = 10_000 + (vault1.stakedNfts * pool.NFT_MULTIPLIER());
+        uint256 expectedBoostedRp = (vault1.stakedRealmPoints * boostFactor) / 10_000;
+        uint256 expectedBoostedTokens = (vault1.stakedTokens * boostFactor) / 10_000;
+        
+        assertEq(vault1.totalBoostFactor, 0);
+        assertEq(vault1.boostedRealmPoints, 0);
+        assertEq(vault1.boostedStakedTokens, 0);
+    }
 
     function testVault2_StateFrozenAtT46() public {
         DataTypes.Vault memory vault2 = pool.getVault(vaultId2);
@@ -862,19 +880,49 @@ contract StateT51p_ResetRp_VaultsAndUsersUpdated_Test is StateT51p_ResetRp_Vault
         vm.stopPrank();
     }
 
-    function testCannotResetBaseRealmPoints_Vault1Ended() public {
-       
+    function testResetBaseRealmPoints_Vault1Ended() public {
+        // Store before values
+        uint256 beforeUser1RP = pool.getUser(user1, vaultId1).stakedRealmPoints;
+        uint256 beforeUser1BoostedRP = beforeUser1RP * pool.getVault(vaultId1).totalBoostFactor / Constants.PRECISION_BASE;
+        uint256 beforeVault1RP = pool.getVault(vaultId1).stakedRealmPoints;
+        uint256 beforeVault1BoostedRP = pool.getVault(vaultId1).boostedRealmPoints;
+        uint256 beforeTotalStakedRP = pool.totalStakedRealmPoints();
+        uint256 beforeTotalBoostedRP = pool.totalBoostedRealmPoints();
+        
         // Setup user addresses for reset
         address[] memory userAddresses = new address[](1);
             userAddresses[0] = user1;
         
         // Reset realm points
         vm.startPrank(owner);
-            vm.expectRevert(Errors.VaultAlreadyRemoved.selector);
+            vm.expectEmit(true, true, true, true);
+            emit BaseRealmPointsReset(vaultId1, userAddresses, beforeUser1RP);
+        
             pool.resetBaseRealmPoints(vaultId1, userAddresses);
         vm.stopPrank();
-    }
 
+        //Store After values
+        uint256 afterUser1RP = pool.getUser(user1, vaultId1).stakedRealmPoints;
+        uint256 afterVault1RP = pool.getVault(vaultId1).stakedRealmPoints;
+        uint256 afterVault1BoostedRP = pool.getVault(vaultId1).boostedRealmPoints;
+        uint256 afterTotalStakedRP = pool.totalStakedRealmPoints();
+        uint256 afterTotalBoostedRP = pool.totalBoostedRealmPoints();
+
+        
+        // Check user values after reset
+        assertEq(afterUser1RP, 0, "user1 stakedRP should be 0");
+
+        // Check vault values after reset - only user1's RP should be decremented
+        assertEq(afterVault1RP, beforeVault1RP - beforeUser1RP, "vault1 stakedRP should be decremented by user1's RP");
+        
+        // Check global base realm points are NOT decremented
+        assertEq(afterTotalStakedRP, beforeTotalStakedRP, "totalStakedRealmPoints mismatch");
+        
+
+        // Check that boosted realm points are not affected
+        assertEq(afterVault1BoostedRP, beforeVault1BoostedRP, "vault1 boostedStakedRP should be unchanged");
+        assertEq(afterTotalBoostedRP, beforeTotalBoostedRP, "totalBoostedRealmPoints mismatch");
+    }
 }
 
 abstract contract StateT51p_ResetRp_ResetBaseRp is StateT51p_ResetRp_VaultsAndUsersUpdated {
@@ -889,7 +937,7 @@ abstract contract StateT51p_ResetRp_ResetBaseRp is StateT51p_ResetRp_VaultsAndUs
 
         // reset rp
         vm.startPrank(owner);
-            //pool.resetBaseRealmPoints(vaultId1, userAddresses); -> cannot reset ended vault
+            pool.resetBaseRealmPoints(vaultId1, userAddresses);
             pool.resetBaseRealmPoints(vaultId2, userAddresses);
         vm.stopPrank();
     }

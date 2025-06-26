@@ -1041,8 +1041,12 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
         //if(vault.stakedRealmPoints == 0) revert Errors.NoRpStaked(); -- note
 
-        // if vault ended, revert
-        if(vault.removed == 1) revert Errors.VaultAlreadyRemoved();
+        /** note: cannot block ended vaults
+            if the vault is ended, still need to process it in resetBaseRealmPoints()
+            - this is to ensure that users are decremented against the vaults
+            - global totals will not be updated for ended vaults; only users will.
+         */
+        //if(vault.removed == 1) revert Errors.VaultAlreadyRemoved();
 
         // counters
         uint256 baseRealmPointsSum;
