@@ -133,7 +133,7 @@ abstract contract StateT61p_Vault2CooldownActivated_VaultIsRemovedImmediately is
 
 contract StateT61p_Vault2CooldownActivated_VaultIsRemovedImmediately_Test is StateT61p_Vault2CooldownActivated_VaultIsRemovedImmediately {
 
-    function testUser2UnstakeAfterVault2EndedDoesNotDecrementGlobalState() public {
+    function testUser2UnstakeAfterVault2EndedDecrementsGlobalState() public {
 
         // global state: before
         uint256 poolTotalNftsBefore = pool.totalStakedNfts();
@@ -146,6 +146,10 @@ contract StateT61p_Vault2CooldownActivated_VaultIsRemovedImmediately_Test is Sta
         // vault state: before
         DataTypes.Vault memory vaultBefore = pool.getVault(vaultId2);
         assertEq(vaultBefore.removed, 1, "Vault2 not ended");
+        // check boosted assets: 0 since vault ended
+        assertEq(vaultBefore.totalBoostFactor, 0, "totalBoostFactor mismatch"); 
+        assertEq(vaultBefore.boostedStakedTokens, 0, "boostedStakedTokens mismatch");
+        assertEq(vaultBefore.boostedRealmPoints, 0, "boostedRealmPoints mismatch");
 
         // user account: before
         DataTypes.User memory user2Vault2Assets = pool.getUser(user2, vaultId2);
@@ -173,13 +177,10 @@ contract StateT61p_Vault2CooldownActivated_VaultIsRemovedImmediately_Test is Sta
         assertEq(poolTotalBoostedRpBefore, poolTotalBoostedRpAfter, "totalBoostedRealmPoints mismatch");
         assertEq(poolTotalBoostedTokensBefore, poolTotalBoostedTokensAfter, "totalBoostedStakedTokens mismatch");
 
+
         //check vault state: decrementation of assets
         assertEq(vaultAfter.stakedNfts, vaultBefore.stakedNfts - user2Vault2Assets.tokenIds.length, "stakedNfts mismatch");
         assertEq(vaultAfter.stakedTokens, vaultBefore.stakedTokens - user2Vault2Assets.stakedTokens, "stakedTokens mismatch");
-        
-        // check boosted assets: 0 since all nfts are unstaked
-        assertEq(vaultAfter.totalBoostFactor, 10_000, "totalBoostFactor mismatch"); 
-        assertEq(vaultAfter.boostedStakedTokens, 0, "boostedStakedTokens mismatch");
     }
 
     function testUser2MigrateRpToVault1DoesNotDecrementGlobalState() public {

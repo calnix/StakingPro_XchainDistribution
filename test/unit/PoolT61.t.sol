@@ -1109,18 +1109,15 @@ contract StateT61_Vault2CooldownActivatedTest is StateT61_Vault2CooldownActivate
 
         // vault state: after
         DataTypes.Vault memory vaultAfter = pool.getVault(vaultId2);
-        uint256 vaultNftsAfter = vaultAfter.stakedNfts;
-        uint256 vaultTokensAfter = vaultAfter.stakedTokens;
-        uint256 vaultRPAfter = vaultAfter.stakedRealmPoints;
-        uint256 vaultBoostedTokensAfter = vaultAfter.boostedStakedTokens;
-        uint256 vaultBoostedRPAfter = vaultAfter.boostedRealmPoints;
+        assertEq(vaultAfter.removed, 1, "vaultRemoved mismatch");
+        assertEq(vaultAfter.boostedStakedTokens, 0, "vaultBoostedTokens mismatch");
+        assertEq(vaultAfter.boostedRealmPoints, 0, "vaultBoostedRP mismatch");
+        assertEq(vaultAfter.totalBoostFactor, 0, "vaultTotalBoostFactor mismatch");
 
         // check vault state: unchanged
-        assertEq(vaultNftsAfter, vaultNfts, "vaultNfts mismatch");
-        assertEq(vaultTokensAfter, vaultTokens, "vaultTokens mismatch");
-        assertEq(vaultRPAfter, vaultRP, "vaultRP mismatch");
-        assertEq(vaultBoostedTokensAfter, vaultBoostedTokens, "vaultBoostedTokens mismatch");
-        assertEq(vaultBoostedRPAfter, vaultBoostedRP, "vaultBoostedRP mismatch");
+        assertEq(vaultAfter.stakedNfts, vaultNfts, "vaultNfts mismatch");
+        assertEq(vaultAfter.stakedTokens, vaultTokens, "vaultTokens mismatch");
+        assertEq(vaultAfter.stakedRealmPoints, vaultRP, "vaultRP mismatch");
     }
 
 
