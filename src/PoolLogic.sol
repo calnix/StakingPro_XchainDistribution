@@ -169,7 +169,7 @@ library PoolLogic {
 
         // ---------------------------- update vaults ----------------------------------------------
 
-        // decrement oldVault
+        // decrement oldVault | oldBoostedRealmPoints could be zero if vault has ended, as totalBoostFactor would be 0
         uint256 oldBoostedRealmPoints = (amount * oldVault.totalBoostFactor) / Constants.PRECISION_BASE; 
         oldVault.stakedRealmPoints -= amount;
         oldVault.boostedRealmPoints -= oldBoostedRealmPoints;
@@ -243,8 +243,10 @@ library PoolLogic {
         // also serves to check that the user owns the inputted nfts
         userVaultAssets.tokenIds = _removeFromArray(userVaultAssets.tokenIds, tokenIds);
 
+        uint256 boostFactorReduction;
         uint256 totalBoostedTokensDelta;
         uint256 totalBoostedRealmPointsDelta;
+        uint256 nftBoostedTokensDelta;
 
         // unstaking tokens
         if(amount > 0){
@@ -254,7 +256,6 @@ library PoolLogic {
 
             // update vault
             vault.stakedTokens -= amount;
-            vault.boostedStakedTokens -= totalBoostedTokensDelta;
 
             // update user
             userVaultAssets.stakedTokens -= amount;
@@ -264,37 +265,39 @@ library PoolLogic {
 
         // unstaking nfts
         if(numOfNftsToUnstake > 0){
+            // if not ended, calc. boost-related changes | else skip
+            if(vault.removed == 0){
             
-            // calc. boost factor reduction
-            uint256 boostFactorReduction = numOfNftsToUnstake * NFT_MULTIPLIER;
+                // calc. boost factor reduction
+                boostFactorReduction = numOfNftsToUnstake * NFT_MULTIPLIER;
 
-            // calc. effect on realm points boosting
-            totalBoostedRealmPointsDelta = (boostFactorReduction * vault.stakedRealmPoints) / Constants.PRECISION_BASE;
+                // calc. effect on realm points boosting
+                totalBoostedRealmPointsDelta = (boostFactorReduction * vault.stakedRealmPoints) / Constants.PRECISION_BASE;
 
-            // calc. effect on boosted staked tokens [based off remaining staked tokens]
-            uint256 nftBoostedTokensDelta = (boostFactorReduction * vault.stakedTokens) / Constants.PRECISION_BASE;            
-            totalBoostedTokensDelta += nftBoostedTokensDelta;
+                // calc. effect on boosted staked tokens [based off remaining staked tokens]
+                nftBoostedTokensDelta = (boostFactorReduction * vault.stakedTokens) / Constants.PRECISION_BASE;            
+                totalBoostedTokensDelta += nftBoostedTokensDelta;
+            }
 
-            // update vault: numOfNftsToUnstake & totalBoostFactor
+            // nftBoostedTokensDelta & totalBoostedRealmPointsDelta are 0 if vault is ended
+            emit UnstakedNfts(params.user, params.vaultId, tokenIds, nftBoostedTokensDelta, totalBoostedRealmPointsDelta);             
+
+            // update vault: numOfNftsToUnstake
             vault.stakedNfts -= numOfNftsToUnstake;
-            
-            // to avoid underflow, set totalBoostFactor to 0 if boostFactorReduction is greater than totalBoostFactor
+        }
+
+        // if vault is not removed, decrement its boosted balances & update totalBoostFactor
+        if(vault.removed == 0){
+            vault.boostedStakedTokens -= totalBoostedTokensDelta;
+            vault.boostedRealmPoints -= totalBoostedRealmPointsDelta;
+
+            // reduce totalBoostFactor by boostFactorReduction, reverting if underflow occurs
             if(boostFactorReduction <= vault.totalBoostFactor) {
                 vault.totalBoostFactor -= boostFactorReduction;
             } else {
-                if(vault.removed == 1){
-                    delete vault.totalBoostFactor;
-                } else{
-                    // we definitely should not be here
-                    revert Errors.Warning();
-                }
+                // we definitely should not be here
+                revert Errors.Warning();
             }
-
-            // recalc vault's boosted balances, based on remaining staked assets
-            if (vault.stakedTokens > 0) vault.boostedStakedTokens -= nftBoostedTokensDelta;            
-            if (vault.stakedRealmPoints > 0) vault.boostedRealmPoints -= totalBoostedRealmPointsDelta;
-
-            emit UnstakedNfts(params.user, params.vaultId, tokenIds, nftBoostedTokensDelta, totalBoostedRealmPointsDelta);             
         }
 
         // update storage: mappings 
@@ -554,8 +557,15 @@ library PoolLogic {
                     NFT_REGISTRY.recordUnstake(vault.creator, vault.creationTokenIds, vaultId);
                     delete vaults[vaultId].creationTokenIds;
 
-                    // Mark vault as removed
-                    vaults[vaultId].removed = 1;
+                    // Mark vault as removed and delete boosted balances
+                    vault.removed = 1;
+                    delete vault.totalBoostFactor;
+                    delete vault.boostedRealmPoints;
+                    delete vault.boostedStakedTokens;
+                    // storage update
+                    vaults[vaultId] = vault;
+
+                    // increment count
                     ++vaultsEnded;
                 }
             }

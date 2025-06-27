@@ -296,9 +296,9 @@ contract StateT51p_ResetRp_VaultsAndUsersUpdated_Test is StateT51p_ResetRp_Vault
         uint256 expectedBoostedRp = (vault1.stakedRealmPoints * boostFactor) / 10_000;
         uint256 expectedBoostedTokens = (vault1.stakedTokens * boostFactor) / 10_000;
         
-        assertEq(vault1.totalBoostFactor, boostFactor);
-        assertEq(vault1.boostedRealmPoints, expectedBoostedRp);
-        assertEq(vault1.boostedStakedTokens, expectedBoostedTokens);
+        assertEq(vault1.totalBoostFactor, 0);
+        assertEq(vault1.boostedRealmPoints, 0);
+        assertEq(vault1.boostedStakedTokens, 0);
     }
 
     function testVault2_StateFrozenAtT46() public {

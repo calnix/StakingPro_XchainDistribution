@@ -191,8 +191,6 @@ Others
 - PoolT61p_UpdateVaultCooldown
 - PoolT61p_UpdateVaultCooldownZero.t.sol
 
-
-
 ### `updateDistribution`
 
 - split sometime after distribution 1 is created
@@ -219,12 +217,6 @@ startTime, endTime, emissionPerSecond
 ## Others
 
 - partial deposits for distributions
-
-# TODO
-
-## Migration
-
-- v1 to v2: rewardsVault
 
 # Future
 

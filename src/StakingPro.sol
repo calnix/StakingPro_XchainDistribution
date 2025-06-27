@@ -414,11 +414,14 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // decrement user's staked tokens and boosted staked tokens
         if(isRemoved == 0){
 
+            // decrement totalBoostedStakedTokens; this will occur regardless of what is unstaked
+            // decrementation of totalBoostedRealmPoints is handled with the nft conditional below
+            totalBoostedStakedTokens -= totalBoostedTokensDelta;
+
             if(amount > 0){
 
                 // update global
                 totalStakedTokens -= amount;
-                totalBoostedStakedTokens -= totalBoostedTokensDelta;
 
                 // return MOCA
                 STAKED_TOKEN.safeTransfer(msg.sender, amount);
@@ -431,10 +434,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
                 // update global
                 totalStakedNfts -= numOfNftsToUnstake;
                 totalBoostedRealmPoints -= totalBoostedRealmPointsDelta;
-                
-                // decrement totalBoostedStakedTokens when only nfts are unstaked
-                if(amount == 0) totalBoostedStakedTokens -= totalBoostedTokensDelta;
-                
+                                
                 // record unstake with registry
                 NFT_REGISTRY.recordUnstake(msg.sender, tokenIds, vaultId);
             }
@@ -546,8 +546,11 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             totalBoostedStakedTokens -= vault.boostedStakedTokens;
             totalBoostedRealmPoints -= vault.boostedRealmPoints;
 
-            // Mark vault as removed
+            // Mark vault as removed and delete boosted balances
             vault.removed = 1;
+            delete vault.totalBoostFactor;
+            delete vault.boostedRealmPoints;
+            delete vault.boostedStakedTokens;
 
             // return creator NFTs
             NFT_REGISTRY.recordUnstake(vault.creator, vault.creationTokenIds, vaultId);
@@ -1038,6 +1041,13 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
         //if(vault.stakedRealmPoints == 0) revert Errors.NoRpStaked(); -- note
 
+        /** note: cannot block ended vaults
+            if the vault is ended, still need to process it in resetBaseRealmPoints()
+            - this is to ensure that users are decremented against the vaults
+            - global totals will not be updated for ended vaults; only users will.
+         */
+        //if(vault.removed == 1) revert Errors.VaultAlreadyRemoved();
+
         // counters
         uint256 baseRealmPointsSum;
 
@@ -1058,7 +1068,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
         // decrement vault totals
         vault.stakedRealmPoints -= baseRealmPointsSum;
 
-        // if last cycle: reset boosted realm points on vault, decrement global total
+        // if last cycle: reset boostedRealmPoints on vault, decrement global total
         if(vault.stakedRealmPoints == 0){
         
             // decrement global total if vault is not already removed
@@ -1076,7 +1086,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             emit VaultRealmPointsZeroed(vaultId);
         }
 
-        // decrement global total if vault is not already removed
+        // decrement global totalStakedRealmPoints, if vault is not removed
         if(vault.removed == 0) {
             if(baseRealmPointsSum <= totalStakedRealmPoints){
                 totalStakedRealmPoints -= baseRealmPointsSum;
@@ -1217,18 +1227,18 @@ contract StakingPro is EIP712, Pausable, AccessControl {
             // get vault + ensure it exists
             DataTypes.Vault storage vault = vaults[vaultId];
             if(vault.creator == address(0)) revert Errors.NonExistentVault(vaultId);
+            
+            // if vault ended, revert
+            if(vault.removed == 1) revert Errors.VaultAlreadyRemoved();
 
             // calc. new boost values
             uint256 newBoostFactor = (vault.stakedNfts * NFT_MULTIPLIER) + Constants.PRECISION_BASE;  // expressed as 1.XXX
             uint256 newBoostedRealmPoints = (vault.stakedRealmPoints * newBoostFactor) / Constants.PRECISION_BASE;    
             uint256 newBoostedStakedTokens = (vault.stakedTokens * newBoostFactor) / Constants.PRECISION_BASE;
 
-            // update global totals | only if vault is active
-            if(vault.removed == 0) {
-                // add new values, subtract old values
-                totalBoostedRealmPoints = totalBoostedRealmPoints + newBoostedRealmPoints - vault.boostedRealmPoints;
-                totalBoostedStakedTokens = totalBoostedStakedTokens + newBoostedStakedTokens - vault.boostedStakedTokens;
-            }
+            // update global totals: add new values, subtract old values
+            totalBoostedRealmPoints = totalBoostedRealmPoints + newBoostedRealmPoints - vault.boostedRealmPoints;
+            totalBoostedStakedTokens = totalBoostedStakedTokens + newBoostedStakedTokens - vault.boostedStakedTokens;
 
             // update vault with new values
             vault.totalBoostFactor = newBoostFactor;

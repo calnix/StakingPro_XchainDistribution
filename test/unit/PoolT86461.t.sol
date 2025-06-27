@@ -138,14 +138,10 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
         assertEq(vault2.stakedTokens, user2Moca/2);
         assertEq(vault2.stakedNfts, 2);
 
-        // Check boosted values
-        uint256 boostFactor = 10_000 + (vault2.stakedNfts * pool.NFT_MULTIPLIER());
-        uint256 expectedBoostedRp = (vault2.stakedRealmPoints * boostFactor) / 10_000;
-        uint256 expectedBoostedTokens = (vault2.stakedTokens * boostFactor) / 10_000;
-
-        assertEq(vault2.totalBoostFactor, boostFactor);
-        assertEq(vault2.boostedRealmPoints, expectedBoostedRp);
-        assertEq(vault2.boostedStakedTokens, expectedBoostedTokens);
+        // Check boosted values - zeroed out as vault is ended
+        assertEq(vault2.totalBoostFactor, 0);
+        assertEq(vault2.boostedRealmPoints, 0);
+        assertEq(vault2.boostedStakedTokens, 0);
 
         // Check fee factors
         assertEq(vault2.nftFeeFactor, 1250);          
@@ -821,8 +817,8 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
         assertEq(initialVault.stakedRealmPoints, user2Rp/2, "Vault staked RP mismatch");
         // Calculate boost factor: 10% boost per NFT
         uint256 boostFactor = Constants.PRECISION_BASE + (initialVault.stakedNfts * pool.NFT_MULTIPLIER());
-        assertEq(initialVault.boostedStakedTokens, user2Moca/2 * boostFactor / Constants.PRECISION_BASE, "Vault boosted staked mismatch");
-        assertEq(initialVault.boostedRealmPoints, user2Rp/2 * boostFactor / Constants.PRECISION_BASE, "Vault boosted RP mismatch");
+        assertEq(initialVault.boostedStakedTokens, 0, "Vault boosted staked mismatch");
+        assertEq(initialVault.boostedRealmPoints, 0, "Vault boosted RP mismatch");
 
         // User2 unstakes from vault2
         vm.startPrank(user2);
@@ -844,9 +840,10 @@ contract StateT86461_Vault2EndedTest is StateT86461_Vault2Ended {
         assertEq(vaultAfter.stakedNfts, 0, "Vault staked NFTs mismatch");
         assertEq(vaultAfter.stakedTokens, 0, "Non-zero stakedTokens in vault2");
         assertEq(vaultAfter.boostedStakedTokens, 0, "Non-zero boostedStakedTokens in vault2");
-        // rp should remain unchanged - except for boosting update
+        assertEq(vaultAfter.boostedRealmPoints, 0, "Non-zero boostedRealmPoints in vault2");
+
+        // staked realm points should remain unchanged
         assertEq(vaultAfter.stakedRealmPoints, initialVault.stakedRealmPoints, "Rp incorrectly cleared");
-        assertEq(vaultAfter.boostedRealmPoints, initialVault.stakedRealmPoints, "Non-zero boostedRealmPoints in vault2");
 
         // Check pool state updated
         assertEq(pool.totalStakedTokens(), initialPoolTotalStaked, "Pool total staked not decreased");
