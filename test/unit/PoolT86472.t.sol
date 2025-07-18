@@ -23,12 +23,13 @@ contract StateT86472_ContractEndedTest is StateT86472_ContractEnded {
     }
 
 // ---- state tests ----
+
     function testCanUnstakeAfterContractEnded() public {
         // Get initial vault and user state
         DataTypes.Vault memory vaultBefore = pool.getVault(vaultId1);
         DataTypes.User memory userBefore = pool.getUser(user1, vaultId1);
 
-        uint256 unstakeAmount = 1000;
+        uint256 unstakeAmount = 500;
 
         vm.startPrank(user1);
             pool.unstake(vaultId1, unstakeAmount, new uint256[](0));
@@ -41,6 +42,19 @@ contract StateT86472_ContractEndedTest is StateT86472_ContractEnded {
         // Check user state after unstake
         DataTypes.User memory userAfter = pool.getUser(user1, vaultId1);
         assertEq(userAfter.stakedTokens, userBefore.stakedTokens - unstakeAmount, "User staked tokens not reduced correctly");
+
+
+        //note: additional check: D0 final index calculation 
+        // check that D0's index and totalEmitted remain unchanged after contract ends
+        DataTypes.Distribution memory distribution0_T86472_ContractEndedPlusOne = getDistribution(0);
+
+        assertEq(distribution0_T86472_ContractEndedPlusOne.index, distribution0_T86471_ContractEnded_StateUpdated.index, "D0 index should not change after contract ended");
+        assertEq(distribution0_T86472_ContractEndedPlusOne.totalEmitted, distribution0_T86471_ContractEnded_StateUpdated.totalEmitted, "D0 totalEmitted should not change after contract ended");        
+
+        assertEq(distribution0_T86472_ContractEndedPlusOne.index, distribution0_T86471_ContractEnded_View.index, "D0 index should not change after contract ended");
+        assertEq(distribution0_T86472_ContractEndedPlusOne.totalEmitted, distribution0_T86471_ContractEnded_View.totalEmitted, "D0 totalEmitted should not change after contract ended");
+
+
     }
     
     function testCanActivateCooldownAfterContractEnded() public {

@@ -668,6 +668,7 @@ contract StakingPro is EIP712, Pausable, AccessControl {
                 
                 // D0: endTime is not set
                 distribution.endTime = endTime_;
+                distribution.lastUpdateTimeStamp = endTime_;
             }
         }
     }
