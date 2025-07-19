@@ -61,7 +61,10 @@ contract StateT86472_ContractEndedTest is StateT86472_ContractEnded {
         assertEq(lastUpdateTimeStamp, pool.endTime(), "D0 lastUpdateTimeStamp should be contract end time");
         //
         assertEq(emissionPerSecond, 1 ether, "D0 emissionPerSecond should be 1 ether");
-        assertEq(totalEmitted, 86470 ether, "D0 totalEmitted should be 86470 ether | nothing emitted past endTime");
+        assertEq(totalEmitted, 86470 ether, "D0 totalEmitted should be 86470 ether");
+        
+        // check that nothing was emitted past endTime
+        assertLe(totalEmitted, block.timestamp * 1 ether, "Nothing emitted past endTime");
         
         // verify view state matches storage
         DataTypes.Distribution memory distribution0_T86472_ContractEndedPlusOne = pool.getUpdatedDistribution(0);
