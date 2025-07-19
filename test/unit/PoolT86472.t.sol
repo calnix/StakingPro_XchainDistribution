@@ -44,17 +44,31 @@ contract StateT86472_ContractEndedTest is StateT86472_ContractEnded {
         assertEq(userAfter.stakedTokens, userBefore.stakedTokens - unstakeAmount, "User staked tokens not reduced correctly");
 
 
+
         //note: additional check: D0 final index calculation 
         // check that D0's index and totalEmitted remain unchanged after contract ends
-        DataTypes.Distribution memory distribution0_T86472_ContractEndedPlusOne = getDistribution(0);
+        /**
+            D0 started at T1
+            D0 ends at T86471 [as does the contract]
+            Therefore, totalEmitted should be 86471 - 1 = 86470 ether
+         */
+        
+        // verify final updated state of D0
+        (, , uint256 d0EndTime, uint256 d0StartTime, uint256 emissionPerSecond, uint256 index, uint256 totalEmitted, uint256 lastUpdateTimeStamp, ) = pool.distributions(0);
+        // check storage 
+        assertEq(d0StartTime, 1, "D0 startTime should be 1");
+        assertEq(d0EndTime, pool.endTime(), "D0 endTime should be contract end time"); 
+        assertEq(lastUpdateTimeStamp, pool.endTime(), "D0 lastUpdateTimeStamp should be contract end time");
+        //
+        assertEq(emissionPerSecond, 1 ether, "D0 emissionPerSecond should be 1 ether");
+        assertEq(totalEmitted, 86470 ether, "D0 totalEmitted should be 86470 ether | nothing emitted past endTime");
+        
+        // verify view state matches storage
+        DataTypes.Distribution memory distribution0_T86472_ContractEndedPlusOne = pool.getUpdatedDistribution(0);
 
-        assertEq(distribution0_T86472_ContractEndedPlusOne.index, distribution0_T86471_ContractEnded_StateUpdated.index, "D0 index should not change after contract ended");
-        assertEq(distribution0_T86472_ContractEndedPlusOne.totalEmitted, distribution0_T86471_ContractEnded_StateUpdated.totalEmitted, "D0 totalEmitted should not change after contract ended");        
-
-        assertEq(distribution0_T86472_ContractEndedPlusOne.index, distribution0_T86471_ContractEnded_View.index, "D0 index should not change after contract ended");
-        assertEq(distribution0_T86472_ContractEndedPlusOne.totalEmitted, distribution0_T86471_ContractEnded_View.totalEmitted, "D0 totalEmitted should not change after contract ended");
-
-
+        assertEq(distribution0_T86472_ContractEndedPlusOne.index, index, "D0 index should be same as view");
+        assertEq(distribution0_T86472_ContractEndedPlusOne.totalEmitted, totalEmitted, "D0 totalEmitted should be same as view");
+        assertEq(distribution0_T86472_ContractEndedPlusOne.lastUpdateTimeStamp, lastUpdateTimeStamp, "D0 emissionPerSecond should be same as view");
     }
     
     function testCanActivateCooldownAfterContractEnded() public {
