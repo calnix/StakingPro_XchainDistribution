@@ -4,6 +4,11 @@ pragma solidity ^0.8.26;
 import "./PoolT86466.t.sol";
 
 abstract contract StateT86471_ContractSetEndTime is StateT86466_User2UnstakedFromVault2 {
+
+    // for reference
+    DataTypes.Distribution distribution0_T86471_ContractEnded_View;
+    DataTypes.Distribution distribution1_T86471_ContractEnded_View;
+
     function setUp() public virtual override {
         super.setUp();
 
@@ -12,6 +17,9 @@ abstract contract StateT86471_ContractSetEndTime is StateT86466_User2UnstakedFro
             pool.setEndTime(86471);
         vm.stopPrank();
 
+        // get view state before unstake
+        distribution0_T86471_ContractEnded_View = pool.getUpdatedDistribution(0);
+        distribution1_T86471_ContractEnded_View = pool.getUpdatedDistribution(1);
     }
 }   
 
